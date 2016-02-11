@@ -1,5 +1,6 @@
 // added just for one use of abs; let me know if there is a better way
 // to do this
+#pragma once
 #include <cmath>
 #include <cstdlib>
 #include <stdio.h>

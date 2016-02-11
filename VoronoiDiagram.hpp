@@ -81,6 +81,13 @@ namespace voro {
 			poly_.face_areas(v);
 		}
 
+		// So apparently the compiler won't make a default assignment operator
+		// WHYYYYYYYYYYYY
+		FatCell& operator=(const FatCell& cell)
+		{
+			return *this;
+		}
+
 	private:
 		void ensurePolyComputed() {
 			if (!poly_computed_) {
