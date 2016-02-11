@@ -1,6 +1,8 @@
 // added just for one use of abs; let me know if there is a better way
 // to do this
 #pragma once
+#ifndef voro_priv
+#define voro_priv
 #include <cmath>
 #include <cstdlib>
 #include <stdio.h>
@@ -1665,3 +1667,4 @@ double cellContainer::findMaxNeighDist() {
 // This function returns a random floating point number between 0 and 1
 double rnd() {return double(rand())/RAND_MAX;}
 
+#endif

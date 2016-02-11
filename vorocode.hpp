@@ -18,7 +18,7 @@
 typedef struct Vector3
 {
 	double X, Y, Z;
-	Vector3(void);
+	Vector3(void){};//hack{}
 	Vector3(const double x, const double y, const double z);
 	Vector3 operator + (const Vector3& A) const;
 	Vector3 operator + (const double A) const;
@@ -54,7 +54,7 @@ typedef struct Particle {
 	int group;
 	Particle(int Id, double x, double y, double z);
 	Particle(int Id, Vector3 pos);
-	Particle(void);
+	Particle(void){};//hack{}
 
 	// index should not be an int, nor should the default group be 0
 	Particle(double x, double y, double z, int index, int id, int group = 0)
@@ -118,25 +118,25 @@ public:
 	voronoiCell(std::string shape, double length, Particle particle, double maxRadius,
 				double x_min, double x_max, double y_min, double y_max,
 				double z_min, double z_max);
-	~voronoiCell();
-
+	~voronoiCell(){};//hack{}
+	
 	struct Particle particle;
 	struct Particle neighborParticle;
 	double maxRadius;
 
-	void cutCell(const Particle& neighbor);
+	void cutCell(const Particle& neighbor){};//hack{}
 
 	// CustomInterface IO
 
 	// why was this virtual?
-	void neighbors(std::vector<int> &v);
+	void neighbors(std::vector<int> &v){};//hack{}
 
 	void faceAreas(std::vector<double> &v);
 
-	double volume();
-	void vertices(std::vector<double> &v);
+	double volume(){};//hack{}
+	void vertices(std::vector<double> &v){};//hack{}
 	void face_vertices(std::vector<int> &v);
-	void face_areas(std::vector<double> &v);
+	void face_areas(std::vector<double> &v){};//hack{}
 
 	void drawGnuplot(double dispX, double dispY, double dispZ, FILE* fp, HalfEdge* edge);
 	// only public for debugging purposes
@@ -254,6 +254,6 @@ public:
 
 };
 
-#include "vorocode-private.hpp"
+//#include "vorocode-private.hpp"
 
 #endif
