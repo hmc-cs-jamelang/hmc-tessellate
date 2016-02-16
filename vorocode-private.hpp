@@ -74,7 +74,7 @@ Particle::Particle(int Id, Vector3 pos) {
     id = Id;
 }
 
-Particle::Particle( void ){
+Particle::Particle( void ) {
     id = -1;
 }
 
@@ -1665,6 +1665,6 @@ double cellContainer::findMaxNeighDist() {
 
 
 // This function returns a random floating point number between 0 and 1
-double rnd() {return double(rand())/RAND_MAX;}
+// double rnd() {return double(rand())/RAND_MAX;}
 
 #endif

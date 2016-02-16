@@ -18,18 +18,18 @@
 typedef struct Vector3
 {
 	double X, Y, Z;
-	Vector3(void){};//hack{}
-	Vector3(const double x, const double y, const double z);
-	Vector3 operator + (const Vector3& A) const;
-	Vector3 operator + (const double A) const;
-	Vector3 operator * (const double A) const;
-	Vector3 operator - (const Vector3& A) const;
-	Vector3 operator / (const double A) const;
-	bool operator != (const Vector3& A) const;
-	bool operator == (const Vector3& A) const;
-	double Dot(const Vector3& A) const;
-	Vector3 Cross(const Vector3& A) const;
-	double distanceTo(const Vector3& other) const;
+	inline Vector3(void);
+	inline Vector3(const double x, const double y, const double z);
+	inline Vector3 operator + (const Vector3& A) const;
+	inline Vector3 operator + (const double A) const;
+	inline Vector3 operator * (const double A) const;
+	inline Vector3 operator - (const Vector3& A) const;
+	inline Vector3 operator / (const double A) const;
+	inline bool operator != (const Vector3& A) const;
+	inline bool operator == (const Vector3& A) const;
+	inline double Dot(const Vector3& A) const;
+	inline Vector3 Cross(const Vector3& A) const;
+	inline double distanceTo(const Vector3& other) const;
 } Vector3;
 
 
@@ -43,21 +43,21 @@ typedef struct Vertex {
 	bool deleteFlag;
 	bool seen;
 
-	Vertex(void);
-	Vertex(double x, double y, double z);
-	Vertex(Vector3 pos);
+	inline Vertex(void);
+	inline Vertex(double x, double y, double z);
+	inline Vertex(Vector3 pos);
 } Vertex;
 
 typedef struct Particle {
 	Vector3 position;
 	int id;
 	int group;
-	Particle(int Id, double x, double y, double z);
-	Particle(int Id, Vector3 pos);
-	Particle(void){};//hack{}
+	inline Particle(int Id, double x, double y, double z);
+	inline Particle(int Id, Vector3 pos);
+	inline Particle(void);
 
 	// index should not be an int, nor should the default group be 0
-	Particle(double x, double y, double z, int index, int id, int group = 0)
+	inline Particle(double x, double y, double z, int index, int id, int group = 0)
 	{
 		// yeah no
 	}
@@ -65,20 +65,20 @@ typedef struct Particle {
 } Particle;
 
 typedef struct HalfEdge {
-	HalfEdge( void );
-	HalfEdge(Vertex* vertex);
-	HalfEdge(Vertex* vertex, Particle* neighbor);
+	inline HalfEdge( void );
+	inline HalfEdge(Vertex* vertex);
+	inline HalfEdge(Vertex* vertex, Particle* neighbor);
 
 	// target, next
-	HalfEdge(Vertex* vertex, HalfEdge* edge2, Particle* neighbor);
+	inline HalfEdge(Vertex* vertex, HalfEdge* edge2, Particle* neighbor);
 
 	// target, flip, next
-	HalfEdge(Vertex* vertex, HalfEdge* edge1, HalfEdge* edge2,
+	inline HalfEdge(Vertex* vertex, HalfEdge* edge1, HalfEdge* edge2,
 			 Particle* neighbor);
 
 	// We should eventually remove this from our struct, or turn it into a
 	// class, or find some better way of doing this.
-	HalfEdge* getPrev();
+	inline HalfEdge* getPrev();
 
 	Vertex* target;
 	struct HalfEdge* flip;
@@ -99,46 +99,46 @@ enum side {inside, outside, incident};
 
 class voronoiCell{
 public:
-	voronoiCell()
+	inline voronoiCell()
 	{
 		// do nothing
 	}
 
-	void clear()
+	inline void clear()
 	{
 		// Probably should reset some stuff
 	}
 
-	void initialize(Vector3 position, double xmin, double xmax, double ymin, double ymax,
+	inline void initialize(Vector3 position, double xmin, double xmax, double ymin, double ymax,
 					double zmin, double zmax)
 	{
 		// Should, you know, initialize stuff
 	}
 
-	voronoiCell(std::string shape, double length, Particle particle, double maxRadius,
+	inline voronoiCell(std::string shape, double length, Particle particle, double maxRadius,
 				double x_min, double x_max, double y_min, double y_max,
 				double z_min, double z_max);
-	~voronoiCell(){};//hack{}
+	inline ~voronoiCell();
 	
 	struct Particle particle;
 	struct Particle neighborParticle;
 	double maxRadius;
 
-	void cutCell(const Particle& neighbor){};//hack{}
+	inline void cutCell(const Particle& neighbor);
 
 	// CustomInterface IO
 
 	// why was this virtual?
-	void neighbors(std::vector<int> &v){};//hack{}
+	inline void neighbors(std::vector<int> &v);
 
-	void faceAreas(std::vector<double> &v);
+	inline void faceAreas(std::vector<double> &v);
 
-	double volume(){};//hack{}
-	void vertices(std::vector<double> &v){};//hack{}
-	void face_vertices(std::vector<int> &v);
-	void face_areas(std::vector<double> &v){};//hack{}
+	inline double volume();
+	inline void vertices(std::vector<double> &v);
+	inline void face_vertices(std::vector<int> &v);
+	inline void face_areas(std::vector<double> &v);
 
-	void drawGnuplot(double dispX, double dispY, double dispZ, FILE* fp, HalfEdge* edge);
+	inline void drawGnuplot(double dispX, double dispY, double dispZ, FILE* fp, HalfEdge* edge);
 	// only public for debugging purposes
 	HalfEdge* firstEdge;
 
@@ -146,75 +146,75 @@ public:
 
 private:
 	// Finds side of plane that point is on
-	side planeSide(Vertex* vertex);
+	inline side planeSide(Vertex* vertex);
 
 	// I love Dani-chan
 	// Finds a new edge to be first edge (one that wont be cut off)
-	HalfEdge* maintainFirstEdge(HalfEdge* edge);
+	inline HalfEdge* maintainFirstEdge(HalfEdge* edge);
 
 	// Adds a vertex in the middle of an edge
-	void splitEdge(HalfEdge* edge, Vertex* newVertex);
+	inline void splitEdge(HalfEdge* edge, Vertex* newVertex);
 
 	// Location of intersection of plane with edge
-	Vector3 planeEdgeIntersect(HalfEdge* edge);
+	inline Vector3 planeEdgeIntersect(HalfEdge* edge);
 
 	// Creates a halfedge and its flip
-	HalfEdge* addEdgePair(Vertex* vertex1, Vertex* vertex2);
+	inline HalfEdge* addEdgePair(Vertex* vertex1, Vertex* vertex2);
 
 	// Makes a one-sided face on a vertex.
 	// Used as an intermediate stage.
-	HalfEdge* makeSelfLoopOnVertex(Vertex* newVertex);
+	inline HalfEdge* makeSelfLoopOnVertex(Vertex* newVertex);
 
 	// Sets two edges to be each other's flips
-	void setFlip(HalfEdge* forward, HalfEdge* back);
+	inline void setFlip(HalfEdge* forward, HalfEdge* back);
 
 	// Half of the process of selfLoopOnVertex
 	// Makes one halfedge of the face (but not its flip)
-	HalfEdge* makeOneEdgeFace(Vertex* vertex);
+	inline HalfEdge* makeOneEdgeFace(Vertex* vertex);
 
 	// orig is pointing outside the plane.
 	// This goes until it finds one that crosses the plane.
-	HalfEdge* findNextIncidentEdge(HalfEdge* orig);
+	inline HalfEdge* findNextIncidentEdge(HalfEdge* orig);
 
 	// Distance from plane
-	double planeDist(Vertex* vertex);
+	inline double planeDist(Vertex* vertex);
 
 	// Returns whether or not an incident edge exists,
 	// and if so returns that edge in returnEdge
-	bool findSomeIncidentEdge(HalfEdge* &returnEdge);
+	inline bool findSomeIncidentEdge(HalfEdge* &returnEdge);
 
 	// Resets the seen flag on all edges
-	void resetEdges(HalfEdge* edge);
+	inline void resetEdges(HalfEdge* edge);
 	// Resets the seen flag on all edges and vertices
-	void resetEdgesAndVertices(HalfEdge* edge);
+	inline void resetEdgesAndVertices(HalfEdge* edge);
 
 	// Deprecated
 	// Volume uses it though...
-	void reset(HalfEdge* edge);
+	inline void reset(HalfEdge* edge);
 
 	// Attempted but failed, supposed to be resetEdgesAndVertices
 	// but more robust. Doesn't work.
-	void seenSearch(std::stack<HalfEdge*>* seenStackEdge,
+	inline void seenSearch(std::stack<HalfEdge*>* seenStackEdge,
 					std::stack<Vertex*>* seenStackVertex,
 					HalfEdge* edge);
 
 	// Delete things, starting with an edge-to-be-deleted
-	void cleanUp(HalfEdge* edge);
+	inline void cleanUp(HalfEdge* edge);
 	// Gets the connected component to delete
-	void deleteSearch(std::stack<HalfEdge*>* deleteStackEdge,
+	inline void deleteSearch(std::stack<HalfEdge*>* deleteStackEdge,
 					  std::stack<Vertex*>* deleteStackVertex,
 					  HalfEdge* edge);
 
 	// IO helper functions
-	void getVertex(HalfEdge* testEdge, std::vector<Vertex*> &vertices);
-	void getFaceVertex(HalfEdge* testEdge);
-	double tetVolume(Vertex* vertex1, Vertex* vertex2,
+	inline void getVertex(HalfEdge* testEdge, std::vector<Vertex*> &vertices);
+	inline void getFaceVertex(HalfEdge* testEdge);
+	inline double tetVolume(Vertex* vertex1, Vertex* vertex2,
 					 Vertex* vertex3, Vertex* vertex4);
 
-	double triArea(Vertex* vertex1, Vertex* vertex2, Vertex* vertex3);
+	inline double triArea(Vertex* vertex1, Vertex* vertex2, Vertex* vertex3);
 
 	// destructor helper
-	void getEdgeAndVertex(HalfEdge* testEdge, std::stack<HalfEdge*> &edgeStack,
+	inline void getEdgeAndVertex(HalfEdge* testEdge, std::stack<HalfEdge*> &edgeStack,
 						  std::stack<Vertex*> &vertexStack);
 
 	const double tolerance = 1e-11;
@@ -225,7 +225,7 @@ private:
 struct Location :
 	public std::unary_function<Particle*, std::array<double,3> > {
 	result_type
-	operator()(argument_type r) {
+	inline operator()(argument_type r) {
 		result_type location = {{r->position.X, r->position.Y, r->position.Z}};
 		return location;
 	}
@@ -242,18 +242,18 @@ public:
 	bool calculated = false;
 	double x_min, x_max, y_min, y_max, z_min, z_max;
 
-	voronoiCell* makeCell(Particle particle);
-	cellContainer(std::vector<Particle> parts, double defaultLen);
-	cellContainer(std::vector<Particle> parts, double defaultLen,
+	inline voronoiCell* makeCell(Particle particle);
+	inline cellContainer(std::vector<Particle> parts, double defaultLen);
+	inline cellContainer(std::vector<Particle> parts, double defaultLen,
 				  double x_min, double x_max, double y_min, double y_max,
 				  double z_min, double z_max);
-	~cellContainer();
-	double sum_cell_volumes();
-	void put(int id, double x, double y, double z);
-	double findMaxNeighDist();   
+	inline ~cellContainer();
+	inline double sum_cell_volumes();
+	inline void put(int id, double x, double y, double z);
+	inline double findMaxNeighDist();   
 
 };
 
-//#include "vorocode-private.hpp"
+#include "vorocode-private.hpp"
 
 #endif
