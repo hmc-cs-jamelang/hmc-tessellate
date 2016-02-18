@@ -739,23 +739,23 @@ double voronoiCell::volume() {
     // We then calculate the volume through a tetrahedral decomposition.
     // First, we select one vertex, which will serve as one corner of all
     // of the tetrahedra.
-    Vertex* firstVertex = firstEdge->target;
+    VertexIndex firstVertex = edges[firstEdge].target;
 
     // Next, loop over the face vertices, decomposing each face into
     // triangles, which can then be used to decompose the cell into tetrahedra.
     for (std::size_t i = 0; i < faceVertices.size(); ++i) {
 
-        HalfEdge* firstBaseEdge = faceVertices[i]->edges[0];
-        HalfEdge* secondBaseEdge = faceVertices[i]->edges[1];
-        HalfEdge* thirdBaseEdge = faceVertices[i]->edges[2];
+        EdgeIndex firstBaseEdge = faceVertices[i]->edges[0];
+        EdgeIndex secondBaseEdge = faceVertices[i]->edges[1];
+        EdgeIndex thirdBaseEdge = faceVertices[i]->edges[2];
 
         while (thirdBaseEdge != firstBaseEdge) {
 
-            volume += tetVolume(firstVertex, firstBaseEdge->target,
-                                secondBaseEdge->target, thirdBaseEdge->target);
+            volume += tetVolume(firstVertex, edges[firstBaseEdge].target,
+                                edges[secondBaseEdge].target, edges[thirdBaseEdge].target);
 
             secondBaseEdge = thirdBaseEdge;
-            thirdBaseEdge = thirdBaseEdge->next;
+            thirdBaseEdge = edges[thirdBaseEdge].next;
         }
     }
 
@@ -764,13 +764,13 @@ double voronoiCell::volume() {
 }
 
 // Calculates the volume of a tetrahedron composed of four input vertices.
-double voronoiCell::tetVolume(Vertex* vertex1, Vertex* vertex2,
-                              Vertex* vertex3, Vertex* vertex4) {
-    Vector3 firstVector = vertex2->position - vertex1->position;
+double voronoiCell::tetVolume(VertexIndex vertex1, VertexIndex vertex2,
+                              VertexIndex vertex3, VertexIndex vertex4) {
+    Vector3 firstVector = vertices[vertex2].position - vertices[vertex1].position;
 
-    Vector3 secondVector = vertex3->position - vertex1->position;
+    Vector3 secondVector = vertices[vertex3].position - vertices[vertex1].position;
 
-    Vector3 thirdVector = vertex4->position - vertex1->position;
+    Vector3 thirdVector = vertices[vertex4].position - vertices[vertex1].position;
 
     return (std::abs(firstVector.Dot(secondVector.Cross(thirdVector)))/ 6);
 }
@@ -790,8 +790,8 @@ void voronoiCell::neighbors(std::vector<int> &v) {
         // We defaulted the creator to particle during initialization,
         // so this is a check for if the "neigbor" is the boundary
         // Should default to -1
-        if (faceVertices[i]->edges[0]->creator->id != particle.id) {
-            v.push_back(faceVertices[i]->edges[0]->creator->id);
+        if (edges[faceVertices[i]->edges[0]].creator->id != particle.id) {
+            v.push_back(edges[faceVertices[i]->edges[0]].creator->id);
         }
     }
 
