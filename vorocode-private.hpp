@@ -86,13 +86,13 @@ HalfEdge::HalfEdge( void ) {
     seen = false;
 }
 
-HalfEdge::HalfEdge(Vertex* vertex) {
+HalfEdge::HalfEdge(VertexIndex vertex) {
     target = vertex;
     deleteFlag = false;
     seen = false;
 }
 
-HalfEdge::HalfEdge(Vertex* vertex, Particle* neighbor) {
+HalfEdge::HalfEdge(VertexIndex vertex, Particle* neighbor) {
     target = vertex;
     deleteFlag = false;
     seen = false;
@@ -100,7 +100,7 @@ HalfEdge::HalfEdge(Vertex* vertex, Particle* neighbor) {
 }
 
 // This constructor builds a HalfEdge with a specified target and next.
-HalfEdge::HalfEdge(Vertex* vertex, HalfEdge* edge2, Particle* neighbor) {
+HalfEdge::HalfEdge(VertexIndex vertex, EdgeIndex edge2, Particle* neighbor) {
     target = vertex;
     next = edge2;
     deleteFlag = false;
@@ -108,7 +108,7 @@ HalfEdge::HalfEdge(Vertex* vertex, HalfEdge* edge2, Particle* neighbor) {
     creator = neighbor;
 }
 
-HalfEdge::HalfEdge(Vertex* vertex, HalfEdge* edge1, HalfEdge* edge2, Particle* neighbor) {
+HalfEdge::HalfEdge(VertexIndex vertex, EdgeIndex edge1, EdgeIndex edge2, Particle* neighbor) {
     target = vertex;
     flip = edge1;
     next = edge2;
@@ -136,7 +136,7 @@ voronoiCell::voronoiCell(std::string shape, double length, Particle seedParticle
                          double y_min, double y_max, double z_min, double z_max) {
     particle = seedParticle;
     maxRadius = maxRadius;
-    // faceVertices = std::vector<FaceVertex*>();
+    faceVertices = std::vector<FaceVertex*>();
 
     if (shape == "cube") {
         // Create half-edge arrays corresponding to the faces of the cube.

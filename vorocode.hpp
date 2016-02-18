@@ -18,7 +18,6 @@
 typedef StructPool<HalfEdge>::Index EdgeIndex;
 typedef StructPool<Vertex>::Index VertexIndex;
 typedef StructPool<voronoiCell>::Index CellIndex;
-typedef StructPool<Particle>::Index ParticleIndex;
 typedef StructPool<FaceVertex>::Index FaceVertexIndex;
 
 // Taken from http://www.flipcode.com/archives/Faster_Vector_Math_Using_Templates.shtml
@@ -74,14 +73,14 @@ typedef struct Particle {
 typedef struct HalfEdge {
 	inline HalfEdge( void );
 	inline HalfEdge(VertexIndex vertex);
-	inline HalfEdge(VertexIndex vertex, ParticleIndex neighbor);
+	inline HalfEdge(VertexIndex vertex, Particle* neighbor);
 
 	// target, next
-	inline HalfEdge(VertexIndex vertex, EdgeIndex edge2, ParticleIndex neighbor);
+	inline HalfEdge(VertexIndex vertex, EdgeIndex edge2, Particle* neighbor);
 
 	// target, flip, next
 	inline HalfEdge(VertexIndex vertex, EdgeIndex edge1, EdgeIndex edge2,
-			 ParticleIndex neighbor);
+			 Particle* neighbor);
 
 	// We should eventually remove this from our struct, or turn it into a
 	// class, or find some better way of doing this.
@@ -97,7 +96,7 @@ typedef struct HalfEdge {
 
 	// The neighbor particle whose cutting plane created the face
 	// associated with this HalfEdge
-	const ParticleIndex creator;
+	const Particle* creator;
 } HalfEdge;
 
 
@@ -151,7 +150,7 @@ public:
 
 	StructPool<HalfEdge> edges;
 	StructPool<Vertex> vertices;
-	StructPool<FaceVertex> faceVertices;
+	std::vector<FaceVertex*> faceVertices;
 
 private:
 	// Finds side of plane that point is on
@@ -235,7 +234,7 @@ private:
 // Pulled from http://www.cacr.caltech.edu/~sean/projects/stlib/html/geom/classstlib_1_1geom_1_1CellArrayNeighbors.html#a94f9656a64eb93f12859b17306ba8dd0
 // stlib documentation on CellArrayNeighbors
 struct Location :
-	public std::unary_function<ParticleIndex, std::array<double,3> > {
+	public std::unary_function<Particle*, std::array<double,3> > {
 	result_type
 	inline operator()(argument_type r) {
 		result_type location = {{r->position.X, r->position.Y, r->position.Z}};
@@ -246,16 +245,15 @@ struct Location :
 class cellContainer{
 public:
 	stlib::geom::CellArrayNeighbors<double, 3,
-									ParticleIndex,
+									Particle*,
 									Location > sds;
 	struct std::vector<Particle> particles;
 	double defaultLength;
 	bool calculated = false;
 	double x_min, x_max, y_min, y_max, z_min, z_max;
-	StructPool<voronoiCell> cells;
+	struct std::vector<voronoiCell> cells;
 
-	// was returning voronoiCell*. Return cell? Maybe CellIndex?
-	inline voronoiCell makeCell(Particle particle);
+	inline voronoiCell* makeCell(Particle particle);
 	inline cellContainer(std::vector<Particle> parts, double defaultLen);
 	inline cellContainer(std::vector<Particle> parts, double defaultLen,
 				  double x_min, double x_max, double y_min, double y_max,
