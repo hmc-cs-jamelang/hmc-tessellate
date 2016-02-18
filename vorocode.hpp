@@ -99,21 +99,16 @@ enum side {inside, outside, incident};
 
 class voronoiCell{
 public:
-	inline voronoiCell()
-	{
-		// do nothing
-	}
+	inline voronoiCell();
 
-	inline void clear()
-	{
-		// Probably should reset some stuff
-	}
+	// inline void clear();
 
-	inline void initialize(Vector3 position, double xmin, double xmax, double ymin, double ymax,
-					double zmin, double zmax)
-	{
-		// Should, you know, initialize stuff
-	}
+	// inline void initialize(Vector3 position, double xmin, double xmax, double ymin, double ymax,
+	// 					   double zmin, double zmax);
+
+	inline void initialize(std::string shape, double length, Particle seedParticle, 
+					  double maxRadius, double x_min, double x_max,
+					  double y_min, double y_max, double z_min, double z_max);
 
 	inline voronoiCell(std::string shape, double length, Particle particle, double maxRadius,
 				double x_min, double x_max, double y_min, double y_max,

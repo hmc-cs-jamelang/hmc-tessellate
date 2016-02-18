@@ -131,6 +131,194 @@ HalfEdge* HalfEdge::getPrev() {
 
 // HalfEdge* firstEdge = getFirstEdge();
 
+/****************************************************************************************
+ * POTENTIALLY BAD FUNCTIONS ADDED BY MAX                                               *
+ ****************************************************************************************/
+voronoiCell::voronoiCell()
+{
+	voronoiCell("cube", 1, Particle(), 1, 0, 1, 0, 1, 0, 1);
+}
+
+// voronoiCell::clear()
+// {
+// 	// This function doesn't do anything in the CGAL interface, either
+// }
+
+// voronoiCell::initialize(Point particle, double xmin, double xMAX, double ymin,
+// 						double yMAX, double zmin, double zMAX)
+// {
+// 	this->particle = particle;
+	
+// }
+
+void voronoiCell::initialize(std::string shape, double length, Particle seedParticle, 
+                         double maxRadius, double x_min, double x_max,
+                         double y_min, double y_max, double z_min, double z_max) {
+    particle = seedParticle;
+    maxRadius = maxRadius;
+    faceVertices = std::vector<FaceVertex*>();
+
+    if (shape == "cube") {
+        // Create half-edge arrays corresponding to the faces of the cube.
+        HalfEdge *plusZ[4], *minusZ[4], *plusY[4], *minusY[4], *plusX[4], *minusX[4];
+
+        // Initialize the vertices of the cube manually.
+        //
+        // Vertices are labeled by octant (with respect to the central
+        // particle) as follows:
+        // First octant: positive x,y,z
+        // Second octant: positive y,z, negative x
+        // Third octant: positive z, negative x,y
+        // Fourth octant: positive x,z, negative y
+        // Fifth octant: positive x,y, negative z
+        // Sixth octant: positive y, negative x,z
+        // Seventh octant: negative x,y,z
+        // Eighth octant: positive x, negative y,z
+
+        Vertex* oct1 = new Vertex(x_max,
+                                  y_max,
+                                  z_max);
+
+        Vertex* oct2 = new Vertex(x_min,
+                                  y_max,
+                                  z_max);
+
+        Vertex* oct3 = new Vertex(x_min,
+                                  y_min,
+                                  z_max);
+
+        Vertex* oct4 = new Vertex(x_max,
+                                  y_min,
+                                  z_max);
+
+        Vertex* oct5 = new Vertex(x_max,
+                                  y_max,
+                                  z_min);
+
+        Vertex* oct6 = new Vertex(x_min,
+                                  y_max,
+                                  z_min);
+
+        Vertex* oct7 = new Vertex(x_min,
+                                  y_min,
+                                  z_min);
+
+        Vertex* oct8 = new Vertex(x_max,
+                                  y_min,
+                                  z_min);
+
+        // We will construct each face by beginning with the edge whose target
+        // is in the lowest-numbered quadrant, then continue around the face
+        // by iteratively creating the prev of the most recently created edge.
+        //
+        // Traversing the nexts around a face leads if you are looking
+        // directly at it should lead to clockwise traversal of the face.
+
+        // Note also our choice of default initialization for the particle
+        // associated with each HalfEdge; since no planes have cut this cell
+        // yet, we associate it with the particle at the center of this cell.
+        plusZ[0] = new HalfEdge(oct1, &particle);             // O2 to O1
+
+        plusZ[1] = new HalfEdge(oct2, plusZ[0], &particle);   // O3 to O2
+
+        plusZ[2] = new HalfEdge(oct3, plusZ[1], &particle);   // O4 to O3
+
+        plusZ[3] = new HalfEdge(oct4, plusZ[2], &particle);   // O1 to O4
+
+        plusZ[0]->next = plusZ[3];
+
+        minusZ[0] = new HalfEdge(oct5, &particle);            // O8 to O5
+
+        minusZ[1] = new HalfEdge(oct8, minusZ[0], &particle); // O7 to O8
+
+        minusZ[2] = new HalfEdge(oct7, minusZ[1], &particle); // O6 to O7
+
+        minusZ[3] = new HalfEdge(oct6, minusZ[2], &particle); // O5 to O6
+
+        minusZ[0]->next = minusZ[3];
+
+        plusY[0] = new HalfEdge(oct1, &particle);             // O5 to O1
+
+        plusY[1] = new HalfEdge(oct5, plusY[0], &particle);   // O6 to O5
+
+        plusY[2] = new HalfEdge(oct6, plusY[1], &particle);   // O2 to O6
+
+        plusY[3] = new HalfEdge(oct2, plusY[2], &particle);   // O1 to O2
+
+        plusY[0]->next = plusY[3];
+
+        minusY[0] = new HalfEdge(oct3, &particle);            // O7 to O3
+
+        minusY[1] = new HalfEdge(oct7, minusY[0], &particle); // O8 to O7
+
+        minusY[2] = new HalfEdge(oct8, minusY[1], &particle); // O4 to O8
+
+        minusY[3] = new HalfEdge(oct4, minusY[2], &particle); // O3 to O4
+
+        minusY[0]->next = minusY[3];
+
+        plusX[0] = new HalfEdge(oct1, &particle);             // O4 to O1 
+
+        plusX[1] = new HalfEdge(oct4, plusX[0], &particle);   // O8 to O4 
+
+        plusX[2] = new HalfEdge(oct8, plusX[1], &particle);   // O5 to O8 
+
+        plusX[3] = new HalfEdge(oct5, plusX[2], &particle);   // O1 to O5 
+
+        plusX[0]->next = plusX[3];
+
+        minusX[0] = new HalfEdge(oct2, &particle);            // O6 to O2
+
+        minusX[1] = new HalfEdge(oct6, minusX[0], &particle); // O7 to O6
+
+        minusX[2] = new HalfEdge(oct7, minusX[1], &particle); // O3 to O7
+
+        minusX[3] = new HalfEdge(oct3, minusX[2], &particle); // O2 to O3
+
+        minusX[0]->next = minusX[3];
+
+        // Now we have to set the flips manually
+        plusZ[0]->flip = plusY[3];
+        plusZ[1]->flip = minusX[3];
+        plusZ[2]->flip = minusY[3];
+        plusZ[3]->flip = plusX[0];
+
+        minusZ[0]->flip = plusX[2];
+        minusZ[1]->flip = minusY[1];
+        minusZ[2]->flip = minusX[1];
+        minusZ[3]->flip = plusY[1];
+
+        plusY[0]->flip = plusX[3];
+        plusY[1]->flip = minusZ[3];
+        plusY[2]->flip = minusX[0];
+        plusY[3]->flip = plusZ[0];
+
+        minusY[0]->flip = minusX[2];
+        minusY[1]->flip = minusZ[1];
+        minusY[2]->flip = plusX[1];
+        minusY[3]->flip = plusZ[2];
+
+        plusX[0]->flip = plusZ[3];
+        plusX[1]->flip = minusY[2];
+        plusX[2]->flip = minusZ[0];
+        plusX[3]->flip = plusY[0];
+
+        minusX[0]->flip = plusY[2];
+        minusX[1]->flip = minusZ[2];
+        minusX[2]->flip = minusY[0];
+        minusX[3]->flip = plusZ[1];
+
+        // Set firstEdge to our favorite edge.
+
+        firstEdge = plusX[0];
+
+    }
+}
+
+/****************************************************************************************
+ * END OF BAD MAX FUNCTIONS                                                             *
+ ****************************************************************************************/
+
 voronoiCell::voronoiCell(std::string shape, double length, Particle seedParticle, 
                          double maxRadius, double x_min, double x_max,
                          double y_min, double y_max, double z_min, double z_max) {
@@ -528,7 +716,6 @@ HalfEdge* voronoiCell::maintainFirstEdge(HalfEdge* edge) {
     std::size_t i = 0;
     while (planeSide(edge->flip->target) != inside) {
         if (!edge->seen) {
-
             testEdges.push_back(edge->next);
             testEdges.push_back(edge->flip);
             edge->seen = true;
@@ -537,7 +724,6 @@ HalfEdge* voronoiCell::maintainFirstEdge(HalfEdge* edge) {
         i++;
         edge = testEdges[i];
     }
-
     return edge;
 
     // if (planeSide(edge->flip->target) != outside) {
@@ -583,7 +769,7 @@ void voronoiCell::cutCell(const Particle& neighbor) {
     do {
 
         // was inside
-        if (planeSide(nextIncidentEdge->target) == outside) {      
+        if (planeSide(nextIncidentEdge->target) == outside) {
             // Create a new vertex at the location of the intersection of
             // the crossing edge and the cutting plane.
             Vector3 vertexLoc = planeEdgeIntersect(nextIncidentEdge);
@@ -775,7 +961,6 @@ double voronoiCell::tetVolume(Vertex* vertex1, Vertex* vertex2,
 // Takes by reference a vector that will become filled with
 // the ids of the neighbors of this cell.
 void voronoiCell::neighbors(std::vector<int> &v) {
-
     // We want to only call face_vertices when it
     // hasn't already been called
     if (faceVertices.size() == 0) {
@@ -791,7 +976,6 @@ void voronoiCell::neighbors(std::vector<int> &v) {
             v.push_back(faceVertices[i]->edges[0]->creator->id);
         }
     }
-
 }
 
 void voronoiCell::face_areas(std::vector<double> &v) {
@@ -836,7 +1020,6 @@ double voronoiCell::triArea(Vertex* vertex1, Vertex* vertex2,
 }
 
 void voronoiCell::face_vertices(std::vector<int> &v) {
-
     resetEdgesAndVertices(firstEdge);
     getFaceVertex(firstEdge);
 
