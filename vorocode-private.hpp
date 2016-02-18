@@ -131,7 +131,7 @@ EdgeIndex HalfEdge::getPrev() {
 
 // HalfEdge* firstEdge = getFirstEdge();
 
-voronoiCell::voronoiCell(std::string shape, double length, Particle seedParticle, 
+voronoiCell::voronoiCell(std::string shape, double length, Particle seedParticle,
                          double maxRadius, double x_min, double x_max,
                          double y_min, double y_max, double z_min, double z_max) {
     particle = seedParticle;
@@ -237,13 +237,13 @@ voronoiCell::voronoiCell(std::string shape, double length, Particle seedParticle
 
         minusY[0].next = minusY[3];
 
-        plusX[0] = edges.create(HalfEdge(oct1, &particle));             // O4 to O1 
+        plusX[0] = edges.create(HalfEdge(oct1, &particle));             // O4 to O1
 
-        plusX[1] = edges.create(HalfEdge(oct4, plusX[0], &particle));   // O8 to O4 
+        plusX[1] = edges.create(HalfEdge(oct4, plusX[0], &particle));   // O8 to O4
 
-        plusX[2] = edges.create(HalfEdge(oct8, plusX[1], &particle));   // O5 to O8 
+        plusX[2] = edges.create(HalfEdge(oct8, plusX[1], &particle));   // O5 to O8
 
-        plusX[3] = edges.create(HalfEdge(oct5, plusX[2], &particle));   // O1 to O5 
+        plusX[3] = edges.create(HalfEdge(oct5, plusX[2], &particle));   // O1 to O5
 
         plusX[0].next = plusX[3];
 
@@ -330,12 +330,12 @@ void voronoiCell::getEdgeAndVertex(EdgeIndex testEdge, std::stack<EdgeIndex> &ed
         edges[testEdge].seen = true;
 
         edgeStack.push(testEdge);
-        
+
         if (!vertices[edges[testEdge].target].seen) {
             vertices[edges[testEdge].target].seen = true;
             vertexStack.push(vertices[testEdge].target);
         }
-        
+
 
 
         getEdgeAndVertex(edges[testEdge].flip, edgeStack, vertexStack);
@@ -347,7 +347,7 @@ void voronoiCell::getEdgeAndVertex(EdgeIndex testEdge, std::stack<EdgeIndex> &ed
 side voronoiCell::planeSide(VertexIndex vertex)
 {
     float ans = (vertices[vertex].position - (particle.position + neighborParticle.position) / 2).Dot(particle.position - neighborParticle.position);
-    
+
     if (std::abs(ans) < tolerance) {
         return incident;
     }
@@ -413,7 +413,7 @@ bool voronoiCell::findSomeIncidentEdge(HalfEdge* &returnEdge) {
     side testSide = planeSide(testVertex);
     side flipSide = planeSide(testEdge->flip->target);
 
-    
+
 
     double maxDist = planeDist(testVertex);
 
@@ -429,7 +429,7 @@ bool voronoiCell::findSomeIncidentEdge(HalfEdge* &returnEdge) {
 
             testSide = planeSide(testVertex);
             flipSide = planeSide(testEdge->flip->target);
-            maxDist = planeDist(testVertex);  
+            maxDist = planeDist(testVertex);
 
         } else {
             HalfEdge* nextEdge = testEdge->next;
@@ -442,7 +442,7 @@ bool voronoiCell::findSomeIncidentEdge(HalfEdge* &returnEdge) {
 
                 testSide = planeSide(testVertex);
                 flipSide = planeSide(testEdge->flip->target);
-                maxDist = planeDist(testVertex);    
+                maxDist = planeDist(testVertex);
 
             // and, if not, repeatedly examine the edges leaving the
             // testVertex until we find one that is closer
@@ -465,7 +465,7 @@ bool voronoiCell::findSomeIncidentEdge(HalfEdge* &returnEdge) {
 
                 testSide = planeSide(testVertex);
                 flipSide = planeSide(testEdge->flip->target);
-                maxDist = planeDist(testVertex);   
+                maxDist = planeDist(testVertex);
             }
         }
     }
@@ -543,7 +543,7 @@ HalfEdge* voronoiCell::maintainFirstEdge(HalfEdge* edge) {
     // if (planeSide(edge->flip->target) != outside) {
 
     //     return edge;
-    // } 
+    // }
     // if (!edge->seen) {
 
     //     edge->seen = true;
@@ -583,12 +583,12 @@ void voronoiCell::cutCell(const Particle& neighbor) {
     do {
 
         // was inside
-        if (planeSide(nextIncidentEdge->target) == outside) {      
+        if (planeSide(nextIncidentEdge->target) == outside) {
             // Create a new vertex at the location of the intersection of
             // the crossing edge and the cutting plane.
             Vector3 vertexLoc = planeEdgeIntersect(nextIncidentEdge);
             Vertex* newVertex = new Vertex(vertexLoc);
-            
+
             // was "splitCrossingEdge", but that was not defined -- should it
             // have been splitEdge?
             splitEdge(nextIncidentEdge, newVertex);
@@ -704,7 +704,7 @@ void voronoiCell::deleteSearch(std::stack<HalfEdge*>* deleteStackEdge,
         deleteStackEdge->push(edge);
         edge->deleteFlag = true;
         deleteSearch(deleteStackEdge, deleteStackVertex, edge->next);
-        deleteSearch(deleteStackEdge, deleteStackVertex, edge->flip);    
+        deleteSearch(deleteStackEdge, deleteStackVertex, edge->flip);
     }
 
     if (planeSide(edge->target) == outside && !edge->target->deleteFlag) {
@@ -780,7 +780,7 @@ void voronoiCell::neighbors(std::vector<int> &v) {
     // hasn't already been called
     if (faceVertices.size() == 0) {
         std::vector<int> face_v;
-        face_vertices(face_v);        
+        face_vertices(face_v);
     }
 
     for (std::size_t i = 0; i < faceVertices.size(); ++i) {
@@ -798,7 +798,7 @@ void voronoiCell::face_areas(std::vector<double> &v) {
     // First, make the face vertices, if they haven't already been made
     if (faceVertices.size() == 0) {
         std::vector<int> face_v;
-        face_vertices(face_v);        
+        face_vertices(face_v);
     }
 
     double area = 0.0;
@@ -808,14 +808,14 @@ void voronoiCell::face_areas(std::vector<double> &v) {
     for (std::size_t i = 0; i < faceVertices.size(); ++i) {
         area = 0.0;
 
-        HalfEdge* firstBaseEdge = faceVertices[i]->edges[0];
-        HalfEdge* secondBaseEdge = faceVertices[i]->edges[1];
-        HalfEdge* thirdBaseEdge = faceVertices[i]->edges[2];
+        EdgeIndex firstBaseEdge = faceVertices[i]->edges[0];
+        EdgeIndex secondBaseEdge = faceVertices[i]->edges[1];
+        EdgeIndex thirdBaseEdge = faceVertices[i]->edges[2];
 
         while (thirdBaseEdge != firstBaseEdge) {
 
-            area += triArea(firstBaseEdge->target,
-                            secondBaseEdge->target, thirdBaseEdge->target);
+            area += triArea(edges[firstBaseEdge].target,
+                            edges[secondBaseEdge].target, edges[thirdBaseEdge].target);
 
             secondBaseEdge = thirdBaseEdge;
             thirdBaseEdge = thirdBaseEdge->next;
@@ -826,11 +826,11 @@ void voronoiCell::face_areas(std::vector<double> &v) {
 }
 
 // Calculates the area of a triangle composed of three input vertices.
-double voronoiCell::triArea(Vertex* vertex1, Vertex* vertex2,
-                              Vertex* vertex3) {
-    Vector3 firstVector = vertex2->position - vertex1->position;
+double voronoiCell::triArea(VertexIndex vertex1, VertexIndex vertex2,
+                              VertexIndex vertex3) {
+    Vector3 firstVector = vertices[vertex2].position - vertices[vertex1].position;
 
-    Vector3 secondVector = vertex3->position - vertex1->position;
+    Vector3 secondVector = vertices[vertex3].position - vertices[vertex1].position;
 
     return (std::abs(firstVector.Cross(secondVector).distanceTo(Vector3(0, 0, 0)))/ 2);
 }
@@ -853,25 +853,25 @@ void voronoiCell::face_vertices(std::vector<int> &v) {
     resetEdges(firstEdge);
 };
 
-void voronoiCell::getFaceVertex(HalfEdge* testEdge) {
+void voronoiCell::getFaceVertex(EdgeIndex testEdge) {
 
-    if (!testEdge->seen) {
+    if (!edges[testEdge].seen) {
 
         FaceVertex* newFaceVertex = new FaceVertex;
 
         newFaceVertex->edges.push_back(testEdge);
 
 
-        HalfEdge* otherEdge = testEdge->next;
+        EdgeIndex otherEdge = edges[testEdge].next;
 
-        testEdge->seen = true;
+        edges[testEdge].seen = true;
 
         while (otherEdge != testEdge) {
-            
-            newFaceVertex->edges.push_back(otherEdge);
-            otherEdge->seen = true;
 
-            otherEdge = otherEdge->next;
+            newFaceVertex->edges.push_back(otherEdge);
+            edges[otherEdge].seen = true;
+
+            otherEdge = edges[otherEdge].next;
 
         }
 
@@ -881,26 +881,26 @@ void voronoiCell::getFaceVertex(HalfEdge* testEdge) {
 
         faceVertices.push_back(newFaceVertex);
 
-        getFaceVertex(testEdge->flip);
+        getFaceVertex(edges[testEdge].flip);
 
-        otherEdge = testEdge->next;
+        otherEdge = edges[testEdge].next;
         while (otherEdge != testEdge) {
-            getFaceVertex(otherEdge->flip);
-            otherEdge = otherEdge->next;
+            getFaceVertex(edges[otherEdge].flip);
+            otherEdge = edges[otherEdge].next;
         }
     }
 };
 
 // CustomInterface IO
 void voronoiCell::vertices(std::vector<double> &v) {
-    std::vector<Vertex*> vertices;
+    std::vector<VertexIndex> vs;
     getVertex(firstEdge, vertices);
     resetEdgesAndVertices(firstEdge);
 
     for (std::size_t i = 0; i < vertices.size(); ++i) {
-        v.push_back(vertices[i]->position.X);
-        v.push_back(vertices[i]->position.Y);
-        v.push_back(vertices[i]->position.Z);
+        v.push_back(vs[i]->position.X);
+        v.push_back(vs[i]->position.Y);
+        v.push_back(vs[i]->position.Z);
     }
 
     // we eventually need to reset all the seen flags at the end of this. or,
@@ -910,59 +910,59 @@ void voronoiCell::vertices(std::vector<double> &v) {
 
 void voronoiCell::getVertex(HalfEdge* testEdge, std::vector<Vertex*> &vertices) {
 
-    if (!testEdge->seen) {
-        testEdge->seen = true;
-        
-        if (!testEdge->target->seen) {
-            testEdge->target->seen = true;
-            vertices.push_back(testEdge->target);
+    if (edges[testEdge].seen) {
+        edges[testEdge].seen = true;
+
+        if (!vertices[edges[testEdge].target].seen) {
+            vertices[edges[testEdge].target].seen = true;
+            vertices.push_back(edges[testEdge].target);
         }
 
-        getVertex(testEdge->flip, vertices);
-        getVertex(testEdge->next, vertices);
+        getVertex(edges[testEdge].flip, vertices);
+        getVertex(edges[testEdge].next, vertices);
     }
 };
 
 // Resets the seen flags on all edges
-void voronoiCell::resetEdges(HalfEdge* edge) {
-    if (edge->seen) {
+void voronoiCell::resetEdges(EdgeIndex edge) {
+    if (edges[edge].seen) {
 
-        edge->seen = false;
-        resetEdges(edge->flip);
-        resetEdges(edge->next);
+        edges[edge].seen = false;
+        resetEdges(edges[edge].flip);
+        resetEdges(edges[edge].next);
     }
 };
 
 // Resets the seen flags on all edges and vertices
 void voronoiCell::resetEdgesAndVertices(HalfEdge* edge) {
-    if (edge->seen) {
+    if (edges[edge].seen) {
 
-        edge->seen = false;
+        edges[edge].seen = false;
 
         // Reset the associated vertex, if we need to
-        if (edge->target->seen) {
+        if (vertices[edges[edge].target].seen) {
 
-            edge->target->seen = false;
+            vertices[edges[edge].target].seen = false;
         }
 
-        resetEdgesAndVertices(edge->flip);
-        resetEdgesAndVertices(edge->next);
+        resetEdgesAndVertices(edges[edge].flip);
+        resetEdgesAndVertices(edges[edge].next);
     }
 };
 
-void voronoiCell::reset(HalfEdge* edge){
+void voronoiCell::reset(EdgeIndex edge){
 
-    std::stack<HalfEdge*>* seenStackEdge = new std::stack<HalfEdge*>;
+    std::stack<EdgeIndex>* seenStackEdge = new std::stack<EdgeIndex>;
 
-    std::stack<Vertex*>* seenStackVertex = new std::stack<Vertex*>;
+    std::stack<VertexIndex>* seenStackVertex = new std::stack<VertexIndex>;
 
     seenSearch(seenStackEdge, seenStackVertex, edge);
 
     while (!seenStackEdge->empty()) {
-        HalfEdge* topEdge = seenStackEdge->top();
+        EdgeIndex topEdge = seenStackEdge->top();
         seenStackEdge->pop();
 
-        topEdge->seen = false;
+        edges[topEdge].seen = false;
 
     }
     while (!seenStackVertex->empty()) {
@@ -970,7 +970,7 @@ void voronoiCell::reset(HalfEdge* edge){
 
         seenStackVertex->pop();
 
-        topVertex->seen = false;
+        vertices[topVertex].seen = false;
     }
     delete seenStackVertex;
 
@@ -978,22 +978,22 @@ void voronoiCell::reset(HalfEdge* edge){
 
 };
 
-void voronoiCell::seenSearch(std::stack<HalfEdge*>* seenStackEdge,
-                  std::stack<Vertex*>* seenStackVertex,
-                  HalfEdge* edge){
+void voronoiCell::seenSearch(std::stack<EdgeIndex>* seenStackEdge,
+                  std::stack<VertexIndex>* seenStackVertex,
+                  EdgeIndex edge){
 
     // Currently needs to watch out for problems with edges
     // within the cutting plane
-    if (!edge->seen) {
+    if (!edges[edge].seen) {
         seenStackEdge->push(edge);
-        edge->seen = true;
-        seenSearch(seenStackEdge, seenStackVertex, edge->next);
-        seenSearch(seenStackEdge, seenStackVertex, edge->flip);    
+        edges[edge].seen = true;
+        seenSearch(seenStackEdge, seenStackVertex, edges[edge].next);
+        seenSearch(seenStackEdge, seenStackVertex, edges[edge].flip);
     }
 
-    if (!edge->target->seen) {
-        seenStackVertex->push(edge->target);
-        edge->target->seen = true;
+    if (!vertices[edges[edge].target].seen) {
+        seenStackVertex->push(edges[edge].target);
+        vertices[edges[edge].target].seen = true;
     }
 };
 
@@ -1004,39 +1004,41 @@ void voronoiCell::seenSearch(std::stack<HalfEdge*>* seenStackEdge,
 // Shamelessly stolen from voro++
 // Remember to resetEdges after calling this
 void voronoiCell::drawGnuplot(double dispX, double dispY, double dispZ, FILE* fp, HalfEdge* edge) {
-    HalfEdge* currentEdge = edge->next;
-    fprintf(fp, "%g, %g, %g\n", currentEdge->flip->target->position.X + dispX,
-                                currentEdge->flip->target->position.Y + dispY,
-                                currentEdge->flip->target->position.Z + dispZ);
+    EdgeIndex currentEdge = edges[edge].next;
+    Vertex* target = &vertices[edges[edges[currentEdge].flip].target];
+    fprintf(fp, "%g, %g, %g\n", target->position.X + dispX,
+                                target->position.Y + dispY,
+                                target->position.Z + dispZ);
 
     // Loop around the current face, drawing all edges.
     while (currentEdge != edge) {
-        fprintf(fp, "%g, %g, %g\n", currentEdge->target->position.X + dispX,
-                                    currentEdge->target->position.Y + dispY,
-                                    currentEdge->target->position.Z + dispZ);
+        target = &vertices[edges[currentEdge].target];
+        fprintf(fp, "%g, %g, %g\n", target->position.X + dispX,
+                                    target->position.Y + dispY,
+                                    target->position.Z + dispZ);
 
-        currentEdge = currentEdge->next;
+        currentEdge = edges[currentEdge].next;
     }
 
-    fprintf(fp, "%g, %g, %g\n", currentEdge->target->position.X + dispX,
-                                currentEdge->target->position.Y + dispY,
-                                currentEdge->target->position.Z + dispZ);
+    fprintf(fp, "%g, %g, %g\n", target->position.X + dispX,
+                                target->position.Y + dispY,
+                                target->position.Z + dispZ);
 
     fputs("\n\n", fp);
 
     // Loop around the face again, recursing on faces that have not yet been drawn
-    currentEdge->seen = true;
-    if (!currentEdge->flip->seen) {
+    edges[currentEdge].seen = true;
+    if (!edges[edges[currentEdge].flip].seen) {
         drawGnuplot(dispX, dispY, dispZ, fp, currentEdge->flip);
     }
-    currentEdge = currentEdge->next;
+    currentEdge = edges[currentEdge].next;
 
     while (currentEdge != edge) {
-        currentEdge->seen = true;
-        if (!currentEdge->flip->seen) {
-            drawGnuplot(dispX, dispY, dispZ, fp, currentEdge->flip);
+        edges[currentEdge].seen = true;
+        if (!edges[edges[currentEdge].flip].seen) {
+            drawGnuplot(dispX, dispY, dispZ, fp, edges[edges[currentEdge].flip]);
         }
-        currentEdge = currentEdge->next;
+        currentEdge = edges[currentEdge].next;
     }
 }
 
