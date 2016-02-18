@@ -1070,7 +1070,6 @@ cellContainer::cellContainer(std::vector<Particle> parts, double defaultLen,
 voronoiCell* cellContainer::makeCell(Particle particle) {
 
 
-    sds.initialize(&particles[0], &particles[particles.size()]);
     // Calculate the initial max radius of a cube
     double maxRadius = sqrt(3) * defaultLength;
 
@@ -1112,6 +1111,10 @@ cellContainer::~cellContainer() {
 
 double cellContainer::sum_cell_volumes() {
     double sum = 0;
+
+    // Need to put in an initialize function. DO NOT KEEP HERE
+    sds.initialize(&particles[0], &particles[particles.size()]);
+
     if(!calculated) {
         for(unsigned int i = 0; i < particles.size(); ++i) {
 
