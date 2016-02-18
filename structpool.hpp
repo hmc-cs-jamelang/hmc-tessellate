@@ -16,6 +16,7 @@ protected:
         Index index;
         T object;
 
+        ObjectOrIndex() {}
         ~ObjectOrIndex() {}
     };
 
@@ -95,6 +96,10 @@ public:
         : first_available_(INVALID_INDEX), chunks_(reserve)
     { /* Done */ }
 
+    Index size()
+    {
+        return chunks_.size();
+    }
 
     T& operator[](Index i)
     {

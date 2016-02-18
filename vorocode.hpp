@@ -15,10 +15,13 @@
 #include <stlib/geom/orq/CellArrayNeighbors.h>
 #include "structpool.hpp"
 
+struct HalfEdge;
+struct Vertex;
+
 typedef StructPool<HalfEdge>::Index EdgeIndex;
 typedef StructPool<Vertex>::Index VertexIndex;
-typedef StructPool<voronoiCell>::Index CellIndex;
-typedef StructPool<FaceVertex>::Index FaceVertexIndex;
+// typedef StructPool<voronoiCell>::Index CellIndex;
+// typedef StructPool<FaceVertex>::Index FaceVertexIndex;
 
 // Taken from http://www.flipcode.com/archives/Faster_Vector_Math_Using_Templates.shtml
 typedef struct Vector3
@@ -41,7 +44,7 @@ typedef struct Vector3
 
 
 typedef struct FaceVertex {
-	StructPool<struct HalfEdge> edges;
+	std::vector<EdgeIndex> edges;
 } FaceVertex;
 
 typedef struct Vertex {
@@ -87,12 +90,12 @@ typedef struct HalfEdge {
 	inline EdgeIndex getPrev();
 
 	VertexIndex target;
-	struct EdgeIndex flip;
-	struct EdgeIndex next;
+	EdgeIndex flip;
+	EdgeIndex next;
 	bool deleteFlag;
 	bool seen;
 
-	FaceVertexIndex face;
+	FaceVertex* face;
 
 	// The neighbor particle whose cutting plane created the face
 	// associated with this HalfEdge
@@ -140,13 +143,13 @@ public:
 	inline void faceAreas(std::vector<double> &v);
 
 	inline double volume();
-	inline void vertices(std::vector<double> &v);
+	// inline void vertices(std::vector<double> &v);
 	inline void face_vertices(std::vector<int> &v);
 	inline void face_areas(std::vector<double> &v);
 
 	inline void drawGnuplot(double dispX, double dispY, double dispZ, FILE* fp, EdgeIndex edge);
 	// only public for debugging purposes
-	// EdgeIndex firstEdge;
+	EdgeIndex firstEdge;
 
 	StructPool<HalfEdge> edges;
 	StructPool<Vertex> vertices;
@@ -251,7 +254,7 @@ public:
 	double defaultLength;
 	bool calculated = false;
 	double x_min, x_max, y_min, y_max, z_min, z_max;
-	struct std::vector<voronoiCell> cells;
+	struct std::vector<voronoiCell*> cells;
 
 	inline voronoiCell* makeCell(Particle particle);
 	inline cellContainer(std::vector<Particle> parts, double defaultLen);
