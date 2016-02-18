@@ -13,6 +13,13 @@
 #include <math.h>
 #include <stlib/geom/orq/KDTree.h>
 #include <stlib/geom/orq/CellArrayNeighbors.h>
+#include "structpool.hpp"
+
+typedef StructPool<HalfEdge>::Index EdgeIndex;
+typedef StructPool<Vertex>::Index VertexIndex;
+typedef StructPool<voronoiCell> CellIndex;
+typedef StructPool<Particle> ParticleIndex;
+typedef StructPool<FaceVertex> FaceVertexIndex;
 
 // Taken from http://www.flipcode.com/archives/Faster_Vector_Math_Using_Templates.shtml
 typedef struct Vector3
@@ -35,7 +42,7 @@ typedef struct Vector3
 
 
 typedef struct FaceVertex {
-	std::vector<struct HalfEdge*> edges;
+	StructPool<struct HalfEdge> edges;
 } FaceVertex;
 
 typedef struct Vertex {
@@ -66,31 +73,31 @@ typedef struct Particle {
 
 typedef struct HalfEdge {
 	inline HalfEdge( void );
-	inline HalfEdge(Vertex* vertex);
-	inline HalfEdge(Vertex* vertex, Particle* neighbor);
+	inline HalfEdge(VertexIndex vertex);
+	inline HalfEdge(VertexIndex vertex, ParticleIndex neighbor);
 
 	// target, next
-	inline HalfEdge(Vertex* vertex, HalfEdge* edge2, Particle* neighbor);
+	inline HalfEdge(VertexIndex vertex, EdgeIndex edge2, ParticleIndex neighbor);
 
 	// target, flip, next
-	inline HalfEdge(Vertex* vertex, HalfEdge* edge1, HalfEdge* edge2,
-			 Particle* neighbor);
+	inline HalfEdge(VertexIndex vertex, EdgeIndex edge1, EdgeIndex edge2,
+			 ParticleIndex neighbor);
 
 	// We should eventually remove this from our struct, or turn it into a
 	// class, or find some better way of doing this.
-	inline HalfEdge* getPrev();
+	inline EdgeIndex getPrev();
 
-	Vertex* target;
-	struct HalfEdge* flip;
-	struct HalfEdge* next;
+	VertexIndex target;
+	struct EdgeIndex flip;
+	struct EdgeIndex next;
 	bool deleteFlag;
 	bool seen;
 
-	FaceVertex* face;
+	FaceVertexIndex face;
 
 	// The neighbor particle whose cutting plane created the face
 	// associated with this HalfEdge
-	const Particle* creator;
+	const ParticleIndex creator;
 } HalfEdge;
 
 
@@ -138,84 +145,89 @@ public:
 	inline void face_vertices(std::vector<int> &v);
 	inline void face_areas(std::vector<double> &v);
 
-	inline void drawGnuplot(double dispX, double dispY, double dispZ, FILE* fp, HalfEdge* edge);
+	inline void drawGnuplot(double dispX, double dispY, double dispZ, FILE* fp, EdgeIndex edge);
 	// only public for debugging purposes
-	HalfEdge* firstEdge;
+	// EdgeIndex firstEdge;
 
-	std::vector<FaceVertex*> faceVertices;
+	StructPool<HalfEdge> edges;
+	StructPool<Vertex> vertices;
+	StructPool<FaceVertex> faceVertices;
 
 private:
 	// Finds side of plane that point is on
-	inline side planeSide(Vertex* vertex);
+	inline side planeSide(VertexIndex vertex);
 
 	// I love Dani-chan
 	// Finds a new edge to be first edge (one that wont be cut off)
-	inline HalfEdge* maintainFirstEdge(HalfEdge* edge);
+	inline EdgeIndex maintainFirstEdge(EdgeIndex edge);
 
 	// Adds a vertex in the middle of an edge
-	inline void splitEdge(HalfEdge* edge, Vertex* newVertex);
+	inline void splitEdge(EdgeIndex edge, VertexIndex newVertex);
 
 	// Location of intersection of plane with edge
-	inline Vector3 planeEdgeIntersect(HalfEdge* edge);
+	inline Vector3 planeEdgeIntersect(EdgeIndex edge);
 
 	// Creates a halfedge and its flip
-	inline HalfEdge* addEdgePair(Vertex* vertex1, Vertex* vertex2);
+	inline EdgeIndex addEdgePair(VertexIndex vertex1, VertexIndex vertex2);
 
 	// Makes a one-sided face on a vertex.
 	// Used as an intermediate stage.
-	inline HalfEdge* makeSelfLoopOnVertex(Vertex* newVertex);
+	inline EdgeIndex makeSelfLoopOnVertex(VertexIndex newVertex);
 
 	// Sets two edges to be each other's flips
-	inline void setFlip(HalfEdge* forward, HalfEdge* back);
+	inline void setFlip(EdgeIndex forward, EdgeIndex back);
 
 	// Half of the process of selfLoopOnVertex
 	// Makes one halfedge of the face (but not its flip)
-	inline HalfEdge* makeOneEdgeFace(Vertex* vertex);
+	inline EdgeIndex makeOneEdgeFace(VertexIndex vertex);
 
 	// orig is pointing outside the plane.
 	// This goes until it finds one that crosses the plane.
-	inline HalfEdge* findNextIncidentEdge(HalfEdge* orig);
+	inline EdgeIndex findNextIncidentEdge(EdgeIndex orig);
 
 	// Distance from plane
-	inline double planeDist(Vertex* vertex);
+	inline double planeDist(VertexIndex vertex);
 
 	// Returns whether or not an incident edge exists,
 	// and if so returns that edge in returnEdge
-	inline bool findSomeIncidentEdge(HalfEdge* &returnEdge);
+	inline bool findSomeIncidentEdge(EdgeIndex &returnEdge);
 
 	// Resets the seen flag on all edges
-	inline void resetEdges(HalfEdge* edge);
+	inline void resetEdges(EdgeIndex edge);
 	// Resets the seen flag on all edges and vertices
-	inline void resetEdgesAndVertices(HalfEdge* edge);
+	inline void resetEdgesAndVertices(EdgeIndex edge);
 
 	// Deprecated
 	// Volume uses it though...
-	inline void reset(HalfEdge* edge);
+	inline void reset(EdgeIndex edge);
 
 	// Attempted but failed, supposed to be resetEdgesAndVertices
-	// but more robust. Doesn't work.
-	inline void seenSearch(std::stack<HalfEdge*>* seenStackEdge,
-					std::stack<Vertex*>* seenStackVertex,
-					HalfEdge* edge);
+	// but more robust. Doesn't work. Should probably get rid of
+	// due to memory pools
+	inline void seenSearch(std::stack<EdgeIndex>* seenStackEdge,
+					std::stack<VertexIndex>* seenStackVertex,
+					EdgeIndex edge);
 
 	// Delete things, starting with an edge-to-be-deleted
-	inline void cleanUp(HalfEdge* edge);
-	// Gets the connected component to delete
-	inline void deleteSearch(std::stack<HalfEdge*>* deleteStackEdge,
-					  std::stack<Vertex*>* deleteStackVertex,
-					  HalfEdge* edge);
+	inline void cleanUp(EdgeIndex edge);
+
+	// Gets the connected component to delete.
+	// Can probably do this easier with memory pools
+	inline void deleteSearch(std::stack<EdgeIndex>* deleteStackEdge,
+					  std::stack<VertexIndex>* deleteStackVertex,
+					  EdgeIndex edge);
 
 	// IO helper functions
-	inline void getVertex(HalfEdge* testEdge, std::vector<Vertex*> &vertices);
-	inline void getFaceVertex(HalfEdge* testEdge);
-	inline double tetVolume(Vertex* vertex1, Vertex* vertex2,
-					 Vertex* vertex3, Vertex* vertex4);
+	inline void getVertex(EdgeIndex testEdge, std::vector<VertexIndex> &vertices);
+	inline void getFaceVertex(EdgeIndex testEdge);
+	inline double tetVolume(VertexIndex vertex1, VertexIndex vertex2,
+					 VertexIndex vertex3, VertexIndex vertex4);
 
-	inline double triArea(Vertex* vertex1, Vertex* vertex2, Vertex* vertex3);
+	inline double triArea(VertexIndex vertex1, VertexIndex vertex2, VertexIndex vertex3);
 
 	// destructor helper
-	inline void getEdgeAndVertex(HalfEdge* testEdge, std::stack<HalfEdge*> &edgeStack,
-						  std::stack<Vertex*> &vertexStack);
+	inline void getEdgeAndVertex(EdgeIndex testEdge, std::stack<EdgeIndex> &edgeStack,
+						  std::stack<VertexIndex> &vertexStack);
 
 	const double tolerance = 1e-11;
 };
@@ -223,7 +235,7 @@ private:
 // Pulled from http://www.cacr.caltech.edu/~sean/projects/stlib/html/geom/classstlib_1_1geom_1_1CellArrayNeighbors.html#a94f9656a64eb93f12859b17306ba8dd0
 // stlib documentation on CellArrayNeighbors
 struct Location :
-	public std::unary_function<Particle*, std::array<double,3> > {
+	public std::unary_function<ParticleIndex, std::array<double,3> > {
 	result_type
 	inline operator()(argument_type r) {
 		result_type location = {{r->position.X, r->position.Y, r->position.Z}};
@@ -234,15 +246,16 @@ struct Location :
 class cellContainer{
 public:
 	stlib::geom::CellArrayNeighbors<double, 3,
-									Particle*,
+									ParticleIndex,
 									Location > sds;
 	struct std::vector<Particle> particles;
-	struct std::vector<voronoiCell*> cells;
 	double defaultLength;
 	bool calculated = false;
 	double x_min, x_max, y_min, y_max, z_min, z_max;
+	StructPool<voronoiCell> cells;
 
-	inline voronoiCell* makeCell(Particle particle);
+	// was returning voronoiCell*. Return cell? Maybe CellIndex?
+	inline voronoiCell makeCell(Particle particle);
 	inline cellContainer(std::vector<Particle> parts, double defaultLen);
 	inline cellContainer(std::vector<Particle> parts, double defaultLen,
 				  double x_min, double x_max, double y_min, double y_max,

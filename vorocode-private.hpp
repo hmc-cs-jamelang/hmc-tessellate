@@ -118,8 +118,8 @@ HalfEdge::HalfEdge(Vertex* vertex, HalfEdge* edge1, HalfEdge* edge2, Particle* n
 }
 
 // Intended to get the previous edge, should be used rarely.
-HalfEdge* HalfEdge::getPrev() {
-    HalfEdge* other = this;
+EdgeIndex HalfEdge::getPrev() {
+    EdgeIndex other = this;
 
     //TODO: Optimize
     // HalfEdge* other = next->next;
@@ -136,11 +136,11 @@ voronoiCell::voronoiCell(std::string shape, double length, Particle seedParticle
                          double y_min, double y_max, double z_min, double z_max) {
     particle = seedParticle;
     maxRadius = maxRadius;
-    faceVertices = std::vector<FaceVertex*>();
+    // faceVertices = std::vector<FaceVertex*>();
 
     if (shape == "cube") {
         // Create half-edge arrays corresponding to the faces of the cube.
-        HalfEdge *plusZ[4], *minusZ[4], *plusY[4], *minusY[4], *plusX[4], *minusX[4];
+        EdgeIndex plusZ[4], minusZ[4], plusY[4], minusY[4], plusX[4], minusX[4];
 
         // Initialize the vertices of the cube manually.
         //
@@ -155,37 +155,37 @@ voronoiCell::voronoiCell(std::string shape, double length, Particle seedParticle
         // Seventh octant: negative x,y,z
         // Eighth octant: positive x, negative y,z
 
-        Vertex* oct1 = new Vertex(x_max,
+        VertexIndex oct1 = vertices.create(Vertex(x_max,
                                   y_max,
-                                  z_max);
+                                  z_max));
 
-        Vertex* oct2 = new Vertex(x_min,
+        VertexIndex oct2 = vertices.create(Vertex(x_min,
                                   y_max,
-                                  z_max);
+                                  z_max));
 
-        Vertex* oct3 = new Vertex(x_min,
+        VertexIndex oct3 = vertices.create(Vertex(x_min,
                                   y_min,
-                                  z_max);
+                                  z_max));
 
-        Vertex* oct4 = new Vertex(x_max,
+        VertexIndex oct4 = vertices.create(Vertex(x_max,
                                   y_min,
-                                  z_max);
+                                  z_max));
 
-        Vertex* oct5 = new Vertex(x_max,
+        VertexIndex oct5 = vertices.create(Vertex(x_max,
                                   y_max,
-                                  z_min);
+                                  z_min));
 
-        Vertex* oct6 = new Vertex(x_min,
+        VertexIndex oct6 = vertices.create(Vertex(x_min,
                                   y_max,
-                                  z_min);
+                                  z_min));
 
-        Vertex* oct7 = new Vertex(x_min,
+        VertexIndex oct7 = vertices.create(Vertex(x_min,
                                   y_min,
-                                  z_min);
+                                  z_min));
 
-        Vertex* oct8 = new Vertex(x_max,
+        VertexIndex oct8 = vertices.create(Vertex(x_max,
                                   y_min,
-                                  z_min);
+                                  z_min));
 
         // We will construct each face by beginning with the edge whose target
         // is in the lowest-numbered quadrant, then continue around the face
@@ -197,100 +197,100 @@ voronoiCell::voronoiCell(std::string shape, double length, Particle seedParticle
         // Note also our choice of default initialization for the particle
         // associated with each HalfEdge; since no planes have cut this cell
         // yet, we associate it with the particle at the center of this cell.
-        plusZ[0] = new HalfEdge(oct1, &particle);             // O2 to O1
+        plusZ[0] = edges.create(HalfEdge(oct1, &particle));             // O2 to O1
 
-        plusZ[1] = new HalfEdge(oct2, plusZ[0], &particle);   // O3 to O2
+        plusZ[1] = edges.create(HalfEdge(oct2, plusZ[0], &particle));   // O3 to O2
 
-        plusZ[2] = new HalfEdge(oct3, plusZ[1], &particle);   // O4 to O3
+        plusZ[2] = edges.create(HalfEdge(oct3, plusZ[1], &particle));   // O4 to O3
 
-        plusZ[3] = new HalfEdge(oct4, plusZ[2], &particle);   // O1 to O4
+        plusZ[3] = edges.create(HalfEdge(oct4, plusZ[2], &particle));   // O1 to O4
 
-        plusZ[0]->next = plusZ[3];
+        plusZ[0].next = plusZ[3];
 
-        minusZ[0] = new HalfEdge(oct5, &particle);            // O8 to O5
+        minusZ[0] = edges.create(HalfEdge(oct5, &particle));            // O8 to O5
 
-        minusZ[1] = new HalfEdge(oct8, minusZ[0], &particle); // O7 to O8
+        minusZ[1] = edges.create(HalfEdge(oct8, minusZ[0], &particle)); // O7 to O8
 
-        minusZ[2] = new HalfEdge(oct7, minusZ[1], &particle); // O6 to O7
+        minusZ[2] = edges.create(HalfEdge(oct7, minusZ[1], &particle)); // O6 to O7
 
-        minusZ[3] = new HalfEdge(oct6, minusZ[2], &particle); // O5 to O6
+        minusZ[3] = edges.create(HalfEdge(oct6, minusZ[2], &particle)); // O5 to O6
 
-        minusZ[0]->next = minusZ[3];
+        minusZ[0].next = minusZ[3];
 
-        plusY[0] = new HalfEdge(oct1, &particle);             // O5 to O1
+        plusY[0] = edges.create(HalfEdge(oct1, &particle));             // O5 to O1
 
-        plusY[1] = new HalfEdge(oct5, plusY[0], &particle);   // O6 to O5
+        plusY[1] = edges.create(HalfEdge(oct5, plusY[0], &particle));   // O6 to O5
 
-        plusY[2] = new HalfEdge(oct6, plusY[1], &particle);   // O2 to O6
+        plusY[2] = edges.create(HalfEdge(oct6, plusY[1], &particle));   // O2 to O6
 
-        plusY[3] = new HalfEdge(oct2, plusY[2], &particle);   // O1 to O2
+        plusY[3] = edges.create(HalfEdge(oct2, plusY[2], &particle));   // O1 to O2
 
-        plusY[0]->next = plusY[3];
+        plusY[0].next = plusY[3];
 
-        minusY[0] = new HalfEdge(oct3, &particle);            // O7 to O3
+        minusY[0] = edges.create(HalfEdge(oct3, &particle));            // O7 to O3
 
-        minusY[1] = new HalfEdge(oct7, minusY[0], &particle); // O8 to O7
+        minusY[1] = edges.create(HalfEdge(oct7, minusY[0], &particle)); // O8 to O7
 
-        minusY[2] = new HalfEdge(oct8, minusY[1], &particle); // O4 to O8
+        minusY[2] = edges.create(HalfEdge(oct8, minusY[1], &particle)); // O4 to O8
 
-        minusY[3] = new HalfEdge(oct4, minusY[2], &particle); // O3 to O4
+        minusY[3] = edges.create(HalfEdge(oct4, minusY[2], &particle)); // O3 to O4
 
-        minusY[0]->next = minusY[3];
+        minusY[0].next = minusY[3];
 
-        plusX[0] = new HalfEdge(oct1, &particle);             // O4 to O1 
+        plusX[0] = edges.create(HalfEdge(oct1, &particle));             // O4 to O1 
 
-        plusX[1] = new HalfEdge(oct4, plusX[0], &particle);   // O8 to O4 
+        plusX[1] = edges.create(HalfEdge(oct4, plusX[0], &particle));   // O8 to O4 
 
-        plusX[2] = new HalfEdge(oct8, plusX[1], &particle);   // O5 to O8 
+        plusX[2] = edges.create(HalfEdge(oct8, plusX[1], &particle));   // O5 to O8 
 
-        plusX[3] = new HalfEdge(oct5, plusX[2], &particle);   // O1 to O5 
+        plusX[3] = edges.create(HalfEdge(oct5, plusX[2], &particle));   // O1 to O5 
 
-        plusX[0]->next = plusX[3];
+        plusX[0].next = plusX[3];
 
-        minusX[0] = new HalfEdge(oct2, &particle);            // O6 to O2
+        minusX[0] = edges.create(HalfEdge(oct2, &particle));            // O6 to O2
 
-        minusX[1] = new HalfEdge(oct6, minusX[0], &particle); // O7 to O6
+        minusX[1] = edges.create(HalfEdge(oct6, minusX[0], &particle)); // O7 to O6
 
-        minusX[2] = new HalfEdge(oct7, minusX[1], &particle); // O3 to O7
+        minusX[2] = edges.create(HalfEdge(oct7, minusX[1], &particle)); // O3 to O7
 
-        minusX[3] = new HalfEdge(oct3, minusX[2], &particle); // O2 to O3
+        minusX[3] = edges.create(HalfEdge(oct3, minusX[2], &particle)); // O2 to O3
 
-        minusX[0]->next = minusX[3];
+        minusX[0].next = minusX[3];
 
         // Now we have to set the flips manually
-        plusZ[0]->flip = plusY[3];
-        plusZ[1]->flip = minusX[3];
-        plusZ[2]->flip = minusY[3];
-        plusZ[3]->flip = plusX[0];
+        plusZ[0].flip = plusY[3];
+        plusZ[1].flip = minusX[3];
+        plusZ[2].flip = minusY[3];
+        plusZ[3].flip = plusX[0];
 
-        minusZ[0]->flip = plusX[2];
-        minusZ[1]->flip = minusY[1];
-        minusZ[2]->flip = minusX[1];
-        minusZ[3]->flip = plusY[1];
+        minusZ[0].flip = plusX[2];
+        minusZ[1].flip = minusY[1];
+        minusZ[2].flip = minusX[1];
+        minusZ[3].flip = plusY[1];
 
-        plusY[0]->flip = plusX[3];
-        plusY[1]->flip = minusZ[3];
-        plusY[2]->flip = minusX[0];
-        plusY[3]->flip = plusZ[0];
+        plusY[0].flip = plusX[3];
+        plusY[1].flip = minusZ[3];
+        plusY[2].flip = minusX[0];
+        plusY[3].flip = plusZ[0];
 
-        minusY[0]->flip = minusX[2];
-        minusY[1]->flip = minusZ[1];
-        minusY[2]->flip = plusX[1];
-        minusY[3]->flip = plusZ[2];
+        minusY[0].flip = minusX[2];
+        minusY[1].flip = minusZ[1];
+        minusY[2].flip = plusX[1];
+        minusY[3].flip = plusZ[2];
 
-        plusX[0]->flip = plusZ[3];
-        plusX[1]->flip = minusY[2];
-        plusX[2]->flip = minusZ[0];
-        plusX[3]->flip = plusY[0];
+        plusX[0].flip = plusZ[3];
+        plusX[1].flip = minusY[2];
+        plusX[2].flip = minusZ[0];
+        plusX[3].flip = plusY[0];
 
-        minusX[0]->flip = plusY[2];
-        minusX[1]->flip = minusZ[2];
-        minusX[2]->flip = minusY[0];
-        minusX[3]->flip = plusZ[1];
+        minusX[0].flip = plusY[2];
+        minusX[1].flip = minusZ[2];
+        minusX[2].flip = minusY[0];
+        minusX[3].flip = plusZ[1];
 
         // Set firstEdge to our favorite edge.
 
-        firstEdge = plusX[0];
+        // firstEdge = plusX[0];
 
     }
 }
@@ -323,30 +323,30 @@ voronoiCell::~voronoiCell() {
     }
 }
 
-void voronoiCell::getEdgeAndVertex(HalfEdge* testEdge, std::stack<HalfEdge*> &edgeStack,
-                                   std::stack<Vertex*> &vertexStack) {
-    if (!testEdge->seen) {
+void voronoiCell::getEdgeAndVertex(EdgeIndex testEdge, std::stack<EdgeIndex> &edgeStack,
+                                   std::stack<VertexIndex> &vertexStack) {
+    if (!edges[testEdge].seen) {
 
-        testEdge->seen = true;
+        edges[testEdge].seen = true;
 
         edgeStack.push(testEdge);
         
-        if (!testEdge->target->seen) {
-            testEdge->target->seen = true;
-            vertexStack.push(testEdge->target);
+        if (!vertices[edges[testEdge].target].seen) {
+            vertices[edges[testEdge].target].seen = true;
+            vertexStack.push(vertices[testEdge].target);
         }
         
 
 
-        getEdgeAndVertex(testEdge->flip, edgeStack, vertexStack);
+        getEdgeAndVertex(edges[testEdge].flip, edgeStack, vertexStack);
 
-        getEdgeAndVertex(testEdge->next, edgeStack, vertexStack);
+        getEdgeAndVertex(edges[testEdge].next, edgeStack, vertexStack);
     }
 }
 
-side voronoiCell::planeSide(Vertex* vertex)
+side voronoiCell::planeSide(VertexIndex vertex)
 {
-    float ans = (vertex->position - (particle.position + neighborParticle.position) / 2).Dot(particle.position - neighborParticle.position);
+    float ans = (vertices[vertex].position - (particle.position + neighborParticle.position) / 2).Dot(particle.position - neighborParticle.position);
     
     if (std::abs(ans) < tolerance) {
         return incident;
@@ -368,11 +368,11 @@ side voronoiCell::planeSide(Vertex* vertex)
 //    - Delete a vertex.
 
 
-void voronoiCell::splitEdge(HalfEdge* edge, Vertex* newVertex) {
+void voronoiCell::splitEdge(EdgeIndex edge, VertexIndex newVertex) {
 
-    HalfEdge* newEdge = makeSelfLoopOnVertex(newVertex);
-    HalfEdge* otherNewEdge = newEdge->flip;
-    HalfEdge* otherOldEdge = edge->flip;
+    EdgeIndex newEdge = makeSelfLoopOnVertex(newVertex);
+    EdgeIndex otherNewEdge = edges[newEdge].flip;
+    EdgeIndex otherOldEdge = edges[edge].flip;
     newEdge->creator = edge->creator;
     otherNewEdge->creator = otherOldEdge->creator;
     std::swap(*edge, *newEdge);
