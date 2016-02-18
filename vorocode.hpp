@@ -17,9 +17,9 @@
 
 typedef StructPool<HalfEdge>::Index EdgeIndex;
 typedef StructPool<Vertex>::Index VertexIndex;
-typedef StructPool<voronoiCell> CellIndex;
-typedef StructPool<Particle> ParticleIndex;
-typedef StructPool<FaceVertex> FaceVertexIndex;
+typedef StructPool<voronoiCell>::Index CellIndex;
+typedef StructPool<Particle>::Index ParticleIndex;
+typedef StructPool<FaceVertex>::Index FaceVertexIndex;
 
 // Taken from http://www.flipcode.com/archives/Faster_Vector_Math_Using_Templates.shtml
 typedef struct Vector3
@@ -126,7 +126,7 @@ public:
 				double x_min, double x_max, double y_min, double y_max,
 				double z_min, double z_max);
 	inline ~voronoiCell();
-	
+
 	struct Particle particle;
 	struct Particle neighborParticle;
 	double maxRadius;
@@ -263,7 +263,7 @@ public:
 	inline ~cellContainer();
 	inline double sum_cell_volumes();
 	inline void put(int id, double x, double y, double z);
-	inline double findMaxNeighDist();   
+	inline double findMaxNeighDist();
 
 };
 
