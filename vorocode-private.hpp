@@ -117,17 +117,17 @@ HalfEdge::HalfEdge(Vertex* vertex, HalfEdge* edge1, HalfEdge* edge2, Particle* n
     creator = neighbor;
 }
 
-// Intended to get the previous edge, should be used rarely.
-EdgeIndex HalfEdge::getPrev() {
-    EdgeIndex other = this;
+// // Intended to get the previous edge, should be used rarely.
+// EdgeIndex HalfEdge::getPrev() {
+//     EdgeIndex other = this;
 
-    //TODO: Optimize
-    // HalfEdge* other = next->next;
-    while (other->next != this) {
-        other = other->next;
-    }
-    return other;
-}
+//     //TODO: Optimize
+//     // HalfEdge* other = next->next;
+//     while (other->next != this) {
+//         other = other->next;
+//     }
+//     return other;
+// }
 
 // HalfEdge* firstEdge = getFirstEdge();
 
@@ -614,78 +614,78 @@ void voronoiCell::cutCell(const Particle& neighbor) {
         // Create a new edge on the cutting plane (unless this is the first
         // incident edge, in which case do nothing)
         if (prevIncidentEdge != nextIncidentEdge) {
-            HalfEdge* prevInsideEdge = prevIncidentEdge;
-            HalfEdge* nextInsideEdge = nextIncidentEdge->flip;
+            EdgeIndex prevInsideEdge = prevIncidentEdge;
+            EdgeIndex nextInsideEdge = nextIncidentEdge->flip;
 
             // addEdgePair is now implemented, and thus is no longer a FIXME.
-            HalfEdge* newInsideEdge = addEdgePair(prevIncidentEdge->target, nextIncidentEdge->target);
-            prevInsideEdge->next = newInsideEdge;
-            newInsideEdge->next = nextInsideEdge;
-            newInsideEdge->creator = newInsideEdge->next->creator;
+            EdgeIndex newInsideEdge = addEdgePair(edges[prevIncidentEdge].target, edges[nextIncidentEdge].target);
+            edges[prevInsideEdge].next = newInsideEdge;
+            edges[newInsideEdge].next = nextInsideEdge;
+            edges[newInsideEdge].creator = edges[edges[newInsideEdge].next].creator;
 
-            outsideEdges.push_back(newInsideEdge->flip);
+            outsideEdges.push_back(edges[newInsideEdge].flip);
         }
 
         prevIncidentEdge = nextIncidentEdge;
 
         nextIncidentEdge = findNextIncidentEdge(prevIncidentEdge);
 
-    } while(nextIncidentEdge != startingIncidentEdge && nextIncidentEdge != startingIncidentEdge->flip->next->flip);
+    } while(nextIncidentEdge != startingIncidentEdge && nextIncidentEdge != edges[edges[edges[startingIncidentEdge].flip].next].flip);
 
     // We have to manually add the last edge in the newly-created face.
-    HalfEdge* prevInsideEdge = prevIncidentEdge;
-    HalfEdge* nextInsideEdge = lastInsideEdge;
+    EdgeIndex prevInsideEdge = prevIncidentEdge;
+    EdgeIndex nextInsideEdge = lastInsideEdge;
 
     // addEdgePair is now implemented, and thus is no longer a FIXME.
-    HalfEdge* newInsideEdge = addEdgePair(prevIncidentEdge->target, lastInsideEdge->flip->target);
-    prevInsideEdge->next = newInsideEdge;
+    EdgeIndex newInsideEdge = addEdgePair(edges[prevIncidentEdge].target, edges[edges[lastInsideEdge].flip].target);
+    edges[prevInsideEdge]next = newInsideEdge;
 
 
-    newInsideEdge->next = nextInsideEdge;
+    edges[newInsideEdge].next = nextInsideEdge;
 
     // All edges on a face should be associated with the
     // same neighbor particle.
-    newInsideEdge->creator = newInsideEdge->next->creator;
+    edges[newInsideEdge].creator = edges[edges[newInsideEdge].next].creator;
 
-    outsideEdges.push_back(newInsideEdge->flip);
+    outsideEdges.push_back(edges[newInsideEdge].flip);
 
     // Set the next of each edge in the new face, and set
     // the creator of each edge in the new face to the particle
     // we are cutting by.
     for (std::size_t i = 1; i < outsideEdges.size(); ++i) {
-        outsideEdges[i]->next = outsideEdges[i-1];
-        outsideEdges[i]->creator = &neighbor;
+        edges[outsideEdges[i]].next = outsideEdges[i-1];
+        edges[outsideEdges[i]].creator = &neighbor;
 
 
 
     }
-    outsideEdges.front()->next = outsideEdges.back();
-    outsideEdges.front()->creator = &neighbor;
+    edges[outsideEdges.front()].next = outsideEdges.back();
+    edges[outsideEdges.front()].creator = &neighbor;
 
     cleanUp(startingIncidentEdge);
 }
 
-void voronoiCell::cleanUp(HalfEdge* edge){
+void voronoiCell::cleanUp(EdgeIndex edge){
 
-    std::stack<HalfEdge*>* deleteStackEdge = new std::stack<HalfEdge*>;
+    std::stack<EdgeIndex>* deleteStackEdge = new std::stack<EdgeIndex>;
 
-    std::stack<Vertex*>* deleteStackVertex = new std::stack<Vertex*>;
+    std::stack<VertexIndex>* deleteStackVertex = new std::stack<VertexIndex>;
 
     deleteSearch(deleteStackEdge, deleteStackVertex, edge);
 
     while (!deleteStackEdge->empty()) {
-        HalfEdge* topEdge = deleteStackEdge->top();
+        EdgeIndex topEdge = deleteStackEdge->top();
         deleteStackEdge->pop();
 
-        delete topEdge;
+        edges.destroy(topEdge);
 
     }
     while (!deleteStackVertex->empty()) {
-        Vertex* topVertex = deleteStackVertex->top();
+        VertexIndex topVertex = deleteStackVertex->top();
 
         deleteStackVertex->pop();
 
-        delete topVertex;
+        vertices.destroy(topVertex);
 
     }
     delete deleteStackVertex;
@@ -694,26 +694,26 @@ void voronoiCell::cleanUp(HalfEdge* edge){
 
 }
 
-void voronoiCell::deleteSearch(std::stack<HalfEdge*>* deleteStackEdge,
-                  std::stack<Vertex*>* deleteStackVertex,
-                  HalfEdge* edge){
+void voronoiCell::deleteSearch(std::stack<EdgeIndex>* deleteStackEdge,
+                  std::stack<VertexIndex>* deleteStackVertex,
+                  EdgeIndex edge){
 
 
         // Currently needs to watch out for problems with edges
         // within the cutting plane
-    if ((planeSide(edge->target) == outside || planeSide(edge->flip->target) == outside)
-	  && !edge->deleteFlag) {
+    if ((planeSide(edges[edge].target) == outside || planeSide(edges[edges[edge].flip].target) == outside)
+	  && !edges[edge].deleteFlag) {
 
         deleteStackEdge->push(edge);
-        edge->deleteFlag = true;
-        deleteSearch(deleteStackEdge, deleteStackVertex, edge->next);
-        deleteSearch(deleteStackEdge, deleteStackVertex, edge->flip);
+        edges[edge].deleteFlag = true;
+        deleteSearch(deleteStackEdge, deleteStackVertex, edges[edge].next);
+        deleteSearch(deleteStackEdge, deleteStackVertex, edges[edge].flip);
     }
 
-    if (planeSide(edge->target) == outside && !edge->target->deleteFlag) {
+    if (planeSide(edges[edge].target) == outside && !vertices[edges[edge].target].deleteFlag) {
 
-        deleteStackVertex->push(edge->target);
-        edge->target->deleteFlag = true;
+        deleteStackVertex->push(edges[edge].target);
+        vertices[edges[edge].target].deleteFlag = true;
     }
 }
 
