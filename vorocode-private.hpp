@@ -373,45 +373,45 @@ void voronoiCell::splitEdge(EdgeIndex edge, VertexIndex newVertex) {
     EdgeIndex newEdge = makeSelfLoopOnVertex(newVertex);
     EdgeIndex otherNewEdge = edges[newEdge].flip;
     EdgeIndex otherOldEdge = edges[edge].flip;
-    newEdge->creator = edge->creator;
-    otherNewEdge->creator = otherOldEdge->creator;
-    std::swap(*edge, *newEdge);
-    std::swap(*otherOldEdge, *otherNewEdge);
+    edges[newEdge].creator = edges[edge].creator;
+    edges[otherNewEdge].creator = edges[otherOldEdge].creator;
+    std::swap(edges[edge], edges[newEdge]);
+    std::swap(edges[otherOldEdge], edges[otherNewEdge]);
 }
 
-HalfEdge* voronoiCell::makeSelfLoopOnVertex(Vertex* newVertex) {
-    HalfEdge* edge = makeOneEdgeFace(newVertex);
-    HalfEdge* back = makeOneEdgeFace(newVertex);
+EdgeIndex voronoiCell::makeSelfLoopOnVertex(VertexIndex newVertex) {
+    EdgeIndex edge = makeOneEdgeFace(newVertex);
+    EdgeIndex back = makeOneEdgeFace(newVertex);
     setFlip(edge, back);
     return edge;
 }
 
-void voronoiCell::setFlip(HalfEdge* forward, HalfEdge* back) {
-    forward->flip = back;
-    back->flip = forward;
+void voronoiCell::setFlip(EdgeIndex forward, EdgeIndex back) {
+    edges[forward].flip = back;
+    edges[back].flip = forward;
 }
 
-HalfEdge* voronoiCell::makeOneEdgeFace(Vertex* vertex) {
-    HalfEdge* edge = new HalfEdge(vertex);
+EdgeIndex voronoiCell::makeOneEdgeFace(VertexIndex vertex) {
+    EdgeIndex edge = edges.create(HalfEdge(vertex));
 
-    edge->next = edge;
+    edges[edge].next = edge;
     return edge;
 }
 
-double voronoiCell::planeDist(Vertex* vertex) {
-    return std::abs((vertex->position.distanceTo(particle.position))
-                     - (vertex->position.distanceTo(neighborParticle.position)));
+double voronoiCell::planeDist(VertexIndex vertex) {
+    return std::abs((vertices[vertex].position.distanceTo(particle.position))
+                     - (vertices[vertex].position.distanceTo(neighborParticle.position)));
 }
 
 // This is probably fairly close to being correct, but has a few nagging
 // problems.
-bool voronoiCell::findSomeIncidentEdge(HalfEdge* &returnEdge) {
+bool voronoiCell::findSomeIncidentEdge(EdgeIndex &returnEdge) {
 
-    HalfEdge* testEdge = firstEdge;
-    Vertex* testVertex = testEdge->target;
+    EdgeIndex testEdge = firstEdge;
+    VertexIndex testVertex = edges[testEdge].target;
 
     side testSide = planeSide(testVertex);
-    side flipSide = planeSide(testEdge->flip->target);
+    side flipSide = planeSide(edges[edges[testEdge].flip].target);
 
 
 
@@ -423,48 +423,50 @@ bool voronoiCell::findSomeIncidentEdge(HalfEdge* &returnEdge) {
     while (testSide == flipSide) {
 
         // If the flip's target is closer, iterate on the flip
-        if (planeDist(testEdge->flip->target) < maxDist) {
-            testEdge = testEdge->flip;
-            testVertex = testEdge->target;
+        if (planeDist(edges[edges[testEdge].flip].target) < maxDist) {
+            testEdge = edges[testEdge].flip;
+            testVertex = edges[testEdge].target;
 
             testSide = planeSide(testVertex);
-            flipSide = planeSide(testEdge->flip->target);
-            maxDist = planeDist(testVertex);
+            flipSide = planeSide(edges[edges[testEdge].flip].target);
+            maxDist = planeDist(testVertex);  
 
         } else {
-            HalfEdge* nextEdge = testEdge->next;
+            EdgeIndex nextEdge = edges[testEdge].next;
 
             // Otherwise, first check to see if the next is closer
-            if (planeDist(nextEdge->target) < maxDist) {
+            if (planeDist(edges[nextEdge].target) < maxDist) {
 
                 testEdge = nextEdge;
-                testVertex = testEdge->target;
+                testVertex = edges[testEdge].target;
 
                 testSide = planeSide(testVertex);
-                flipSide = planeSide(testEdge->flip->target);
+
+                flipSide = planeSide(edges[edges[testEdge].flip].target);
                 maxDist = planeDist(testVertex);
 
             // and, if not, repeatedly examine the edges leaving the
             // testVertex until we find one that is closer
             } else {
-                Vertex* firstVertex = nextEdge->target;
+                VertexIndex firstVertex = edges[nextEdge].target;
 
                 // UNLESS we find an incident edge while doing so
-                while (planeDist(nextEdge->target) > maxDist &&
-                       planeSide(nextEdge->target) == planeSide(nextEdge->flip->target)) {
+                while (planeDist(edges[nextEdge].target) > maxDist &&
+                       planeSide(edges[nextEdge].target) == planeSide(edges[edges[nextEdge].flip].target)) {
 
-                    nextEdge = nextEdge->flip->next;
+                    nextEdge = edges[edges[nextEdge].flip].next;
 
-                    if (firstVertex->position == nextEdge->target->position){
+                    if (vertices[firstVertex].position == vertices[edges[nextEdge].target].position){
 
                         return false;
                     }
                 }
                 testEdge = nextEdge;
-                testVertex = testEdge->target;
+                testVertex = edges[testEdge].target;
 
                 testSide = planeSide(testVertex);
-                flipSide = planeSide(testEdge->flip->target);
+
+                flipSide = planeSide(edges[edges[testEdge].flip].target);
                 maxDist = planeDist(testVertex);
             }
         }
@@ -479,26 +481,26 @@ bool voronoiCell::findSomeIncidentEdge(HalfEdge* &returnEdge) {
         returnEdge = testEdge;
         return true;
     } else {
-        returnEdge = testEdge->flip;
+        returnEdge = edges[testEdge].flip;
         return true;
     }
 }
 
-HalfEdge* voronoiCell::findNextIncidentEdge(HalfEdge* orig) {
-    HalfEdge* cross = orig->next;
+EdgeIndex voronoiCell::findNextIncidentEdge(EdgeIndex orig) {
+    EdgeIndex cross = edges[orig].next;
 
-    while (planeSide(cross->target) == outside){
-        cross = cross->next;
+    while (planeSide(edges[cross].target) == outside){
+        cross = edges[cross].next;
     }
 
-    return cross->flip;
+    return edges[cross].flip;
 }
 
 // Returns a Vector3 corresponding to the point at which the cutting plane
 // intersects a given HalfEdge.
-Vector3 voronoiCell::planeEdgeIntersect(HalfEdge* edge) {
-    Vector3 p1 = edge->target->position;
-    Vector3 p2 = edge->flip->target->position;
+Vector3 voronoiCell::planeEdgeIntersect(EdgeIndex edge) {
+    Vector3 p1 = vertices[edges[edge].target].position;
+    Vector3 p2 = vertices[edges[edges[edge].flip].target].position;
     Vector3 intersectionPoint(0, 0, 0);
     Vector3 normal = neighborParticle.position - particle.position;
     Vector3 edgeVec = p2 - p1;
@@ -509,29 +511,29 @@ Vector3 voronoiCell::planeEdgeIntersect(HalfEdge* edge) {
 }
 
 // Creates an edge pair between a given pair of vertices
-HalfEdge* voronoiCell::addEdgePair(Vertex* vertex1, Vertex* vertex2) {
+EdgeIndex voronoiCell::addEdgePair(VertexIndex vertex1, VertexIndex vertex2) {
 
 
-    HalfEdge* forwardEdge = new HalfEdge(vertex2);
+    EdgeIndex forwardEdge = edges.create(HalfEdge(vertex2));
 
-    HalfEdge* backEdge = new HalfEdge(vertex1);
+    EdgeIndex backEdge = edges.create(HalfEdge(vertex1));
 
-    forwardEdge->flip = backEdge;
-    backEdge->flip = forwardEdge;
+    edges[forwardEdge].flip = backEdge;
+    edges[backEdge].flip = forwardEdge;
     return forwardEdge;
 }
 
-HalfEdge* voronoiCell::maintainFirstEdge(HalfEdge* edge) {
+EdgeIndex voronoiCell::maintainFirstEdge(EdgeIndex edge) {
 
-    std::vector<HalfEdge*> testEdges;
+    std::vector<EdgeIndex> testEdges;
     testEdges.push_back(edge);
     std::size_t i = 0;
-    while (planeSide(edge->flip->target) != inside) {
-        if (!edge->seen) {
+    while (planeSide(edges[edges[edge].flip].target) != inside) {
+        if (!edges[edge].seen) {
 
-            testEdges.push_back(edge->next);
-            testEdges.push_back(edge->flip);
-            edge->seen = true;
+            testEdges.push_back(edges[edge].next);
+            testEdges.push_back(edges[edge].flip);
+            edges[edge].seen = true;
         }
 
         i++;
@@ -563,7 +565,7 @@ void voronoiCell::cutCell(const Particle& neighbor) {
 
     resetEdges(firstEdge);
 
-    HalfEdge* startingIncidentEdge;
+    EdgeIndex startingIncidentEdge;
 
     // Determine whether there is an edge incident to the plane; if so, find
     // it (startingIncidentEdge is passed by reference)
@@ -574,20 +576,21 @@ void voronoiCell::cutCell(const Particle& neighbor) {
         return;
     }
 
-    HalfEdge* nextIncidentEdge = startingIncidentEdge;
+    EdgeIndex nextIncidentEdge = startingIncidentEdge;
 
-    std::vector<HalfEdge*> outsideEdges;
-    HalfEdge* prevIncidentEdge = nextIncidentEdge;
-    HalfEdge* lastInsideEdge;
+    std::vector<EdgeIndex> outsideEdges;
+    EdgeIndex prevIncidentEdge = nextIncidentEdge;
+    EdgeIndex lastInsideEdge;
 
     do {
 
         // was inside
-        if (planeSide(nextIncidentEdge->target) == outside) {
+
+        if (planeSide(edges[nextIncidentEdge].target) == outside) {      
             // Create a new vertex at the location of the intersection of
             // the crossing edge and the cutting plane.
             Vector3 vertexLoc = planeEdgeIntersect(nextIncidentEdge);
-            Vertex* newVertex = new Vertex(vertexLoc);
+            VertexIndex newVertex = vertices.create(Vertex(vertexLoc));
 
             // was "splitCrossingEdge", but that was not defined -- should it
             // have been splitEdge?
@@ -597,8 +600,8 @@ void voronoiCell::cutCell(const Particle& neighbor) {
             if (prevIncidentEdge == nextIncidentEdge) {
 
                 // For later creation of the final edge of the new face
-                lastInsideEdge = startingIncidentEdge->next->flip->next;
-                startingIncidentEdge = startingIncidentEdge->next;
+                lastInsideEdge = edges[edges[edges[startingIncidentEdge].next].flip].next;
+                startingIncidentEdge = edges[startingIncidentEdge].next;
             }
         }
         // Now it's an incident edge
