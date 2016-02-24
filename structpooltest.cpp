@@ -1,5 +1,6 @@
 #include <iostream>
 #include <assert.h>
+#include <bitset>
 #include "structpool.hpp"
 
 struct Vertex {
@@ -32,14 +33,22 @@ struct HalfEdge {
 	// HalfEdge() : flip(INVALID_EDGE), next(INVALID_EDGE), target(INVALID_VERTEX) {}
 };
 
+union union_thingy {
+  	EdgeIndex index;
+  	HalfEdge obj;
+};
+
 int main()
 {
 	std::cout << "HalfEdge size: " << sizeof(HalfEdge) << std::endl;
+	std::cout << "StructPool<HalfEdge> union size: "
+			  << sizeof(union_thingy)
+			  << std::endl;
+	std::cout << "Bitset size: "
+			  << sizeof(std::bitset<2>)
+			  << std::endl;
 	std::cout << "StructPool<HalfEdge> chunk size: "
 			  << sizeof(StructPool<HalfEdge>::Chunk)
-			  << std::endl;
-	std::cout << "Boolean size: "
-			  << sizeof(bool)
 			  << std::endl;
 
 	StructPool<HalfEdge> edges {13};

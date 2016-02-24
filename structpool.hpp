@@ -5,7 +5,7 @@
 #include <bitset>
 #include "verification.hpp"
 
-template <typename T, typename SizeType = std::size_t>
+template <typename T, typename SizeType = short>
 class StructPool {
 public:
     using Index = SizeType;
@@ -28,23 +28,24 @@ public:
     // while the active chunks store data.
     struct Chunk {
         ObjectOrIndex data;
-        std::bitset<2> flags;
+        bool active_;
+        bool marked_;
 
-        Chunk() : flags(), data() {}
+        Chunk() : data(), active_(false), marked_(false) {}
 
         // Flag accessors
-        bool active() const { return flags[0]; }
+        bool active() const { return active_; }
         bool inactive() const { return !active(); }
         void setActive(bool active) {
             VERIFY_EXIT(this->active() == active);
-            flags.set(0, active);
+            active_ = active;
         }
 
-        bool marked() const { return flags[1]; }
+        bool marked() const { return marked_; }
         bool unmarked() const { return !marked(); }
         void setMarked(bool marked) {
             VERIFY_EXIT(this->marked() == marked);
-            flags.set(1, marked);
+            marked_ = marked;
         }
 
         // In-place construction of a new object.
