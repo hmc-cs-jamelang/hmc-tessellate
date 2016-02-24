@@ -1,5 +1,6 @@
 #pragma once
 #include <utility>
+#include <assert.h>
 
 namespace Verification {
     template <typename F>
@@ -28,14 +29,40 @@ namespace Verification {
 #define VERIFICATION_ANONYMOUS_VARIABLE \
 VERIFY_STRING_JOIN(verify_scope_exit_, __LINE__)
 
+
+
+
 #if !defined(NDEBUG) && !defined(NVERIFY)
+
+
+
 #define VERIFICATION(...) __VA_ARGS__
+
 #define NO_VERIFICATION(...)
+
 #define VERIFICATION_EXIT(...) \
 auto VERIFICATION_ANONYMOUS_VARIABLE {Verification::MakeScopeExit([&]{__VA_ARGS__})};
-#else
-#define VERIFICATION(...)
-#define NO_VERIFICATION(...) __VA_ARGS__
-#define VERIFICATION_EXIT(...)
-#endif
 
+#define VERIFY(...) VERIFICATION(assert(__VA_ARGS__);)
+
+#define VERIFY_EXIT(...) VERIFICATION_EXIT(assert(__VA_ARGS__);)
+
+
+
+#else
+
+
+
+#define VERIFICATION(...)
+
+#define NO_VERIFICATION(...) __VA_ARGS__
+
+#define VERIFICATION_EXIT(...)
+
+#define VERIFY(...)
+
+#define VERIFY_EXIT(...)
+
+
+
+#endif
