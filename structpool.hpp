@@ -28,61 +28,46 @@ public:
     // while the active chunks store data.
     struct Chunk {
         ObjectOrIndex data;
-        bool active_;
-        bool marked_;
+        bool active;
+        bool marked;
 
-        Chunk() : data(), active_(false), marked_(false) {}
-
-        // Flag accessors
-        bool active() const { return active_; }
-        bool inactive() const { return !active(); }
-        void setActive(bool active) {
-            VERIFY_EXIT(this->active() == active);
-            active_ = active;
-        }
-
-        bool marked() const { return marked_; }
-        bool unmarked() const { return !marked(); }
-        void setMarked(bool marked) {
-            VERIFY_EXIT(this->marked() == marked);
-            marked_ = marked;
-        }
+        Chunk() : data(), active(false), marked(false) {}
 
         // In-place construction of a new object.
         template <typename... T_Constructor_Args>
         void construct(T_Constructor_Args... args)
         {
-            VERIFY(inactive());
-            VERIFY_EXIT(active());
+            VERIFY(!active);
+            VERIFY_EXIT(active);
 
             // This constructs a new T object
             // inside the space already allocated
             // for this chunk.
             new(&data.object) T {args...};
-            setActive(true);
+            active = true;
         }
 
         // In-place destruction of current object.
         void destruct()
         {
-            VERIFY(active());
-            VERIFY_EXIT(inactive());
+            VERIFY(active);
+            VERIFY_EXIT(!active);
 
             data.object.~T();
-            setActive(false);
+            active = false;
         }
 
         // Get object held by active chunk
         inline T& object()
         {
-            VERIFY(active());
+            VERIFY(active);
             return data.object;
         }
 
         // Get index of next inactive chunk held by this inactive chunk
         inline Index& next_available()
         {
-            VERIFY(inactive());
+            VERIFY(!active);
             return data.index;
         }
     };
@@ -133,13 +118,13 @@ public:
         return occupancy;
     }
 
-    bool active(Index i) const {return chunk(i).active();}
-    bool inactive(Index i) const {return chunk(i).inactive();}
-    bool marked(Index i) const {return chunk(i).marked();}
-    bool unmarked(Index i) const {return chunk(i).unmarked();}
+    bool active(Index i) const {return chunk(i).active;}
+    bool inactive(Index i) const {return !chunk(i).active;}
+    bool marked(Index i) const {return chunk(i).marked;}
+    bool unmarked(Index i) const {return !chunk(i).marked;}
 
-    void setActive(Index i, bool active) {chunk(i).setActive(active);}
-    void setMarked(Index i, bool marked) {chunk(i).setMarked(marked);}
+    void setActive(Index i, bool active) {chunk(i).active = active;}
+    void setMarked(Index i, bool marked) {chunk(i).marked = marked;}
 
     inline T& operator[](Index i) {return chunk(i).object();}
 
