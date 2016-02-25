@@ -61,7 +61,7 @@ namespace voro {
 
 		void vertices(std::vector<double> &v) {
 			ensurePolyComputed();
-			poly_.vertices(v);
+			poly_.computeVertices(v);
 		}
 		void vertices(double x, double y, double z, std::vector<double> &v) {
 			return vertices(v);
@@ -110,7 +110,7 @@ namespace voro {
 	class Blob {
 	public:
 		Blob() = delete;
-		
+
 		Blob(double xmin, double xMAX, double ymin, double yMAX, double zmin, double zMAX)
 			: xmin_(xmin), xMAX_(xMAX), ymin_(ymin), yMAX_(yMAX), zmin_(zmin), zMAX_(zMAX)
 		{
@@ -190,7 +190,7 @@ namespace voro {
 
 		void draw_particles(const char *filename) {}
 		void draw_cells_gnuplot(const char *filename) {}
-		
+
 //private:
 		std::vector<Particle> particles_;
 		double xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_;

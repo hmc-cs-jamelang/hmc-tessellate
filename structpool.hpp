@@ -308,5 +308,12 @@ public:
     {
         return const_iterator(this, size());
     }
+
+    // Auxiliary debug-type functions
+    std::size_t get_memory_usage() {
+        std::size_t memory = 0;
+        memory += sizeof(Chunk) * chunks_.capacity();
+        return memory;
+    }
 };
 

@@ -429,7 +429,7 @@ bool voronoiCell::findSomeIncidentEdge(EdgeIndex &returnEdge) {
 
             testSide = planeSide(testVertex);
             flipSide = planeSide(edges[edges[testEdge].flip].target);
-            maxDist = planeDist(testVertex);  
+            maxDist = planeDist(testVertex);
 
         } else {
             EdgeIndex nextEdge = edges[testEdge].next;
@@ -591,7 +591,7 @@ void voronoiCell::cutCell(const Particle& neighbor) {
 
         // was inside
 
-        if (planeSide(edges[nextIncidentEdge].target) == outside) {      
+        if (planeSide(edges[nextIncidentEdge].target) == outside) {
             // Create a new vertex at the location of the intersection of
             // the crossing edge and the cutting plane.
             Vector3 vertexLoc = planeEdgeIntersect(nextIncidentEdge);
@@ -899,22 +899,22 @@ void voronoiCell::getFaceVertex(EdgeIndex testEdge) {
     }
 };
 
-// // CustomInterface IO
-// void voronoiCell::vertices(std::vector<double> &v) {
-//     std::vector<VertexIndex> vs;
-//     getVertex(firstEdge, vertices);
-//     resetEdgesAndVertices(firstEdge);
+// CustomInterface IO
+void voronoiCell::computeVertices(std::vector<double> &v) {
+    std::vector<VertexIndex> vs;
+    getVertex(firstEdge, vs);
+    resetEdgesAndVertices(firstEdge);
 
-//     for (std::size_t i = 0; i < vertices.size(); ++i) {
-//         v.push_back(vs[i]->position.X);
-//         v.push_back(vs[i]->position.Y);
-//         v.push_back(vs[i]->position.Z);
-//     }
+    for (std::size_t i = 0; i < vs.size(); ++i) {
+        v.push_back(vertices[vs[i]].position.X);
+        v.push_back(vertices[vs[i]].position.Y);
+        v.push_back(vertices[vs[i]].position.Z);
+    }
 
-//     // we eventually need to reset all the seen flags at the end of this. or,
-//     // more likely, we need to optimize this procedure.
-//     resetEdgesAndVertices(firstEdge);
-// };
+    // we eventually need to reset all the seen flags at the end of this. or,
+    // more likely, we need to optimize this procedure.
+    resetEdgesAndVertices(firstEdge);
+};
 
 void voronoiCell::getVertex(EdgeIndex testEdge, std::vector<VertexIndex> &vs) {
 
@@ -1050,6 +1050,18 @@ void voronoiCell::drawGnuplot(double dispX, double dispY, double dispZ, FILE* fp
     }
 }
 
+std::size_t voronoiCell::get_memory_usage(){
+    std::size_t memory = 0;
+    memory += sizeof(FaceVertex) * faceVertices.size();
+    memory += sizeof(FaceVertex*) * faceVertices.capacity();
+    memory += sizeof(voronoiCell);
+    memory += edges.get_memory_usage() + vertices.get_memory_usage();
+    std::cout << "Edges: " << edges.get_memory_usage() << std::endl;
+    std::cout << "Vertices: " << vertices.get_memory_usage() << std::endl;
+    std::cout << "voronoi cell: " << memory << std::endl;
+    return memory;
+}
+
 
 // -----------------------------CELL CONTAINER------------------------------ //
 
@@ -1151,6 +1163,17 @@ double cellContainer::findMaxNeighDist() {
     }
     return maxDist;
 
+}
+
+std::size_t cellContainer::get_memory_usage() {
+    std::size_t memory = 0;
+    memory += sizeof(Particle) * particles.capacity();
+    memory += sizeof(cellContainer);
+    std::cout << "Cell container: " << memory << std::endl;
+    for(auto cell : cells) {
+        memory += cell->get_memory_usage();
+    }
+    return memory;
 }
 
 #endif

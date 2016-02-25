@@ -143,7 +143,7 @@ public:
 	inline void faceAreas(std::vector<double> &v);
 
 	inline double volume();
-	// inline void vertices(std::vector<double> &v);
+	inline void computeVertices(std::vector<double> &v);
 	inline void face_vertices(std::vector<int> &v);
 	inline void face_areas(std::vector<double> &v);
 
@@ -154,6 +154,8 @@ public:
 	StructPool<HalfEdge> edges;
 	StructPool<Vertex> vertices;
 	std::vector<FaceVertex*> faceVertices;
+
+	inline std::size_t get_memory_usage();
 
 private:
 	// Finds side of plane that point is on
@@ -265,6 +267,7 @@ public:
 	inline double sum_cell_volumes();
 	inline void put(int id, double x, double y, double z);
 	inline double findMaxNeighDist();
+	inline std::size_t get_memory_usage();
 
 };
 
