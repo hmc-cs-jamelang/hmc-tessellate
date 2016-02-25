@@ -33,6 +33,14 @@ public:
 
         Chunk() : data(), active(false), marked(false) {}
 
+        ~Chunk()
+        {
+            VERIFY_EXIT(!active);
+            if (active) {
+                destruct();
+            }
+        }
+
         // In-place construction of a new object.
         template <typename... T_Constructor_Args>
         void construct(T_Constructor_Args... args)
