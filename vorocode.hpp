@@ -155,6 +155,8 @@ public:
 	StructPool<Vertex> vertices;
 	std::vector<FaceVertex*> faceVertices;
 
+	inline std::size_t get_memory_usage();
+
 private:
 	// Finds side of plane that point is on
 	inline side planeSide(VertexIndex vertex);
@@ -265,6 +267,7 @@ public:
 	inline double sum_cell_volumes();
 	inline void put(int id, double x, double y, double z);
 	inline double findMaxNeighDist();
+	inline std::size_t get_memory_usage();
 
 };
 

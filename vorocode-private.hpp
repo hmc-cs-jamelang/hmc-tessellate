@@ -1050,6 +1050,18 @@ void voronoiCell::drawGnuplot(double dispX, double dispY, double dispZ, FILE* fp
     }
 }
 
+std::size_t voronoiCell::get_memory_usage(){
+    std::size_t memory = 0;
+    memory += sizeof(FaceVertex) * faceVertices.size();
+    memory += sizeof(FaceVertex*) * faceVertices.capacity();
+    memory += sizeof(voronoiCell);
+    memory += edges.get_memory_usage() + vertices.get_memory_usage();
+    std::cout << "Edges: " << edges.get_memory_usage() << std::endl;
+    std::cout << "Vertices: " << vertices.get_memory_usage() << std::endl;
+    std::cout << "voronoi cell: " << memory << std::endl;
+    return memory;
+}
+
 
 // -----------------------------CELL CONTAINER------------------------------ //
 
@@ -1151,6 +1163,17 @@ double cellContainer::findMaxNeighDist() {
     }
     return maxDist;
 
+}
+
+std::size_t cellContainer::get_memory_usage() {
+    std::size_t memory = 0;
+    memory += sizeof(Particle) * particles.capacity();
+    memory += sizeof(cellContainer);
+    std::cout << "Cell container: " << memory << std::endl;
+    for(auto cell : cells) {
+        memory += cell->get_memory_usage();
+    }
+    return memory;
 }
 
 #endif
