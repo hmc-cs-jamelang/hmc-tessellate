@@ -143,7 +143,7 @@ public:
 	inline void faceAreas(std::vector<double> &v);
 
 	inline double volume();
-	// inline void vertices(std::vector<double> &v);
+	inline void computeVertices(std::vector<double> &v);
 	inline void face_vertices(std::vector<int> &v);
 	inline void face_areas(std::vector<double> &v);
 
