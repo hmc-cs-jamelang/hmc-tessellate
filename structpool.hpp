@@ -145,5 +145,12 @@ public:
         chunk.next_available() = first_available_;
         first_available_ = i;
     }
+
+    std::size_t get_memory_usage() {
+        std::size_t memory = 0;
+        memory += sizeof(Chunk) * chunks_.capacity();
+        return memory;
+
+    }
 };
 
