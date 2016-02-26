@@ -3,6 +3,7 @@
 #include <bitset>
 #include "structpool.hpp"
 
+
 struct Vertex {
 	double x, y, z;
 

@@ -3,13 +3,51 @@
 #include <vector>
 #include <limits>
 #include <bitset>
+#include <iostream>
+#include <typeinfo>
 #include "verification.hpp"
 
-template <typename T, typename SizeType = short>
+
+struct StructPoolDefaultTag {};
+
+template <
+    typename T,
+    typename SizeType = unsigned short,
+    typename Tag = StructPoolDefaultTag
+>
 class StructPool {
 public:
-    using Index = SizeType;
-    static constexpr Index INVALID_INDEX = std::numeric_limits<Index>::max();
+    class Index {
+        friend class StructPool;
+
+    private:
+        SizeType value;
+
+    public:
+        constexpr Index() = default;
+        explicit constexpr Index(SizeType value) : value(value) {}
+        explicit constexpr operator SizeType() const {return value;}
+
+        friend constexpr bool operator==(const Index lhs, const Index rhs)
+        {
+            return lhs.value == rhs.value;
+        }
+
+        friend constexpr bool operator!=(const Index lhs, const Index rhs)
+        {
+            return lhs.value != rhs.value;
+        }
+
+        friend std::ostream& operator<<(std::ostream& stream, const Index index)
+        {
+            return (stream << index.value);
+        }
+    };
+
+    static constexpr Index INVALID_INDEX
+        {std::numeric_limits<SizeType>::max()};
+    static constexpr SizeType MAX_SIZE
+        {static_cast<SizeType>(INVALID_INDEX.value - 1)};
 
 protected:
     union ObjectOrIndex {
@@ -84,19 +122,35 @@ protected:
     Index first_available_;
     std::vector<Chunk> chunks_;
 
+    // Helper functions used for sanity checks.
+    VERIFICATION(
+        // Ensures the StructPool is small enough for its SizeType
+        // to reference all of its elements
+        bool withinMaxSize() const
+        {
+            return chunks_.size() <= MAX_SIZE;
+        }
+    )
+
+    SizeType toSizeType(std::size_t n) const
+    {
+        VERIFY(n < std::numeric_limits<SizeType>::max());
+        return static_cast<SizeType>(n);
+    }
+
     // This trick is used to create both const and nonconst versions
     // of the same function in one go.
     // The typename This will either be a pointer or a const pointer,
     // depending on whether the function calling this one is marked
     // const or not.
     template <typename This>
-    static auto _chunk(This t, Index i) -> decltype(t->chunks_[i])
+    static auto chunk_(This t, Index i) -> decltype(t->chunks_[i.value])
     {
-        VERIFY(i < t->chunks_.size());
-        return t->chunks_[i];
+        VERIFY(i.value < t->chunks_.size());
+        return t->chunks_[i.value];
     }
-    Chunk& chunk(Index i) {return _chunk(this, i);}
-    const Chunk& chunk(Index i) const {return _chunk(this, i);}
+    Chunk& chunk(Index i) {return chunk_(this, i);}
+    const Chunk& chunk(Index i) const {return chunk_(this, i);}
 
 public:
     StructPool()
@@ -107,19 +161,19 @@ public:
         : first_available_(INVALID_INDEX), chunks_(reserve)
     { /* Done */ }
 
-    Index size() const
+    SizeType size() const
     {
-        return chunks_.size();
+        return toSizeType(chunks_.size());
     }
 
-    Index capacity() const
+    SizeType capacity() const
     {
-        return chunks_.capacity();
+        return toSizeType(chunks_.capacity());
     }
 
-    Index computeOccupancy() const
+    SizeType computeOccupancy() const
     {
-        Index occupancy = 0;
+        SizeType occupancy = 0;
         for (auto it = begin(); it != end(); ++it) {
             occupancy += 1;
         }
@@ -139,12 +193,14 @@ public:
     template<typename... T_Constructor_Args>
     Index create(T_Constructor_Args... args)
     {
+        VERIFY_INVARIANT(withinMaxSize());
+
         Index i = first_available_;
         if (i != INVALID_INDEX) {
             first_available_ = chunk(i).next_available();
         }
         else {
-            i = chunks_.size();
+            i = Index {static_cast<SizeType>(chunks_.size())};
             chunks_.push_back(Chunk());
         }
 
@@ -154,6 +210,8 @@ public:
 
     void destroy(Index i)
     {
+        VERIFY_INVARIANT(withinMaxSize());
+
         Chunk& chunk = this->chunk(i);
 
         // We assume that there really is an object here,
@@ -198,7 +256,7 @@ public:
             : pool(pool), index(0)
         {
             while (pool->inactive(index)) {
-                ++index;
+                ++index.value;
             }
         }
 
@@ -253,7 +311,7 @@ public:
 
         // Prefix decrement
         maybe_const_iterator& operator--(){
-            while (index-- > 0) {
+            while (index.value-- > 0) {
                 if (pool.active(index)) {
                     return *this;
                 }
@@ -270,7 +328,7 @@ public:
 
         // Prefix increment
         maybe_const_iterator &operator++(){
-            while (++index < pool->size()) {
+            while (++index.value < pool->size()) {
                 if (pool->active(index)) {
                     return *this;
                 }
@@ -301,12 +359,12 @@ public:
 
     iterator end()
     {
-        return iterator(this, size());
+        return iterator(this, Index {size()});
     }
 
     const_iterator end() const
     {
-        return const_iterator(this, size());
+        return const_iterator(this, Index {size()});
     }
 
     // Auxiliary debug-type functions
@@ -317,3 +375,9 @@ public:
     }
 };
 
+template <typename T, typename SizeType, typename Tag>
+constexpr typename StructPool<T, SizeType, Tag>::Index
+      StructPool<T, SizeType, Tag>::INVALID_INDEX;
+
+template <typename T, typename SizeType, typename Tag>
+constexpr SizeType StructPool<T, SizeType, Tag>::MAX_SIZE;

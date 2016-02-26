@@ -15,7 +15,6 @@ namespace hmc {
     using VoronoiPolyhedron = int;
 
 
-
     // ParticleIndex is just an internal typedef for readability.
     // ParticleIndices are used to refer to and access particular
     // particles within a diagram.
