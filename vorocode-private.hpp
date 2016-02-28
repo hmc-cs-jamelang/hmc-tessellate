@@ -295,6 +295,16 @@ voronoiCell::voronoiCell(std::string shape, double length, Particle seedParticle
     }
 }
 
+voronoiCell& voronoiCell::operator=(voronoiCell rhs) {
+    edges = rhs.edges;
+    vertices = rhs.vertices;
+    particle = rhs.particle;
+    firstEdge = rhs.firstEdge;
+    faceVertices = rhs.faceVertices;
+    maxRadius = rhs.maxRadius;
+
+}
+
 voronoiCell::~voronoiCell() {
 
     resetEdgesAndVertices(firstEdge);
@@ -1079,7 +1089,7 @@ cellContainer::cellContainer(std::vector<Particle> parts, double defaultLen,
     particles = parts;
 }
 
-voronoiCell* cellContainer::makeCell(Particle particle) {
+voronoiCell cellContainer::makeCell(Particle particle) {
 
 
     // Calculate the initial max radius of a cube
@@ -1087,7 +1097,7 @@ voronoiCell* cellContainer::makeCell(Particle particle) {
 
 
     // Initialize the voronoi cell as a cube...
-    voronoiCell* cell = new voronoiCell("cube", defaultLength, particle, maxRadius,
+    voronoiCell cell = voronoiCell("cube", defaultLength, particle, maxRadius,
         x_min, x_max, y_min, y_max, z_min, z_max);
 
     // loop through our array of particles and cut the cell with planes
@@ -1105,7 +1115,7 @@ voronoiCell* cellContainer::makeCell(Particle particle) {
 
         if ((NeighborParticles[i]->position != particle.position) && (particle.position.distanceTo(NeighborParticles[i]->position) < maxRadius)) {
 
-            cell->cutCell(*NeighborParticles[i]);
+            cell.cutCell(*NeighborParticles[i]);
         }
     }
 
@@ -1114,11 +1124,11 @@ voronoiCell* cellContainer::makeCell(Particle particle) {
 
 cellContainer::~cellContainer() {
 
-    while (!cells.empty()) {
-        delete cells.back();
+    // while (!cells.empty()) {
+    //     delete cells.back();
 
-        cells.pop_back();
-    }
+    //     cells.pop_back();
+    // }
 }
 
 double cellContainer::sum_cell_volumes() {
@@ -1127,20 +1137,21 @@ double cellContainer::sum_cell_volumes() {
     // Need to put in an initialize function. DO NOT KEEP HERE
     sds.initialize(&particles[0], &particles[particles.size()]);
 
-    if(!calculated) {
+    // if(!calculated) {
+        voronoiCell c;
         for(unsigned int i = 0; i < particles.size(); ++i) {
 
-            cells.push_back(makeCell(particles[i]));
+            c = makeCell(particles[i]);
 
-            sum += cells[i]->volume();
+            sum += c.volume();
         }
-    }
-    else {
+    // }
+    // else {
 
-        for(unsigned int i = 0; i < particles.size(); ++i) {
-            sum += cells[i]->volume();
-        }
-    }
+    //     for(unsigned int i = 0; i < particles.size(); ++i) {
+    //         sum += c.volume();
+    //     }
+    // }
     return sum;
 }
 
@@ -1149,31 +1160,31 @@ void cellContainer::put(int id, double px, double py, double pz) {
     particles.push_back(Particle(id, px, py, pz));
 }
 
-double cellContainer::findMaxNeighDist() {
-    double maxDist = 0;
-    for(voronoiCell* cellPointer : cells) {
-        std::vector<int> neighborIndexes;
-        cellPointer->neighbors(neighborIndexes);
-        for (int i = 0; i < neighborIndexes.size(); ++i) {
-            double dist = cellPointer->particle.position.distanceTo(particles[neighborIndexes[i]].position);
-            if(dist > maxDist) {
-                maxDist = dist;
-            }
-        }
-    }
-    return maxDist;
+// double cellContainer::findMaxNeighDist() {
+//     double maxDist = 0;
+//     for(voronoiCell* cellPointer : cells) {
+//         std::vector<int> neighborIndexes;
+//         cellPointer->neighbors(neighborIndexes);
+//         for (int i = 0; i < neighborIndexes.size(); ++i) {
+//             double dist = cellPointer->particle.position.distanceTo(particles[neighborIndexes[i]].position);
+//             if(dist > maxDist) {
+//                 maxDist = dist;
+//             }
+//         }
+//     }
+//     return maxDist;
 
-}
+// }
 
-std::size_t cellContainer::get_memory_usage() {
-    std::size_t memory = 0;
-    memory += sizeof(Particle) * particles.capacity();
-    memory += sizeof(cellContainer);
-    std::cout << "Cell container: " << memory << std::endl;
-    for(auto cell : cells) {
-        memory += cell->get_memory_usage();
-    }
-    return memory;
-}
+// std::size_t cellContainer::get_memory_usage() {
+//     std::size_t memory = 0;
+//     memory += sizeof(Particle) * particles.capacity();
+//     memory += sizeof(cellContainer);
+//     std::cout << "Cell container: " << memory << std::endl;
+//     for(auto cell : cells) {
+//         memory += cell->get_memory_usage();
+//     }
+//     return memory;
+// }
 
 #endif

@@ -107,6 +107,12 @@ public:
         : first_available_(INVALID_INDEX), chunks_(reserve)
     { /* Done */ }
 
+    StructPool& operator=(StructPool& rhs)
+    {
+        first_available_ = rhs.first_available_;
+        chunks_ = rhs.chunks_;
+    }
+
     Index size() const
     {
         return chunks_.size();

@@ -118,6 +118,8 @@ public:
 		// Probably should reset some stuff
 	}
 
+	inline voronoiCell& operator=(voronoiCell rhs);
+
 	inline void initialize(Vector3 position, double xmin, double xmax, double ymin, double ymax,
 					double zmin, double zmax)
 	{
@@ -256,9 +258,9 @@ public:
 	double defaultLength;
 	bool calculated = false;
 	double x_min, x_max, y_min, y_max, z_min, z_max;
-	struct std::vector<voronoiCell*> cells;
+	// struct std::vector<voronoiCell*> cells;
 
-	inline voronoiCell* makeCell(Particle particle);
+	inline voronoiCell makeCell(Particle particle);
 	inline cellContainer(std::vector<Particle> parts, double defaultLen);
 	inline cellContainer(std::vector<Particle> parts, double defaultLen,
 				  double x_min, double x_max, double y_min, double y_max,
@@ -266,8 +268,8 @@ public:
 	inline ~cellContainer();
 	inline double sum_cell_volumes();
 	inline void put(int id, double x, double y, double z);
-	inline double findMaxNeighDist();
-	inline std::size_t get_memory_usage();
+	// inline double findMaxNeighDist();
+	// inline std::size_t get_memory_usage();
 
 };
 
