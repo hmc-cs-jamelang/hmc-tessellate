@@ -51,7 +51,6 @@ typedef struct Vertex {
 typedef struct Particle {
 	Vector3 position;
 	int id;
-	int group;
 	inline Particle(int Id, double x, double y, double z);
 	inline Particle(int Id, Vector3 pos);
 	inline Particle(void);

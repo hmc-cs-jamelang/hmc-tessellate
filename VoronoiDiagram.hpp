@@ -4,48 +4,49 @@
 #pragma once
 #include <iterator>
 #include <vector>
+#include <unordered_set>
 #include "vorocode.hpp"
 
 namespace voro {
 
-	typedef voronoiCell Polyhedron;
+	using Polyhedron = voronoiCell;
+	using our_size_t = int;
 
-	typedef int our_size_t;
+	using TargetGroup = std::unordered_set<int>;
+	using SourceGroup = std::vector<int>;
 
-	// Already in vorocode
+	class Diagram;
 
-	// typedef struct Particle {
-	// 	CGALInterface::Point point;
-	// 	our_size_t index;
-	// 	int id;
-	// 	int group;
+	inline Polyhedron* computePolyhedron(Diagram*, our_size_t);
+	inline Polyhedron* computePolyhedron(Diagram*, our_size_t, int);
+	inline int getParticleIdFromIndex(Diagram*, our_size_t);
 
-	// 	Particle(double x, double y, double z, our_size_t index, int id, int group = 0)
-	// 		: point(x,y,z), index(index), id(id), group(group)
-	// 	{
-	// 		// Nothing left to do
-	// 	}
-	// } Particle;
-
-	class Blob;
-
-	inline Polyhedron* computePolyhedron(Blob*, our_size_t);
-	inline Polyhedron* computePolyhedron(Blob*, our_size_t, int);
-	inline int getParticleIdFromIndex(Blob*, our_size_t);
-
-	class FatCell {
+	class Cell {
 	public:
-		FatCell() = default;
+		Cell() = default;
 
-		FatCell(Blob* diagram, our_size_t point)
+		Cell(Diagram* diagram, our_size_t point)
 			// Needed to add no-argument constructor for voronoiCell to get this to work
 			: diagram_(diagram), point_(point), poly_computed_(false)
 		{
 			// Nothing going on here
 		}
 
-		FatCell(Blob* diagram, our_size_t point, int targetGroup)
+		Cell(Diagram* diagram, our_size_t point, TargetGroup targetGroup)
 			: diagram_(diagram), point_(point), poly_computed_(false), target_group_(targetGroup)
+		{
+
+		}
+
+		Cell(Diagram* diagram, double x, double y, double z)
+			// Needed to add no-argument constructor for voronoiCell to get this to work
+			: diagram_(diagram), point_(-1), x_(x), y_(y), z_(z), poly_computed_(false)
+		{
+			// Nothing going on here
+		}
+
+		Cell(Diagram* diagram, double x, double y, double z, TargetGroup targetGroup)
+			: diagram_(diagram), point_(-1), x_(x), y_(y), z_(z), poly_computed_(false), target_group_(targetGroup)
 		{
 
 		}
@@ -81,41 +82,52 @@ namespace voro {
 			poly_->face_areas(v);
 		}
 
-		FatCell& operator=(const FatCell& cell) = default;
+		Cell& operator=(const Cell& cell) = default;
 
 	private:
 		void ensurePolyComputed() {
 			if (!poly_computed_) {
 				if (target_group_) {
 					delete poly_;
-					poly_ = computePolyhedron(diagram_, point_, target_group_);
+					if (point_ != -1) {
+						poly_ = computePolyhedron(diagram_, point_, target_group_);
+					}
+					else {
+						poly_ = computePolyhedron(diagram_, x_, y_, z_, targt_group);
+					}
 				}
 				else {
 					delete poly_;
-					poly_ = computePolyhedron(diagram_, point_);
+					if (point_ != -1) {
+						poly_ = computePolyhedron(diagram_, point_);
+					}
+					else {
+						poly_ = computePolyhedron(diagram_, x_, y_, z_);
+					}
 				}
 			}
 		}
 
 		Polyhedron* poly_ = nullptr;
-		Blob* diagram_;
+		Diagram* diagram_;
 		our_size_t point_;
 		bool poly_computed_;
-		int target_group_ = 0;
+		TargetGroup target_group_;
+		double x_, y_, z_;
 	};
 
-	class Blob {
+	class Diagram {
 	public:
-		Blob() = delete;
+		Diagram() = delete;
 		
-		Blob(double xmin, double xMAX, double ymin, double yMAX, double zmin, double zMAX)
+		Diagram(double xmin, double xMAX, double ymin, double yMAX, double zmin, double zMAX)
 			: xmin_(xmin), xMAX_(xMAX), ymin_(ymin), yMAX_(yMAX), zmin_(zmin), zMAX_(zMAX)
 		{
 			// Nothing happening
 		}
 
 		template<class c_class>
-		Blob(c_class &con)
+		Diagram(c_class &con)
 		{
 			// Nothing to do here
 		}
@@ -125,35 +137,55 @@ namespace voro {
 			return particles_.size();
 		}
 
-		our_size_t put(int id, double x, double y, double z)
+		our_size_t addParticle(double x, double y, double z, int id)
 		{
 			our_size_t index = size();
 			particles_.push_back(Particle(id, x, y, z));
 			return index;
 		}
 
-		our_size_t put(std::vector<int> group, int id, double x, double y, double z)
-		{
-			our_size_t index = put(id, x, y, z);
-			group.push_back(index);
-			return index;
-		}
-
-		our_size_t put(int group, int id, double x, double y, double z)
+		our_size_t addParticle(double x, double y, double z, int id, int group)
 		{
 			our_size_t index = size();
 			particles_.push_back(Particle(x, y, z, index, id, group));
 			return index;
 		}
 
-		FatCell operator[] (our_size_t i)
+		template <typename... Groups>
+		TargetGroup targetGroups(Groups... groups)
 		{
-			return FatCell(this, i);
+			return TargetGroup {groups...};
 		}
 
-		FatCell getCell(our_size_t i, int group)
+		template <typename... Groups>
+		SourceGroup sourceGroups(Groups... groups)
 		{
-			return FatCell(this, i, group);
+			std::unordered_set sources = std::unordered_set<int> {groups...};
+			SourceGroup src;
+
+			int end = particles_.size();
+			for (int i = 0; i < end; ++i) {
+				if (sources.count(groups_[i])) {
+					src.push_back(i);
+				}
+			}
+
+			return src;
+		}
+
+		Cell operator[] (our_size_t i)
+		{
+			return Cell(this, i);
+		}
+
+		Cell getCell(our_size_t i)
+		{
+			return Cell(this, i);
+		}
+
+		Cell getCell(our_size_t i, int group)
+		{
+			return Cell(this, i, group);
 		}
 
 		our_size_t numCells()
@@ -164,11 +196,7 @@ namespace voro {
 		Polyhedron* computePolyhedron(our_size_t i)
 		{
 			Polyhedron* poly = new Polyhedron("cube", 100000000, particles_[i], 100000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
-			// // Needed to add clear() to voronoiCell
-			// poly.clear();
-			// // Needed to add initialize to voronoiCell
-			// poly.initialize(particles_[i].position, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
-			
+
 			our_size_t end = particles_.size();
 			for (our_size_t index = 0; index < end; ++index) {
 				if (index != i) {
@@ -179,14 +207,40 @@ namespace voro {
 			return poly;
 		}
 
-		Polyhedron* computePolyhedron(our_size_t i, int targetGroup)
+		Polyhedron* computePolyhedron(double x, double y, double z)
+		{
+			Particle p = new Particle(-1, x, y, z);
+			Polyhedron* poly = new Polyhedron("cube", 10000000, p, 10000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
+
+			for (auto particle : particles_) {
+				poly->cutCell(particle);
+			}
+
+			return poly;
+		}
+
+		Polyhedron* computePolyhedron(our_size_t i, TargetGroup targetGroup)
 		{
 			Polyhedron* poly = new Polyhedron("cube", 10000000, particles_[i], 10000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
-			// poly.clear();
-			// poly.initialize(particles_[i].position, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
-			for (auto particle : particles_) {
-				// Needed to add group member to Particle
-				if (particle.group == targetGroup) {
+
+			our_size_t end = particles.size();
+			for (our_size_t index = 0; index < end; ++index) {
+				if (targetGroup.count(groups_[index]) && index != i) {
+					poly->cutCell(particle);
+				}
+			}
+
+			return poly;
+		}
+
+		Polyhedron* computePolyhedron(double x, double y, double z, TargetGroup targetGroup)
+		{
+			Particle p = new Particle(-1, x, y, z);
+			Polyhedron* poly = new Polyhedron("cube", 10000000, p, 10000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
+
+			our_size_t end = particles.size();
+			for (our_size_t index = 0; index < end; ++index) {
+				if (targetGroup.count(groups_[index])) {
 					poly->cutCell(particle);
 				}
 			}
@@ -199,22 +253,32 @@ namespace voro {
 		
 //private:
 		std::vector<Particle> particles_;
+		std::vector<int> groups_;
 		double xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_;
 	};
 
-	inline Polyhedron* computePolyhedron(Blob* diagram, our_size_t i) {
+	inline Polyhedron* computePolyhedron(Diagram* diagram, our_size_t i) {
 		return diagram->computePolyhedron(i);
 	}
 
-	inline Polyhedron* computePolyhedron(Blob* diagram, our_size_t i, int targetGroup) {
+	inline Polyhedron* computePolyhedron(Diagram* diagram, double x, double y, double z) {
+		return diagram->computePolyhedron(x, y, z);
+	}
+
+	inline Polyhedron* computePolyhedron(Diagram* diagram, our_size_t i, TargetGroup targetGroup) {
 		return diagram->computePolyhedron(i, targetGroup);
 	}
 
-	inline int getParticleIdFromIndex(Blob* diagram, our_size_t i) {
+	inline Polyhedron* computePolyhedron(Diagram* diagram, double x, double y, double z, TargetGroup targetGroup) {
+		return diagram->computePolyhedron(x, y, z, targetGroup);
+	}
+
+	inline int getParticleIdFromIndex(Diagram* diagram, our_size_t i) {
 		return diagram->particles_[i].id;
 	}
 
 }
 
+		
 
 #endif
