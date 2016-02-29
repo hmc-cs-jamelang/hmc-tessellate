@@ -95,7 +95,7 @@ typedef struct HalfEdge {
 	bool deleteFlag;
 	bool seen;
 
-	FaceVertex* face;
+	// FaceVertex* face;
 
 	// The neighbor particle whose cutting plane created the face
 	// associated with this HalfEdge
@@ -118,7 +118,7 @@ public:
 		// Probably should reset some stuff
 	}
 
-	inline voronoiCell& operator=(voronoiCell rhs);
+	// inline voronoiCell& operator=(voronoiCell& rhs) = default;
 
 	inline void initialize(Vector3 position, double xmin, double xmax, double ymin, double ymax,
 					double zmin, double zmax)
@@ -129,7 +129,7 @@ public:
 	inline voronoiCell(std::string shape, double length, Particle particle, double maxRadius,
 				double x_min, double x_max, double y_min, double y_max,
 				double z_min, double z_max);
-	inline ~voronoiCell();
+	// inline ~voronoiCell();
 
 	struct Particle particle;
 	struct Particle neighborParticle;
@@ -155,7 +155,7 @@ public:
 
 	StructPool<HalfEdge> edges;
 	StructPool<Vertex> vertices;
-	std::vector<FaceVertex*> faceVertices;
+	std::vector<FaceVertex> faceVertices;
 
 	inline std::size_t get_memory_usage();
 
@@ -235,7 +235,7 @@ private:
 	inline void getEdgeAndVertex(EdgeIndex testEdge, std::stack<EdgeIndex> &edgeStack,
 						  std::stack<VertexIndex> &vertexStack);
 
-	const double tolerance = 1e-11;
+	static constexpr double tolerance = 1e-11;
 };
 
 // Pulled from http://www.cacr.caltech.edu/~sean/projects/stlib/html/geom/classstlib_1_1geom_1_1CellArrayNeighbors.html#a94f9656a64eb93f12859b17306ba8dd0

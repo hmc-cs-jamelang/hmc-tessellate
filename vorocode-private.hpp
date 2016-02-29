@@ -136,7 +136,7 @@ voronoiCell::voronoiCell(std::string shape, double length, Particle seedParticle
                          double y_min, double y_max, double z_min, double z_max) {
     particle = seedParticle;
     maxRadius = maxRadius;
-    faceVertices = std::vector<FaceVertex*>();
+    faceVertices = std::vector<FaceVertex>();
 
     if (shape == "cube") {
         // Create half-edge arrays corresponding to the faces of the cube.
@@ -295,43 +295,43 @@ voronoiCell::voronoiCell(std::string shape, double length, Particle seedParticle
     }
 }
 
-voronoiCell& voronoiCell::operator=(voronoiCell rhs) {
-    edges = rhs.edges;
-    vertices = rhs.vertices;
-    particle = rhs.particle;
-    firstEdge = rhs.firstEdge;
-    faceVertices = rhs.faceVertices;
-    maxRadius = rhs.maxRadius;
+// voronoiCell& voronoiCell::operator=(voronoiCell rhs) {
+//     edges = rhs.edges;
+//     vertices = rhs.vertices;
+//     particle = rhs.particle;
+//     firstEdge = rhs.firstEdge;
+//     faceVertices = rhs.faceVertices;
+//     maxRadius = rhs.maxRadius;
 
-}
+// }
 
-voronoiCell::~voronoiCell() {
+// voronoiCell::~voronoiCell() {
 
-    resetEdgesAndVertices(firstEdge);
-    std::stack<EdgeIndex> edgeStack;
-    std::stack<VertexIndex> vertexStack;
+//     // resetEdgesAndVertices(firstEdge);
+//     // std::stack<EdgeIndex> edgeStack;
+//     // std::stack<VertexIndex> vertexStack;
 
-    getEdgeAndVertex(firstEdge, edgeStack, vertexStack);
-    resetEdgesAndVertices(firstEdge);
+//     // getEdgeAndVertex(firstEdge, edgeStack, vertexStack);
+//     // resetEdgesAndVertices(firstEdge);
 
 
-    while (!edgeStack.empty()) {
-        edges.destroy(edgeStack.top());
+//     // while (!edgeStack.empty()) {
+//     //     edges.destroy(edgeStack.top());
 
-        edgeStack.pop();
-    }
-    while (!vertexStack.empty()) {
-        vertices.destroy(vertexStack.top());
+//     //     edgeStack.pop();
+//     // }
+//     // while (!vertexStack.empty()) {
+//     //     vertices.destroy(vertexStack.top());
 
-        vertexStack.pop();
-    }
+//     //     vertexStack.pop();
+//     // }
 
-    while (!faceVertices.empty()) {
-        delete faceVertices.back();
+//     while (!faceVertices.empty()) {
+//         delete faceVertices.back();
 
-        faceVertices.pop_back();
-    }
-}
+//         faceVertices.pop_back();
+//     }
+// }
 
 void voronoiCell::getEdgeAndVertex(EdgeIndex testEdge, std::stack<EdgeIndex> &edgeStack,
                                    std::stack<VertexIndex> &vertexStack) {
@@ -760,9 +760,9 @@ double voronoiCell::volume() {
     // triangles, which can then be used to decompose the cell into tetrahedra.
     for (std::size_t i = 0; i < faceVertices.size(); ++i) {
 
-        EdgeIndex firstBaseEdge = faceVertices[i]->edges[0];
-        EdgeIndex secondBaseEdge = faceVertices[i]->edges[1];
-        EdgeIndex thirdBaseEdge = faceVertices[i]->edges[2];
+        EdgeIndex firstBaseEdge = faceVertices[i].edges[0];
+        EdgeIndex secondBaseEdge = faceVertices[i].edges[1];
+        EdgeIndex thirdBaseEdge = faceVertices[i].edges[2];
 
         while (thirdBaseEdge != firstBaseEdge) {
 
@@ -805,8 +805,8 @@ void voronoiCell::neighbors(std::vector<int> &v) {
         // We defaulted the creator to particle during initialization,
         // so this is a check for if the "neigbor" is the boundary
         // Should default to -1
-        if (edges[faceVertices[i]->edges[0]].creator->id != particle.id) {
-            v.push_back(edges[faceVertices[i]->edges[0]].creator->id);
+        if (edges[faceVertices[i].edges[0]].creator->id != particle.id) {
+            v.push_back(edges[faceVertices[i].edges[0]].creator->id);
         }
     }
 
@@ -826,9 +826,9 @@ void voronoiCell::face_areas(std::vector<double> &v) {
     for (std::size_t i = 0; i < faceVertices.size(); ++i) {
         area = 0.0;
 
-        EdgeIndex firstBaseEdge = faceVertices[i]->edges[0];
-        EdgeIndex secondBaseEdge = faceVertices[i]->edges[1];
-        EdgeIndex thirdBaseEdge = faceVertices[i]->edges[2];
+        EdgeIndex firstBaseEdge = faceVertices[i].edges[0];
+        EdgeIndex secondBaseEdge = faceVertices[i].edges[1];
+        EdgeIndex thirdBaseEdge = faceVertices[i].edges[2];
 
         while (thirdBaseEdge != firstBaseEdge) {
 
@@ -875,9 +875,9 @@ void voronoiCell::getFaceVertex(EdgeIndex testEdge) {
 
     if (!edges[testEdge].seen) {
 
-        FaceVertex* newFaceVertex = new FaceVertex;
+        FaceVertex newFaceVertex;
 
-        newFaceVertex->edges.push_back(testEdge);
+        newFaceVertex.edges.push_back(testEdge);
 
 
         EdgeIndex otherEdge = edges[testEdge].next;
@@ -886,14 +886,10 @@ void voronoiCell::getFaceVertex(EdgeIndex testEdge) {
 
         while (otherEdge != testEdge) {
 
-            newFaceVertex->edges.push_back(otherEdge);
+            newFaceVertex.edges.push_back(otherEdge);
             edges[otherEdge].seen = true;
 
             otherEdge = edges[otherEdge].next;
-
-        }
-
-        for (size_t i = 0; i < newFaceVertex->edges.size(); ++i){
 
         }
 
@@ -1062,8 +1058,7 @@ void voronoiCell::drawGnuplot(double dispX, double dispY, double dispZ, FILE* fp
 
 std::size_t voronoiCell::get_memory_usage(){
     std::size_t memory = 0;
-    memory += sizeof(FaceVertex) * faceVertices.size();
-    memory += sizeof(FaceVertex*) * faceVertices.capacity();
+    memory += sizeof(FaceVertex) * faceVertices.capacity();
     memory += sizeof(voronoiCell);
     memory += edges.get_memory_usage() + vertices.get_memory_usage();
     std::cout << "Edges: " << edges.get_memory_usage() << std::endl;
@@ -1142,8 +1137,12 @@ double cellContainer::sum_cell_volumes() {
         for(unsigned int i = 0; i < particles.size(); ++i) {
 
             c = makeCell(particles[i]);
-
-            sum += c.volume();
+            double vol = c.volume();
+            sum += vol;//c.volume();
+            // std::cout << "Cell volume: " << vol << std::endl;
+            // if(c.faceVertices.size() > 0) {
+            //     std::cout << "FACEVERTEX SIZE GREATER THAN 0: " << c.faceVertices.size() << std::endl;
+            // }
         }
     // }
     // else {
