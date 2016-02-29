@@ -70,6 +70,9 @@ int main()
 	std::cout << "Invalid: " << INVALID_EDGE << std::endl;
 	std::cout << "Invalid as double: " << *((double*) &INVALID_EDGE) << std::endl;
 
+	EdgeIndex uninit;
+	std::cout << "Default constructed: " << uninit << std::endl;
+
 	std::cout << v2 << ": " << vertices[v2] << std::endl;
 	std::cout << vertices[edges[e1].target] << std::endl;
 

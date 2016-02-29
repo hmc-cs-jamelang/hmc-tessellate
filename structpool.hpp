@@ -101,6 +101,7 @@ public:
 
             data.object.~T();
             active = false;
+            marked = false;
         }
 
         // Get object held by active chunk
@@ -224,6 +225,20 @@ public:
         first_available_ = i;
     }
 
+    SizeType destroyUnmarkedAndResetFlags()
+    {
+        SizeType totalDestroyed = 0;
+        for (auto it = begin(); it != end(); ++it) {
+            if (!it.marked()) {
+                destroy(it.getIndex());
+                totalDestroyed += 1;
+            } else {
+                it.setMarked(false);
+            }
+        }
+        return totalDestroyed;
+    }
+
 
     // ==============
     // |  Iterator  |
@@ -264,15 +279,16 @@ public:
             : pool(pool), index(index)
         { /* Done */ }
 
-    public:
-        Index getIndex() const {return index;}
 
         bool active() const {return pool->active(index);}
         bool inactive() const {return pool->inactive(index);}
+        void setActive(bool active) {pool->setActive(index, active);}
+
+    public:
+        Index getIndex() const {return index;}
+
         bool marked() const {return pool->marked(index);}
         bool unmarked() const {return pool->unmarked(index);}
-
-        void setActive(bool active) {pool->setActive(index, active);}
         void setMarked(bool marked) {pool->setMarked(index, marked);}
 
         maybe_const_iterator(const maybe_const_iterator<false>& other)
