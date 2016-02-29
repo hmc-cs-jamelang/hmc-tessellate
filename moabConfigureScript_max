@@ -4,10 +4,10 @@ MOAB_INSTALL_PATH=/clinic/2015/sandia15/max/moabInstall
 # change this path to be the path to your local, non-bare clone of the moab.git repository at /clinic/2015/sandia15/source/moab.git
 # if you cloned the moab.git repo to ~/moab, this would be /home/<username>/moab
 MOAB_SRC_PATH=/clinic/2015/sandia15/max/moab
-MPI_PATH=/clinic/2015/sandia15/mpich-3.1.4 #pi mpi!
+MPI_PATH=/clinic/2015/sandia15/openmpi-1.10.2-clang++
 PYTHON_PATH=/clinic/2015/sandia15/Python-2.7.10
 CGAL_PATH=/clinic/2015/sandia15/CGAL-4.6.3
-TRILINOS_PATH=/clinic/2015/sandia15/trilinos-11.14.3
+TRILINOS_PATH=/clinic/2015/sandia15/trilinos-12.0.1-clang++
 STLIB_PATH=/clinic/2015/sandia15/source/stlib
 HMC_TESSELLATE_PATH=/clinic/2015/sandia15/max/hmc-tessellate # please note that "tessellate" contains 2 "l"s.
 EXTRA_ARGS=$@
