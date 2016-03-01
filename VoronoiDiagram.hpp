@@ -227,9 +227,13 @@ namespace voro {
 		Polyhedron* computePolyhedron(double x, double y, double z)
 		{
 			Particle p = Particle(DEFAULT_INDEX, x, y, z);
-			Polyhedron* poly = new Polyhedron("cube", 10000000, p, 10000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
+			Polyhedron* poly = new Polyhedron("cube", 100000000, p, 100000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
 
-			for (auto particle : particles_) {
+			// our_size_t end = particles_.size();
+			// for (our_size_t index = 0; index < end; ++index) {
+			// 	poly->cutCell(particles_[index]);
+			// }
+			for (auto& particle : particles_) {
 				poly->cutCell(particle);
 			}
 
