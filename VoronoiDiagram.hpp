@@ -123,7 +123,7 @@ namespace voro {
 
 	class Diagram {
 	public:
-		Diagram() = delete;
+		Diagram() = default;
 		
 		Diagram(double xmin, double xMAX, double ymin, double yMAX, double zmin, double zMAX)
 			: xmin_(xmin), xMAX_(xMAX), ymin_(ymin), yMAX_(yMAX), zmin_(zmin), zMAX_(zMAX)
@@ -193,6 +193,16 @@ namespace voro {
 		Cell getCell(our_size_t i, TargetGroup targetGroup)
 		{
 			return Cell(this, i, targetGroup);
+		}
+
+		Cell getCell(double x, double y, double z)
+		{
+			return Cell(this, x, y, z);
+		}
+
+		Cell getCell(double x, double y, double z, TargetGroup targetGroup)
+		{
+			return Cell(this, x, y, z, targetGroup);
 		}
 
 		our_size_t numCells()
