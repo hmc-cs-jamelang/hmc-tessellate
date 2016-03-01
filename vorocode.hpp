@@ -54,13 +54,6 @@ typedef struct Particle {
 	inline Particle(int Id, double x, double y, double z);
 	inline Particle(int Id, Vector3 pos);
 	inline Particle(void);
-
-	// index should not be an int, nor should the default group be 0
-	inline Particle(double x, double y, double z, int index, int id, int group = 0)
-	{
-		// yeah no
-	}
-
 } Particle;
 
 typedef struct HalfEdge {
