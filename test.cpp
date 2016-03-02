@@ -30,8 +30,8 @@ const int NUM_PARTICLES = 10;
 	d = Diagram(0, SCALE, 0, SCALE, 0, SCALE);	\
 	g1 = 0;										\
 	g2 = 1;										\
-	add_n_particles_group(d, n/2, g1);			\
-	add_n_particles_group(d, n-n/2, g2);		\
+	add_n_particles_group(d, 0, n/2, g1);		\
+	add_n_particles_group(d, n/2, n, g2);		\
 	t = d.targetGroups(g1);
 
 // Macro for printing the elements of a vector, which we do frequently
@@ -105,11 +105,11 @@ void add_n_particles(Diagram& d, int n)
 /*
  * add_n_particles_group
  *
- * Helper function for tests. Inserts n particles in diagram d assigned to group g.
+ * Helper function for tests. Inserts particles b through e-1 in diagram d assigned to group g.
  */
-void add_n_particles_group(Diagram& d, int n, int g)
+void add_n_particles_group(Diagram& d, int b, int e, int g)
 {
-	for (int id = 0; id < n; ++id) {
+	for (int id = b; id < e; ++id) {
 		d.addParticle(random_double(), random_double(), random_double(), id, g);
 	}
 }
