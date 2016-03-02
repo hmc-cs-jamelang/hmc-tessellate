@@ -18,10 +18,30 @@ const int SCALE = 10;
 // The number of particles to test in each diagram
 const int NUM_PARTICLES = 10;
 
+// Standard function beginning for non-group tests
 #define NOGROUP_HEADER(n,d)						\
 	n = NUM_PARTICLES;							\
 	d = Diagram(0, SCALE, 0, SCALE, 0, SCALE);	\
 	add_n_particles(d, n);
+
+// Standard function beginning for group tests
+#define GROUP_HEADER(n,d,g1,g2,t)				\
+	n = NUM_PARTICLES;							\
+	d = Diagram(0, SCALE, 0, SCALE, 0, SCALE);	\
+	g1 = 0;										\
+	g2 = 1;										\
+	add_n_particles_group(d, n/2, g1);			\
+	add_n_particles_group(d, n-n/2, g2);		\
+	t = d.targetGroups(g1);
+
+#define TEST_PASS_OR_FAIL(name,fn)						\
+	if (fn) {											\
+		cout << name << " test complete" << endl;		\
+	}													\
+	else {												\
+		cout << name << " test failed" << endl;			\
+		return false;									\
+	}
 
 /*
  * random_double
@@ -38,19 +58,29 @@ double random_double()
  *
  * Helper function for tests. Inserts n particles in diagram d.
  */
-bool add_n_particles(Diagram& d, int n)
+void add_n_particles(Diagram& d, int n)
 {
 	for (int id = 0; id < n; ++id) {
 		d.addParticle(random_double(), random_double(), random_double(), id);
 	}
+}
 
-	return true;
+/*
+ * add_n_particles_group
+ *
+ * Helper function for tests. Inserts n particles in diagram d assigned to group g.
+ */
+void add_n_particles_group(Diagram& d, int n, int g)
+{
+	for (int id = 0; id < n; ++id) {
+		d.addParticle(random_double(), random_double(), random_double(), id, g);
+	}
 }
 
 /*
  * neighbor_test_nogroups
  *
- * Check that each cell can find its neighbors without using groups.
+ * Check that each cell can find its neighbors when there are no groups.
  */
 bool neighbor_test_nogroups()
 {
@@ -206,26 +236,96 @@ bool fake_cell_test_nogroups()
 }
 
 /*
+ * neighbor_test_targetgroups
+ *
+ * Check that each cell can find its neighbors when using target groups.
+ */
+bool neighbor_test_targetgroups()
+{
+	int red, blue, n;
+	Diagram d;
+	TargetGroup t;
+	GROUP_HEADER(n,d,red,blue,t);
+
+	vector<int> neighborList;
+	Cell c;
+	for (int i = 0; i < n; ++i) {
+		neighborList.clear();
+
+		c = d.getCell(i, t);
+		c.computeNeighbors(neighborList);
+
+		cout << "Neighbors of particle " << i << " in red group: ";
+		for (auto neighbor : neighborList) {
+			cout << neighbor << " ";
+			if (neighbor >= n/2) {
+				cout << "INVALID NEIGHBOR FOUND" << endl;
+				return false;
+			}
+		}
+		cout << endl;
+	}
+
+	cout << "Comparing neighbors with and without groups: ";
+	t = d.targetGroups(red, blue);
+	vector<int> neighborListNoGroups;
+	Cell cn;
+	for (int i = 0; i < n; ++i) {
+		neighborList.clear();
+		neighborListNoGroups.clear();
+
+		c = d.getCell(i, t);
+		cn = d.getCell(i);
+		c.computeNeighbors(neighborList);
+		cn.computeNeighbors(neighborListNoGroups);
+
+		if (neighborList != neighborListNoGroups) {
+			cout << "FAILED" << endl;
+			return false;
+		}
+	}
+	cout << "COMPLETE" << endl;
+
+	return true;
+}
+
+/*
+ * run_nogroup_tests
+ *
+ * Run the tests that do not use groups.
+ */
+bool run_nogroup_tests()
+{
+	TEST_PASS_OR_FAIL("Neighbor",neighbor_test_nogroups());
+	TEST_PASS_OR_FAIL("Volume",volume_test_nogroups());
+	TEST_PASS_OR_FAIL("Vertices",vertices_test_nogroups());
+	TEST_PASS_OR_FAIL("Face areas",face_areas_test_nogroups());
+	TEST_PASS_OR_FAIL("Fake cell",fake_cell_test_nogroups());
+
+	return true;
+}
+
+/*
+ * run_targetgroup_tests
+ *
+ * Run the tests that use target groups.
+ */
+bool run_targetgroup_tests()
+{
+	TEST_PASS_OR_FAIL("Neighbor",neighbor_test_targetgroups());
+
+	return true;
+}
+
+/*
  * main
  *
  * Runs the tests.
  */
 int main()
 {
-	neighbor_test_nogroups();
-	cout << "Neighbor test complete" << endl;
-
-	volume_test_nogroups();
-	cout << "Volume test complete" << endl;
-
-	vertices_test_nogroups();
-	cout << "Vertices test complete" << endl;
-
-	face_areas_test_nogroups();
-	cout << "Face areas test complete" << endl;
-
-	fake_cell_test_nogroups();
-	cout << "Fake cell test complete" << endl;
+	TEST_PASS_OR_FAIL("No group",run_nogroup_tests());
+	TEST_PASS_OR_FAIL("Target group",run_targetgroup_tests());
 	
 	return 0;
 }
