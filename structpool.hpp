@@ -38,9 +38,10 @@ public:
             return lhs.value != rhs.value;
         }
 
-        friend std::ostream& operator<<(std::ostream& stream, const Index index)
+        friend std::ostream& operator<<(std::ostream& stream, const Index& index)
         {
-            return (stream << index.value);
+            stream << index.value;
+            return stream;
         }
     };
 
@@ -308,27 +309,27 @@ public:
     public:
 
         // We can only produce a const version if it's a const iterator
-        typename std::enable_if<is_const_iterator, ValueReferenceType>
-        operator*() const {return pool[index];}
+        ValueReferenceType
+        operator*() const {return pool->operator[](index);}
 
-        typename std::enable_if<!is_const_iterator, ValuePointerType>
-        operator*() {return pool[index];}
+        ValueReferenceType
+        operator*() {return pool->operator[](index);}
 
 
 
         // We can only produce const versions if it's a const iterator
-        typename std::enable_if<is_const_iterator, ValuePointerType>
-        operator->() const {return &pool[index];}
+        ValuePointerType
+        operator->() const {return &pool->operator[](index);}
 
-        typename std::enable_if<!is_const_iterator, ValuePointerType>
-        operator->() {return &pool[index];}
+        ValuePointerType
+        operator->() {return &pool->operator[](index);}
 
 
 
         // Prefix decrement
         maybe_const_iterator& operator--(){
             while (index.value-- > 0) {
-                if (pool.active(index)) {
+                if (pool->active(index)) {
                     return *this;
                 }
             }

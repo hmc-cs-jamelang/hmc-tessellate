@@ -151,6 +151,7 @@ runTest(const unsigned int numberOfTrials,
         //const Function function,
         vector<Particle> & particles,
         // const BoundingBox & pointsBoundingBox,
+        double searchDist,
         double boxLength,
         vector<unsigned int> * const result,
         vector<unsigned int> * const resultDelimiters,
@@ -207,10 +208,10 @@ runTest(const unsigned int numberOfTrials,
     }
 
     if (voroVersion == "voro--") {
-      cellContainer con(std::vector<Particle>(), (scale != 0) ? (boxLength/pow(particles.size(),1.0/3))*scale : boxLength, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2);
+      cellContainer con(std::vector<Particle>(), searchDist/*(scale != 0) ? (boxLength/pow(particles.size(),1.0/3))*scale : boxLength*/, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2);
 
       for(unsigned int i=0;i<particles.size();i++) {
-          con.put(particles[i].id, particles[i].position.X, particles[i].position.Y, particles[i].position.Z);
+          con.put(particles[i].id, particles[i].position.X, particles[i].position.Y, particles[i].position.Z, particles[i].index);
       }
 
 
@@ -219,7 +220,7 @@ runTest(const unsigned int numberOfTrials,
       
       voronoiCell c;
       for(unsigned int i = 0; i < con.particles.size(); ++i) {
-        c = con.makeCell(con.particles[i]);
+        c = con.makeCell(i);
         double vol = c.volume();
         if (firstRunDone) {
           if (vols.find(vol*prec) == vols.end()) {
@@ -280,7 +281,7 @@ int main(int argc, char* argv[]) {
   // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
   const array<double, 2> numberOfPointsRange = {{1e3, 1e8}};
-  const unsigned int numberOfDataPoints      = 9;
+  const unsigned int numberOfDataPoints      = 15;
   const unsigned int numberOfTrialsPerSize   = 3;
   const double neighborSearchDistance        = 1.0;
 
@@ -384,8 +385,16 @@ int main(int argc, char* argv[]) {
         x=-neighborSearchDistance/2+Utilities::rnd()*(neighborSearchDistance);
         y=-neighborSearchDistance/2+Utilities::rnd()*(neighborSearchDistance);
         z=-neighborSearchDistance/2+Utilities::rnd()*(neighborSearchDistance);
-        pointsUniform.push_back(Particle(i,x,y,z));
+        pointsUniform.push_back(Particle(i,x,y,z,i));
     }
+
+
+    cellContainer con(std::vector<Particle>(), 2*boxLength, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2);
+
+    for(unsigned int i=0;i<pointsUniform.size();i++) {
+      con.put(pointsUniform[i].id, pointsUniform[i].position.X, pointsUniform[i].position.Y, pointsUniform[i].position.Z, pointsUniform[i].index);
+    }
+    double searchDist = con.findMaxNeighDist()*1.1;
 
     // std::cout << "Max distance: " << findMaxDist(pointsUniform) << std::endl;
 
@@ -422,6 +431,7 @@ int main(int argc, char* argv[]) {
 
     std::multiset<long> voropp = runTest(numberOfTrialsPerSize,
             pointsUniform,
+            searchDist,
             neighborSearchDistance,
             &result,
             &resultDelimiters,
@@ -448,6 +458,7 @@ int main(int argc, char* argv[]) {
 
     std::multiset<long> voromm = runTest(numberOfTrialsPerSize,
             pointsUniform,
+            searchDist,
             neighborSearchDistance,
             &result,
             &resultDelimiters,

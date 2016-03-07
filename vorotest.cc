@@ -81,7 +81,7 @@ int main(int argc, char* argv[]){
     std::cout << "Finding voro-- neighbors" << std::endl;
     voronoiCell c;
     for (int i = 0; i<particle; ++i) {
-    	c = vmcon.makeCell(vmcon.particles[i]);
+    	c = vmcon.makeCell(i);
         c.neighbors(neighborsvm);
         volumesvm.push_back(c.volume());
     	vmneighArray[i] = neighborsvm;

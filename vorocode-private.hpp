@@ -37,6 +37,12 @@ bool Vector3::operator != (const Vector3& A) const
 bool Vector3::operator == (const Vector3& A) const
 { return (X == A.X) && (Y == A.Y) && (Z == A.Z); }
 
+Vector3 Vector3::normalized() const
+{ 
+    double mag = sqrt(pow(X, 2) + pow(Y, 2) + pow(Z, 2));
+    return Vector3(X/mag, Y/mag, Z/mag);
+}
+
 double Vector3::Dot(const Vector3& A) const
 { return A.X*X + A.Y*Y + A.Z*Z; }
 
@@ -64,14 +70,16 @@ Vertex::Vertex(Vector3 pos) {
     seen = false;
 }
 
-Particle::Particle(int Id, double x, double y, double z) {
+Particle::Particle(int Id, double x, double y, double z, size_t Index) {
     position = Vector3(x, y, z);
     id = Id;
+    index = Index;
 }
 
-Particle::Particle(int Id, Vector3 pos) {
+Particle::Particle(int Id, Vector3 pos, size_t Index) {
     position = pos;
     id = Id;
+    index = Index;
 }
 
 Particle::Particle( void ) {
@@ -92,7 +100,7 @@ HalfEdge::HalfEdge(VertexIndex vertex) {
     seen = false;
 }
 
-HalfEdge::HalfEdge(VertexIndex vertex, Particle* neighbor) {
+HalfEdge::HalfEdge(VertexIndex vertex, size_t neighbor) {
     target = vertex;
     deleteFlag = false;
     seen = false;
@@ -100,7 +108,7 @@ HalfEdge::HalfEdge(VertexIndex vertex, Particle* neighbor) {
 }
 
 // This constructor builds a HalfEdge with a specified target and next.
-HalfEdge::HalfEdge(VertexIndex vertex, EdgeIndex edge2, Particle* neighbor) {
+HalfEdge::HalfEdge(VertexIndex vertex, EdgeIndex edge2, size_t neighbor) {
     target = vertex;
     next = edge2;
     deleteFlag = false;
@@ -108,7 +116,7 @@ HalfEdge::HalfEdge(VertexIndex vertex, EdgeIndex edge2, Particle* neighbor) {
     creator = neighbor;
 }
 
-HalfEdge::HalfEdge(VertexIndex vertex, EdgeIndex edge1, EdgeIndex edge2, Particle* neighbor) {
+HalfEdge::HalfEdge(VertexIndex vertex, EdgeIndex edge1, EdgeIndex edge2, size_t neighbor) {
     target = vertex;
     flip = edge1;
     next = edge2;
@@ -131,7 +139,7 @@ HalfEdge::HalfEdge(VertexIndex vertex, EdgeIndex edge1, EdgeIndex edge2, Particl
 
 // HalfEdge* firstEdge = getFirstEdge();
 
-voronoiCell::voronoiCell(std::string shape, double length, Particle seedParticle,
+voronoiCell::voronoiCell(std::string shape, size_t particleIndex, Particle seedParticle,
                          double maxRadius, double x_min, double x_max,
                          double y_min, double y_max, double z_min, double z_max) {
     particle = seedParticle;
@@ -197,63 +205,63 @@ voronoiCell::voronoiCell(std::string shape, double length, Particle seedParticle
         // Note also our choice of default initialization for the particle
         // associated with each HalfEdge; since no planes have cut this cell
         // yet, we associate it with the particle at the center of this cell.
-        plusZ[0] = edges.create(HalfEdge(oct1, &particle));             // O2 to O1
+        plusZ[0] = edges.create(HalfEdge(oct1, -1));             // O2 to O1
 
-        plusZ[1] = edges.create(HalfEdge(oct2, plusZ[0], &particle));   // O3 to O2
+        plusZ[1] = edges.create(HalfEdge(oct2, plusZ[0], -1));   // O3 to O2
 
-        plusZ[2] = edges.create(HalfEdge(oct3, plusZ[1], &particle));   // O4 to O3
+        plusZ[2] = edges.create(HalfEdge(oct3, plusZ[1], -1));   // O4 to O3
 
-        plusZ[3] = edges.create(HalfEdge(oct4, plusZ[2], &particle));   // O1 to O4
+        plusZ[3] = edges.create(HalfEdge(oct4, plusZ[2], -1));   // O1 to O4
 
         edges[plusZ[0]].next = plusZ[3];
 
-        minusZ[0] = edges.create(HalfEdge(oct5, &particle));            // O8 to O5
+        minusZ[0] = edges.create(HalfEdge(oct5, -1));            // O8 to O5
 
-        minusZ[1] = edges.create(HalfEdge(oct8, minusZ[0], &particle)); // O7 to O8
+        minusZ[1] = edges.create(HalfEdge(oct8, minusZ[0], -1)); // O7 to O8
 
-        minusZ[2] = edges.create(HalfEdge(oct7, minusZ[1], &particle)); // O6 to O7
+        minusZ[2] = edges.create(HalfEdge(oct7, minusZ[1], -1)); // O6 to O7
 
-        minusZ[3] = edges.create(HalfEdge(oct6, minusZ[2], &particle)); // O5 to O6
+        minusZ[3] = edges.create(HalfEdge(oct6, minusZ[2], -1)); // O5 to O6
 
         edges[minusZ[0]].next = minusZ[3];
 
-        plusY[0] = edges.create(HalfEdge(oct1, &particle));             // O5 to O1
+        plusY[0] = edges.create(HalfEdge(oct1, -1));             // O5 to O1
 
-        plusY[1] = edges.create(HalfEdge(oct5, plusY[0], &particle));   // O6 to O5
+        plusY[1] = edges.create(HalfEdge(oct5, plusY[0], -1));   // O6 to O5
 
-        plusY[2] = edges.create(HalfEdge(oct6, plusY[1], &particle));   // O2 to O6
+        plusY[2] = edges.create(HalfEdge(oct6, plusY[1], -1));   // O2 to O6
 
-        plusY[3] = edges.create(HalfEdge(oct2, plusY[2], &particle));   // O1 to O2
+        plusY[3] = edges.create(HalfEdge(oct2, plusY[2], -1));   // O1 to O2
 
         edges[plusY[0]].next = plusY[3];
 
-        minusY[0] = edges.create(HalfEdge(oct3, &particle));            // O7 to O3
+        minusY[0] = edges.create(HalfEdge(oct3, -1));            // O7 to O3
 
-        minusY[1] = edges.create(HalfEdge(oct7, minusY[0], &particle)); // O8 to O7
+        minusY[1] = edges.create(HalfEdge(oct7, minusY[0], -1)); // O8 to O7
 
-        minusY[2] = edges.create(HalfEdge(oct8, minusY[1], &particle)); // O4 to O8
+        minusY[2] = edges.create(HalfEdge(oct8, minusY[1], -1)); // O4 to O8
 
-        minusY[3] = edges.create(HalfEdge(oct4, minusY[2], &particle)); // O3 to O4
+        minusY[3] = edges.create(HalfEdge(oct4, minusY[2], -1)); // O3 to O4
 
         edges[minusY[0]].next = minusY[3];
 
-        plusX[0] = edges.create(HalfEdge(oct1, &particle));             // O4 to O1
+        plusX[0] = edges.create(HalfEdge(oct1, -1));             // O4 to O1
 
-        plusX[1] = edges.create(HalfEdge(oct4, plusX[0], &particle));   // O8 to O4
+        plusX[1] = edges.create(HalfEdge(oct4, plusX[0], -1));   // O8 to O4
 
-        plusX[2] = edges.create(HalfEdge(oct8, plusX[1], &particle));   // O5 to O8
+        plusX[2] = edges.create(HalfEdge(oct8, plusX[1], -1));   // O5 to O8
 
-        plusX[3] = edges.create(HalfEdge(oct5, plusX[2], &particle));   // O1 to O5
+        plusX[3] = edges.create(HalfEdge(oct5, plusX[2], -1));   // O1 to O5
 
         edges[plusX[0]].next = plusX[3];
 
-        minusX[0] = edges.create(HalfEdge(oct2, &particle));            // O6 to O2
+        minusX[0] = edges.create(HalfEdge(oct2, -1));            // O6 to O2
 
-        minusX[1] = edges.create(HalfEdge(oct6, minusX[0], &particle)); // O7 to O6
+        minusX[1] = edges.create(HalfEdge(oct6, minusX[0], -1)); // O7 to O6
 
-        minusX[2] = edges.create(HalfEdge(oct7, minusX[1], &particle)); // O3 to O7
+        minusX[2] = edges.create(HalfEdge(oct7, minusX[1], -1)); // O3 to O7
 
-        minusX[3] = edges.create(HalfEdge(oct3, minusX[2], &particle)); // O2 to O3
+        minusX[3] = edges.create(HalfEdge(oct3, minusX[2], -1)); // O2 to O3
 
         edges[minusX[0]].next = minusX[3];
 
@@ -409,8 +417,13 @@ EdgeIndex voronoiCell::makeOneEdgeFace(VertexIndex vertex) {
 }
 
 double voronoiCell::planeDist(VertexIndex vertex) {
-    return std::abs((vertices[vertex].position.distanceTo(particle.position))
-                     - (vertices[vertex].position.distanceTo(neighborParticle.position)));
+    double vdist = (vertices[vertex].position - particle.position).Dot(
+                (neighborParticle.position - particle.position).normalized());
+    return std::abs(neighborParticle.position.distanceTo(particle.position)/2 - vdist);
+    // return std::abs((vertices[vertex].position.distanceTo(particle.position))
+    //                  - (vertices[vertex].position.distanceTo(neighborParticle.position)));
+
+
 }
 
 // This is probably fairly close to being correct, but has a few nagging
@@ -423,7 +436,21 @@ bool voronoiCell::findSomeIncidentEdge(EdgeIndex &returnEdge) {
     side testSide = planeSide(testVertex);
     side flipSide = planeSide(edges[edges[testEdge].flip].target);
 
-
+    // if(particle.index == 335 && neighborParticle.index == 8) {
+    //     std::cout << "Particle 335: " << particle.position.X << ", " << particle.position.Y << ", " << particle.position.Z << std::endl;
+    //     std::cout << "Particle 8: " << neighborParticle.position.X << ", " << neighborParticle.position.Y << ", " << neighborParticle.position.Z << std::endl;
+    //     for(auto iter = edges.begin(); iter != edges.end(); ++iter) {
+    //         // std::cout << planeSide(iter.getIndex()) << " " << planeDist(iter.getIndex()) << std::endl;
+    //         std::cout << static_cast<unsigned short>((*iter).target) 
+    //                 << ": " << vertices[(*iter).target].position.X << ", "
+    //                 << vertices[(*iter).target].position.Y << ", "
+    //                 << vertices[(*iter).target].position.Z << std::endl;
+    //         std::cout << iter.getIndex() << " with flip " << (*iter).flip << std::endl;
+    //     }
+    //     for(auto iter = vertices.begin(); iter != vertices.end(); ++iter) {
+    //         std::cout << iter.getIndex() << ": " << planeSide(iter.getIndex()) << " " << planeDist(iter.getIndex()) << std::endl;
+    //     }
+    // }
 
     double maxDist = planeDist(testVertex);
 
@@ -434,13 +461,16 @@ bool voronoiCell::findSomeIncidentEdge(EdgeIndex &returnEdge) {
 
         // If the flip's target is closer, iterate on the flip
         if (planeDist(edges[edges[testEdge].flip].target) < maxDist) {
+
             testEdge = edges[testEdge].flip;
             testVertex = edges[testEdge].target;
 
             testSide = planeSide(testVertex);
             flipSide = planeSide(edges[edges[testEdge].flip].target);
             maxDist = planeDist(testVertex);
-
+            // if(particle.index == 335 && neighborParticle.index == 8) {
+            //     std::cout << "Found closer flip: " << testVertex << " " << testSide << " " << flipSide << " " << maxDist << std::endl;
+            // }
         } else {
             EdgeIndex nextEdge = edges[testEdge].next;
 
@@ -455,6 +485,10 @@ bool voronoiCell::findSomeIncidentEdge(EdgeIndex &returnEdge) {
                 flipSide = planeSide(edges[edges[testEdge].flip].target);
                 maxDist = planeDist(testVertex);
 
+                // if(particle.index == 335 && neighborParticle.index == 8) {
+                //     std::cout << "Found closer next: " << testVertex << " " << testSide << " " << flipSide << " " << maxDist << std::endl;
+                // }
+
             // and, if not, repeatedly examine the edges leaving the
             // testVertex until we find one that is closer
             } else {
@@ -464,6 +498,9 @@ bool voronoiCell::findSomeIncidentEdge(EdgeIndex &returnEdge) {
                 while (planeDist(edges[nextEdge].target) > maxDist &&
                        planeSide(edges[nextEdge].target) == planeSide(edges[edges[nextEdge].flip].target)) {
 
+                    // if(particle.index == 335 && neighborParticle.index == 8) {
+                    //    std::cout << "Looking for closer: " << edges[nextEdge].target << " " << planeSide(edges[nextEdge].target) << " " << planeSide(edges[edges[nextEdge].flip].target) << " " << planeDist(edges[nextEdge].target) << std::endl;
+                    // }
                     nextEdge = edges[edges[nextEdge].flip].next;
 
                     if (vertices[firstVertex].position == vertices[edges[nextEdge].target].position){
@@ -478,6 +515,9 @@ bool voronoiCell::findSomeIncidentEdge(EdgeIndex &returnEdge) {
 
                 flipSide = planeSide(edges[edges[testEdge].flip].target);
                 maxDist = planeDist(testVertex);
+                // if(particle.index == 335 && neighborParticle.index == 8) {
+                //     std::cout << "Found closer or incident: " << testVertex << " " << testSide << " " << flipSide << " " << maxDist << std::endl;
+                // }
             }
         }
     }
@@ -569,7 +609,7 @@ EdgeIndex voronoiCell::maintainFirstEdge(EdgeIndex edge) {
     // }
 }
 
-void voronoiCell::cutCell(const Particle& neighbor) {
+void voronoiCell::cutCell(const Particle& neighbor, size_t index) {
     neighborParticle = neighbor;
 
     // We need to maintain firstEdge so that we can index into the Voronoi cell.
@@ -587,7 +627,12 @@ void voronoiCell::cutCell(const Particle& neighbor) {
     bool cuttable = findSomeIncidentEdge(startingIncidentEdge);
 
     if (!cuttable) {
-
+        // if(particle.index == 335 && index == 8){
+        //     std::cout << "Not cutting" << std::endl;
+        // }
+        // if(particle.index == 8 && index == 335){
+        //     std::cout << "Not cutting flipped" << std::endl;
+        // }
         return;
     }
 
@@ -669,13 +714,13 @@ void voronoiCell::cutCell(const Particle& neighbor) {
     // we are cutting by.
     for (std::size_t i = 1; i < outsideEdges.size(); ++i) {
         edges[outsideEdges[i]].next = outsideEdges[i-1];
-        edges[outsideEdges[i]].creator = &neighbor;
+        edges[outsideEdges[i]].creator = index;
 
 
 
     }
     edges[outsideEdges.front()].next = outsideEdges.back();
-    edges[outsideEdges.front()].creator = &neighbor;
+    edges[outsideEdges.front()].creator = index;
 
     cleanUp(startingIncidentEdge);
 }
@@ -805,8 +850,8 @@ void voronoiCell::neighbors(std::vector<int> &v) {
         // We defaulted the creator to particle during initialization,
         // so this is a check for if the "neigbor" is the boundary
         // Should default to -1
-        if (edges[faceVertices[i].edges[0]].creator->id != particle.id) {
-            v.push_back(edges[faceVertices[i].edges[0]].creator->id);
+        if (edges[faceVertices[i].edges[0]].creator != -1) {
+            v.push_back(edges[faceVertices[i].edges[0]].creator);
         }
     }
 
@@ -878,7 +923,6 @@ void voronoiCell::getFaceVertex(EdgeIndex testEdge) {
         FaceVertex newFaceVertex;
 
         newFaceVertex.edges.push_back(testEdge);
-
 
         EdgeIndex otherEdge = edges[testEdge].next;
 
@@ -1084,7 +1128,7 @@ cellContainer::cellContainer(std::vector<Particle> parts, double defaultLen,
     particles = parts;
 }
 
-voronoiCell cellContainer::makeCell(Particle particle) {
+voronoiCell cellContainer::makeCell(size_t particleIndex) {
 
 
     // Calculate the initial max radius of a cube
@@ -1092,13 +1136,13 @@ voronoiCell cellContainer::makeCell(Particle particle) {
 
 
     // Initialize the voronoi cell as a cube...
-    voronoiCell cell = voronoiCell("cube", defaultLength, particle, maxRadius,
+    voronoiCell cell = voronoiCell("cube", particleIndex, particles[particleIndex], maxRadius,
         x_min, x_max, y_min, y_max, z_min, z_max);
 
     // loop through our array of particles and cut the cell with planes
     // associated with each possible neighbor.
 
-    std::array<double, 3> point = {{particle.position.X, particle.position.Y, particle.position.Z}};
+    std::array<double, 3> point = {{particles[particleIndex].position.X, particles[particleIndex].position.Y, particles[particleIndex].position.Z}};
 
     std::vector<Particle*> NeighborParticles;
 
@@ -1108,9 +1152,9 @@ voronoiCell cellContainer::makeCell(Particle particle) {
     for (size_t i = 0; i < NeighborParticles.size(); ++i) {
         // This condition may need to be fixed.
 
-        if ((NeighborParticles[i]->position != particle.position) && (particle.position.distanceTo(NeighborParticles[i]->position) < maxRadius)) {
+        if ((NeighborParticles[i]->position != particles[particleIndex].position) && (particles[particleIndex].position.distanceTo(NeighborParticles[i]->position) < maxRadius)) {
 
-            cell.cutCell(*NeighborParticles[i]);
+            cell.cutCell(*NeighborParticles[i], NeighborParticles[i]->index);
         }
     }
 
@@ -1136,7 +1180,7 @@ double cellContainer::sum_cell_volumes() {
         voronoiCell c;
         for(unsigned int i = 0; i < particles.size(); ++i) {
 
-            c = makeCell(particles[i]);
+            c = makeCell(i);
             double vol = c.volume();
             sum += vol;//c.volume();
             // std::cout << "Cell volume: " << vol << std::endl;
@@ -1156,24 +1200,26 @@ double cellContainer::sum_cell_volumes() {
 
 
 void cellContainer::put(int id, double px, double py, double pz) {
-    particles.push_back(Particle(id, px, py, pz));
+    particles.push_back(Particle(id, px, py, pz, particles.size()));
 }
 
-// double cellContainer::findMaxNeighDist() {
-//     double maxDist = 0;
-//     for(voronoiCell* cellPointer : cells) {
-//         std::vector<int> neighborIndexes;
-//         cellPointer->neighbors(neighborIndexes);
-//         for (int i = 0; i < neighborIndexes.size(); ++i) {
-//             double dist = cellPointer->particle.position.distanceTo(particles[neighborIndexes[i]].position);
-//             if(dist > maxDist) {
-//                 maxDist = dist;
-//             }
-//         }
-//     }
-//     return maxDist;
+double cellContainer::findMaxNeighDist() {
+    double maxDist = 0;
+    voronoiCell c;
+    for(size_t i = 0; i < particles.size(); ++i) {
+        std::vector<int> neighborIndexes;
+        c = makeCell(i);
+        c.neighbors(neighborIndexes)
+        for (int i = 0; i < neighborIndexes.size(); ++i) {
+            double dist = c.particle.position.distanceTo(particles[neighborIndexes[i]].position);
+            if(dist > maxDist) {
+                maxDist = dist;
+            }
+        }
+    }
+    return maxDist;
 
-// }
+}
 
 // std::size_t cellContainer::get_memory_usage() {
 //     std::size_t memory = 0;

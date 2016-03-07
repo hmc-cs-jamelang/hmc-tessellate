@@ -1,6 +1,7 @@
 #pragma once
 #include <utility>
 #include <assert.h>
+#include <stdexcept>
 
 namespace verification {
     template <typename F>
@@ -20,6 +21,18 @@ namespace verification {
     ScopeExit<G> makeScopeExit(G g)
     {
         return {g};
+    }
+
+    class VerificationException : public std::runtime_error {
+    public:
+        VerificationException() : std::runtime_error("VERIFICATION failed") {}
+        using std::runtime_error::runtime_error;
+    };
+
+    void verificationAssert(bool test) {
+        if (!test) {
+            throw VerificationException();
+        }
     }
 }
 
@@ -54,9 +67,9 @@ auto VERIFICATION_ANONYMOUS_VARIABLE \
 
     #define VERIFICATION_EXIT(...) V_SCOPE_EXIT(__VA_ARGS__)
 
-    #define VERIFY(...) VERIFICATION(assert(__VA_ARGS__);)
+    #define VERIFY(...) VERIFICATION(verification::verificationAssert(__VA_ARGS__);)
 
-    #define VERIFY_EXIT(...) VERIFICATION_EXIT(assert(__VA_ARGS__);)
+    #define VERIFY_EXIT(...) VERIFICATION_EXIT(verification::verificationAssert(__VA_ARGS__);)
 
 #else
 

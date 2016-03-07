@@ -36,6 +36,7 @@ typedef struct Vector3
 	inline Vector3 operator / (const double A) const;
 	inline bool operator != (const Vector3& A) const;
 	inline bool operator == (const Vector3& A) const;
+	inline Vector3 normalized() const;
 	inline double Dot(const Vector3& A) const;
 	inline Vector3 Cross(const Vector3& A) const;
 	inline double distanceTo(const Vector3& other) const;
@@ -61,8 +62,12 @@ typedef struct Particle {
 	Vector3 position;
 	int id;
 	int group;
-	inline Particle(int Id, double x, double y, double z);
-	inline Particle(int Id, Vector3 pos);
+
+	// Should be removed later hopefully
+	size_t index;
+
+	inline Particle(int Id, double x, double y, double z, size_t index);
+	inline Particle(int Id, Vector3 pos, size_t index);
 	inline Particle(void);
 
 	// index should not be an int, nor should the default group be 0
@@ -76,14 +81,14 @@ typedef struct Particle {
 typedef struct HalfEdge {
 	inline HalfEdge( void );
 	inline HalfEdge(VertexIndex vertex);
-	inline HalfEdge(VertexIndex vertex, Particle* neighbor);
+	inline HalfEdge(VertexIndex vertex, size_t neighbor);
 
 	// target, next
-	inline HalfEdge(VertexIndex vertex, EdgeIndex edge2, Particle* neighbor);
+	inline HalfEdge(VertexIndex vertex, EdgeIndex edge2, size_t neighbor);
 
 	// target, flip, next
 	inline HalfEdge(VertexIndex vertex, EdgeIndex edge1, EdgeIndex edge2,
-			 Particle* neighbor);
+			 size_t neighbor);
 
 	// We should eventually remove this from our struct, or turn it into a
 	// class, or find some better way of doing this.
@@ -99,7 +104,7 @@ typedef struct HalfEdge {
 
 	// The neighbor particle whose cutting plane created the face
 	// associated with this HalfEdge
-	const Particle* creator;
+	size_t creator;
 } HalfEdge;
 
 
@@ -126,7 +131,7 @@ public:
 		// Should, you know, initialize stuff
 	}
 
-	inline voronoiCell(std::string shape, double length, Particle particle, double maxRadius,
+	inline voronoiCell(std::string shape, size_t particleIndex, Particle particle, double maxRadius,
 				double x_min, double x_max, double y_min, double y_max,
 				double z_min, double z_max);
 	// inline ~voronoiCell();
@@ -135,7 +140,7 @@ public:
 	struct Particle neighborParticle;
 	double maxRadius;
 
-	inline void cutCell(const Particle& neighbor);
+	inline void cutCell(const Particle& neighbor, size_t index);
 
 	// CustomInterface IO
 
@@ -260,7 +265,7 @@ public:
 	double x_min, x_max, y_min, y_max, z_min, z_max;
 	// struct std::vector<voronoiCell*> cells;
 
-	inline voronoiCell makeCell(Particle particle);
+	inline voronoiCell makeCell(size_t particleIndex);
 	inline cellContainer(std::vector<Particle> parts, double defaultLen);
 	inline cellContainer(std::vector<Particle> parts, double defaultLen,
 				  double x_min, double x_max, double y_min, double y_max,
@@ -268,7 +273,7 @@ public:
 	inline ~cellContainer();
 	inline double sum_cell_volumes();
 	inline void put(int id, double x, double y, double z);
-	// inline double findMaxNeighDist();
+	inline double findMaxNeighDist();
 	// inline std::size_t get_memory_usage();
 
 };
