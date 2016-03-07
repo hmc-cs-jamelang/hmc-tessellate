@@ -271,6 +271,7 @@ public:
 				  double x_min, double x_max, double y_min, double y_max,
 				  double z_min, double z_max);
 	inline ~cellContainer();
+	inline void initialize();
 	inline double sum_cell_volumes();
 	inline void put(int id, double x, double y, double z);
 	inline double findMaxNeighDist();

@@ -148,6 +148,7 @@ protected:
     template <typename This>
     static auto chunk_(This t, Index i) -> decltype(t->chunks_[i.value])
     {
+    	VERIFY(i != INVALID_INDEX);
         VERIFY(i.value < t->chunks_.size());
         return t->chunks_[i.value];
     }

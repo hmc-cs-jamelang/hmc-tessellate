@@ -1170,6 +1170,11 @@ cellContainer::~cellContainer() {
     // }
 }
 
+void cellContainer::initialize(){
+
+    sds.initialize(&particles[0], &particles[particles.size()]);
+}
+
 double cellContainer::sum_cell_volumes() {
     double sum = 0;
 
@@ -1209,7 +1214,7 @@ double cellContainer::findMaxNeighDist() {
     for(size_t i = 0; i < particles.size(); ++i) {
         std::vector<int> neighborIndexes;
         c = makeCell(i);
-        c.neighbors(neighborIndexes)
+        c.neighbors(neighborIndexes);
         for (int i = 0; i < neighborIndexes.size(); ++i) {
             double dist = c.particle.position.distanceTo(particles[neighborIndexes[i]].position);
             if(dist > maxDist) {

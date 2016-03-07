@@ -211,7 +211,7 @@ runTest(const unsigned int numberOfTrials,
       cellContainer con(std::vector<Particle>(), searchDist/*(scale != 0) ? (boxLength/pow(particles.size(),1.0/3))*scale : boxLength*/, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2);
 
       for(unsigned int i=0;i<particles.size();i++) {
-          con.put(particles[i].id, particles[i].position.X, particles[i].position.Y, particles[i].position.Z, particles[i].index);
+          con.put(particles[i].id, particles[i].position.X, particles[i].position.Y, particles[i].position.Z);
       }
 
 
@@ -281,7 +281,7 @@ int main(int argc, char* argv[]) {
   // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
   const array<double, 2> numberOfPointsRange = {{1e3, 1e8}};
-  const unsigned int numberOfDataPoints      = 15;
+  const unsigned int numberOfDataPoints      = 1;
   const unsigned int numberOfTrialsPerSize   = 3;
   const double neighborSearchDistance        = 1.0;
 
@@ -389,12 +389,13 @@ int main(int argc, char* argv[]) {
     }
 
 
-    cellContainer con(std::vector<Particle>(), 2*boxLength, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2);
+    cellContainer con(std::vector<Particle>(), neighborSearchDistance, -neighborSearchDistance/2, neighborSearchDistance/2, -neighborSearchDistance/2, neighborSearchDistance/2, -neighborSearchDistance/2, neighborSearchDistance/2);
 
     for(unsigned int i=0;i<pointsUniform.size();i++) {
-      con.put(pointsUniform[i].id, pointsUniform[i].position.X, pointsUniform[i].position.Y, pointsUniform[i].position.Z, pointsUniform[i].index);
+      con.put(pointsUniform[i].id, pointsUniform[i].position.X, pointsUniform[i].position.Y, pointsUniform[i].position.Z);
     }
-    double searchDist = con.findMaxNeighDist()*1.1;
+    con.initialize();
+    double searchDist = con.findMaxNeighDist()*1.2;
 
     // std::cout << "Max distance: " << findMaxDist(pointsUniform) << std::endl;
 
