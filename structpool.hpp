@@ -164,6 +164,12 @@ public:
         : first_available_(INVALID_INDEX), chunks_(reserve)
     { /* Done */ }
 
+    void clear()
+    {
+    	first_available_ = INVALID_INDEX;
+    	chunks_.clear();
+    }
+
     SizeType size() const
     {
         return toSizeType(chunks_.size());

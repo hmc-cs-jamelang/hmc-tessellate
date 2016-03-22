@@ -32,6 +32,7 @@ using std::chrono::duration_cast;
 #include <cstdlib>
 #include <set>
 #include <assert.h>
+#include "malloc_count-0.7/malloc_count.h"
 
 namespace Utilities {
 
@@ -151,7 +152,7 @@ runTest(const unsigned int numberOfTrials,
         //const Function function,
         vector<Particle> & particles,
         // const BoundingBox & pointsBoundingBox,
-        double searchDist,
+        std::vector<double> searchDist,
         double boxLength,
         vector<unsigned int> * const result,
         vector<unsigned int> * const resultDelimiters,
@@ -175,6 +176,7 @@ runTest(const unsigned int numberOfTrials,
 
 // Randomly add particles into the container
     if (voroVersion == "voro++") {
+      resetNumberOfTimesMallocHasBeenCalled();
       const int n_x=6,n_y=6,n_z=6;
 
       voro::container con(-boxLength/2, boxLength/2, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2, 
@@ -204,12 +206,13 @@ runTest(const unsigned int numberOfTrials,
       } while (vl.inc());
       // Sum up the volumes, and check that this matches the container volume
       // double vvol=con.sum_cell_volumes();
-      std::cout << "voro++ volume: " << vvol << std::endl;
+      // std::cout << "voro++ volume: " << vvol << std::endl;
+      // std::cout << "Malloc called: " << getNumberOfTimesMallocHasBeenCalled() << " times." << std::endl;
     }
 
     if (voroVersion == "voro--") {
-      cellContainer con(std::vector<Particle>(), searchDist/*(scale != 0) ? (boxLength/pow(particles.size(),1.0/3))*scale : boxLength*/, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2);
-
+      resetNumberOfTimesMallocHasBeenCalled();
+      cellContainer con(std::vector<Particle>(), 1/*(scale != 0) ? (boxLength/pow(particles.size(),1.0/3))*scale : boxLength*/, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2);
       for(unsigned int i=0;i<particles.size();i++) {
           con.put(particles[i].id, particles[i].position.X, particles[i].position.Y, particles[i].position.Z);
       }
@@ -220,7 +223,14 @@ runTest(const unsigned int numberOfTrials,
       
       voronoiCell c;
       for(unsigned int i = 0; i < con.particles.size(); ++i) {
-        c = con.makeCell(i);
+        // std::cout << "Search distance for particle " << i << ": " << searchDist[i] << std::endl;
+        con.defaultLength = searchDist[i];
+        // std::cout << "Mallocs before cell " << i << ": " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
+        con.makeCell(i, c);
+        // std::cout << "Mallocs after cell " << i << ": " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
+        // std::cout << "Cell " << i << " data: " << std::endl;
+        // std::cout << "    edges: " <<  c.edges.capacity() << ", " << c.edges.size() << ", " << c.edges.computeOccupancy() << std::endl;
+        // std::cout << "    vertices: " <<  c.vertices.capacity() << ", " << c.vertices.size() << ", " << c.vertices.computeOccupancy() << std::endl;
         double vol = c.volume();
         if (firstRunDone) {
           if (vols.find(vol*prec) == vols.end()) {
@@ -235,7 +245,8 @@ runTest(const unsigned int numberOfTrials,
 
       // Sum up the volumes, and check that this matches the container volume
       // double vvol=con.sum_cell_volumes();
-      std::cout << "voro-- volume: " << vvol << std::endl;
+      // std::cout << "voro-- volume: " << vvol << std::endl;
+      // std::cout << "Malloc called: " << getNumberOfTimesMallocHasBeenCalled() << " times." << std::endl;
       // std::cout << "Diagram memory: " << con.get_memory_usage() << std::endl;
     }
 
@@ -253,7 +264,7 @@ runTest(const unsigned int numberOfTrials,
 
   }
   return vols;
-}
+      }
 
 // double findMaxDist(vector<Particle> particles) {
 //   double maxDist = 0;
@@ -281,12 +292,12 @@ int main(int argc, char* argv[]) {
   // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
   const array<double, 2> numberOfPointsRange = {{1e3, 1e8}};
-  const unsigned int numberOfDataPoints      = 1;
+  const unsigned int numberOfDataPoints      = 15;
   const unsigned int numberOfTrialsPerSize   = 3;
   const double neighborSearchDistance        = 1.0;
 
   unsigned int numberOfPoints = 1000;
-  double scale = 0;
+  double scale = 1.00001;
   double prec = 1e8;
   if (argc >= 2) {
     numberOfPoints = atoi(argv[1]);
@@ -388,15 +399,22 @@ int main(int argc, char* argv[]) {
         pointsUniform.push_back(Particle(i,x,y,z,i));
     }
 
+    // if (numberOfPoints <= 1000) {
+      cellContainer con(std::vector<Particle>(), neighborSearchDistance, -neighborSearchDistance/2, neighborSearchDistance/2, -neighborSearchDistance/2, neighborSearchDistance/2, -neighborSearchDistance/2, neighborSearchDistance/2);
 
-    cellContainer con(std::vector<Particle>(), neighborSearchDistance, -neighborSearchDistance/2, neighborSearchDistance/2, -neighborSearchDistance/2, neighborSearchDistance/2, -neighborSearchDistance/2, neighborSearchDistance/2);
+      for(unsigned int i=0;i<pointsUniform.size();i++) {
+        con.put(pointsUniform[i].id, pointsUniform[i].position.X, pointsUniform[i].position.Y, pointsUniform[i].position.Z);
+      }
+      con.initialize();
+      std::vector<double> searchDist = con.findMaxNeighDist(scale);
+      double max = *std::max_element(std::begin(searchDist),std::end(searchDist));
+      double min = *std::min_element(searchDist.begin(),searchDist.end());
 
-    for(unsigned int i=0;i<pointsUniform.size();i++) {
-      con.put(pointsUniform[i].id, pointsUniform[i].position.X, pointsUniform[i].position.Y, pointsUniform[i].position.Z);
-    }
-    con.initialize();
-    double searchDist = con.findMaxNeighDist()*1.2;
-
+      std::cout << "Difference between max (" << max << ") and min (" << min << ") search distance: " << max-min << std::endl;
+    // }
+    // // else {
+    // //   searchDist = (neighborSearchDistance/pow(numberOfPoints, 1/3.0))*5;
+    // // }
     // std::cout << "Max distance: " << findMaxDist(pointsUniform) << std::endl;
 
     // const unsigned int averageNumberOfNeighborsPerPoint = 70;

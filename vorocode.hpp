@@ -45,7 +45,8 @@ typedef struct Vector3
 
 
 typedef struct FaceVertex {
-	std::vector<EdgeIndex> edges;
+	// std::vector<EdgeIndex> edges;
+	EdgeIndex firstEdge;
 } FaceVertex;
 
 typedef struct Vertex {
@@ -131,7 +132,7 @@ public:
 		// Should, you know, initialize stuff
 	}
 
-	inline voronoiCell(std::string shape, size_t particleIndex, Particle particle, double maxRadius,
+	inline void reconstruct(size_t particleIndex, const Particle& particle, double maxRadius,
 				double x_min, double x_max, double y_min, double y_max,
 				double z_min, double z_max);
 	// inline ~voronoiCell();
@@ -165,6 +166,21 @@ public:
 	inline std::size_t get_memory_usage();
 
 private:
+
+	std::vector<EdgeIndex> deleteStackEdge;
+
+    std::vector<VertexIndex> deleteStackVertex;
+
+    std::vector<EdgeIndex> seenStackEdge;
+
+    std::vector<VertexIndex> seenStackVertex;
+
+    std::vector<EdgeIndex> outsideEdges;
+
+    std::vector<EdgeIndex> testEdges;
+
+
+
 	// Finds side of plane that point is on
 	inline side planeSide(VertexIndex vertex);
 
@@ -215,18 +231,14 @@ private:
 	// Attempted but failed, supposed to be resetEdgesAndVertices
 	// but more robust. Doesn't work. Should probably get rid of
 	// due to memory pools
-	inline void seenSearch(std::stack<EdgeIndex>* seenStackEdge,
-					std::stack<VertexIndex>* seenStackVertex,
-					EdgeIndex edge);
+	inline void seenSearch(EdgeIndex edge);
 
 	// Delete things, starting with an edge-to-be-deleted
 	inline void cleanUp(EdgeIndex edge);
 
 	// Gets the connected component to delete.
 	// Can probably do this easier with memory pools
-	inline void deleteSearch(std::stack<EdgeIndex>* deleteStackEdge,
-					  std::stack<VertexIndex>* deleteStackVertex,
-					  EdgeIndex edge);
+	inline void deleteSearch(EdgeIndex edge);
 
 	// IO helper functions
 	inline void getVertex(EdgeIndex testEdge, std::vector<VertexIndex> &vertices);
@@ -264,8 +276,10 @@ public:
 	bool calculated = false;
 	double x_min, x_max, y_min, y_max, z_min, z_max;
 	// struct std::vector<voronoiCell*> cells;
+	std::vector<Particle*> NeighborParticles;
 
-	inline voronoiCell makeCell(size_t particleIndex);
+
+	inline void makeCell(size_t particleIndex, voronoiCell& cell);
 	inline cellContainer(std::vector<Particle> parts, double defaultLen);
 	inline cellContainer(std::vector<Particle> parts, double defaultLen,
 				  double x_min, double x_max, double y_min, double y_max,
@@ -274,7 +288,7 @@ public:
 	inline void initialize();
 	inline double sum_cell_volumes();
 	inline void put(int id, double x, double y, double z);
-	inline double findMaxNeighDist();
+	inline std::vector<double> findMaxNeighDist(double scale);
 	// inline std::size_t get_memory_usage();
 
 };

@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <limits>
 
+#include "malloc_count-0.7/malloc_count.h"
 
 
 // vector3 methods
@@ -139,168 +140,192 @@ HalfEdge::HalfEdge(VertexIndex vertex, EdgeIndex edge1, EdgeIndex edge2, size_t 
 
 // HalfEdge* firstEdge = getFirstEdge();
 
-voronoiCell::voronoiCell(std::string shape, size_t particleIndex, Particle seedParticle,
-                         double maxRadius, double x_min, double x_max,
+void voronoiCell::reconstruct(size_t particleIndex, const Particle& seedParticle,
+                         double MaxRadius, double x_min, double x_max,
                          double y_min, double y_max, double z_min, double z_max) {
+    //std::cout << "Start reconstruct: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;;
+
+    vertices.clear();
+    edges.clear();
     particle = seedParticle;
-    maxRadius = maxRadius;
-    faceVertices = std::vector<FaceVertex>();
 
-    if (shape == "cube") {
-        // Create half-edge arrays corresponding to the faces of the cube.
-        EdgeIndex plusZ[4], minusZ[4], plusY[4], minusY[4], plusX[4], minusX[4];
+    // std::cout << getNumberOfTimesMallocHasBeenCalled() << std::endl;;
 
-        // Initialize the vertices of the cube manually.
-        //
-        // Vertices are labeled by octant (with respect to the central
-        // particle) as follows:
-        // First octant: positive x,y,z
-        // Second octant: positive y,z, negative x
-        // Third octant: positive z, negative x,y
-        // Fourth octant: positive x,z, negative y
-        // Fifth octant: positive x,y, negative z
-        // Sixth octant: positive y, negative x,z
-        // Seventh octant: negative x,y,z
-        // Eighth octant: positive x, negative y,z
 
-        VertexIndex oct1 = vertices.create(Vertex(x_max,
-                                  y_max,
-                                  z_max));
+    maxRadius = MaxRadius;
+    faceVertices.clear();
 
-        VertexIndex oct2 = vertices.create(Vertex(x_min,
-                                  y_max,
-                                  z_max));
+    // std::cout << "Before making cube:" << std::endl;
+    // std::cout << "    edges: " <<  edges.capacity() << ", " << edges.size()  << std::endl;
+    // std::cout << "    vertices: " <<  vertices.capacity() << ", " << vertices.size()  << std::endl;
 
-        VertexIndex oct3 = vertices.create(Vertex(x_min,
-                                  y_min,
-                                  z_max));
+    // Create half-edge arrays corresponding to the faces of the cube.
+    EdgeIndex plusZ[4], minusZ[4], plusY[4], minusY[4], plusX[4], minusX[4];
 
-        VertexIndex oct4 = vertices.create(Vertex(x_max,
-                                  y_min,
-                                  z_max));
+    // Initialize the vertices of the cube manually.
+    //
+    // Vertices are labeled by octant (with respect to the central
+    // particle) as follows:
+    // First octant: positive x,y,z
+    // Second octant: positive y,z, negative x
+    // Third octant: positive z, negative x,y
+    // Fourth octant: positive x,z, negative y
+    // Fifth octant: positive x,y, negative z
+    // Sixth octant: positive y, negative x,z
+    // Seventh octant: negative x,y,z
+    // Eighth octant: positive x, negative y,z
 
-        VertexIndex oct5 = vertices.create(Vertex(x_max,
-                                  y_max,
-                                  z_min));
+    // std::cout << getNumberOfTimesMallocHasBeenCalled() << std::endl;;
 
-        VertexIndex oct6 = vertices.create(Vertex(x_min,
-                                  y_max,
-                                  z_min));
+    VertexIndex oct1 = vertices.create(Vertex(x_max,
+                              y_max,
+                              z_max));
 
-        VertexIndex oct7 = vertices.create(Vertex(x_min,
-                                  y_min,
-                                  z_min));
+    VertexIndex oct2 = vertices.create(Vertex(x_min,
+                              y_max,
+                              z_max));
 
-        VertexIndex oct8 = vertices.create(Vertex(x_max,
-                                  y_min,
-                                  z_min));
+    VertexIndex oct3 = vertices.create(Vertex(x_min,
+                              y_min,
+                              z_max));
 
-        // We will construct each face by beginning with the edge whose target
-        // is in the lowest-numbered quadrant, then continue around the face
-        // by iteratively creating the prev of the most recently created edge.
-        //
-        // Traversing the nexts around a face leads if you are looking
-        // directly at it should lead to clockwise traversal of the face.
+    VertexIndex oct4 = vertices.create(Vertex(x_max,
+                              y_min,
+                              z_max));
 
-        // Note also our choice of default initialization for the particle
-        // associated with each HalfEdge; since no planes have cut this cell
-        // yet, we associate it with the particle at the center of this cell.
-        plusZ[0] = edges.create(HalfEdge(oct1, -1));             // O2 to O1
+    VertexIndex oct5 = vertices.create(Vertex(x_max,
+                              y_max,
+                              z_min));
 
-        plusZ[1] = edges.create(HalfEdge(oct2, plusZ[0], -1));   // O3 to O2
+    VertexIndex oct6 = vertices.create(Vertex(x_min,
+                              y_max,
+                              z_min));
 
-        plusZ[2] = edges.create(HalfEdge(oct3, plusZ[1], -1));   // O4 to O3
+    VertexIndex oct7 = vertices.create(Vertex(x_min,
+                              y_min,
+                              z_min));
 
-        plusZ[3] = edges.create(HalfEdge(oct4, plusZ[2], -1));   // O1 to O4
+    VertexIndex oct8 = vertices.create(Vertex(x_max,
+                              y_min,
+                              z_min));
 
-        edges[plusZ[0]].next = plusZ[3];
+    // std::cout << getNumberOfTimesMallocHasBeenCalled() << std::endl;;
 
-        minusZ[0] = edges.create(HalfEdge(oct5, -1));            // O8 to O5
+    // We will construct each face by beginning with the edge whose target
+    // is in the lowest-numbered quadrant, then continue around the face
+    // by iteratively creating the prev of the most recently created edge.
+    //
+    // Traversing the nexts around a face leads if you are looking
+    // directly at it should lead to clockwise traversal of the face.
 
-        minusZ[1] = edges.create(HalfEdge(oct8, minusZ[0], -1)); // O7 to O8
+    // Note also our choice of default initialization for the particle
+    // associated with each HalfEdge; since no planes have cut this cell
+    // yet, we associate it with the particle at the center of this cell.
+    plusZ[0] = edges.create(HalfEdge(oct1, -1));             // O2 to O1
 
-        minusZ[2] = edges.create(HalfEdge(oct7, minusZ[1], -1)); // O6 to O7
+    plusZ[1] = edges.create(HalfEdge(oct2, plusZ[0], -1));   // O3 to O2
 
-        minusZ[3] = edges.create(HalfEdge(oct6, minusZ[2], -1)); // O5 to O6
+    plusZ[2] = edges.create(HalfEdge(oct3, plusZ[1], -1));   // O4 to O3
 
-        edges[minusZ[0]].next = minusZ[3];
+    plusZ[3] = edges.create(HalfEdge(oct4, plusZ[2], -1));   // O1 to O4
 
-        plusY[0] = edges.create(HalfEdge(oct1, -1));             // O5 to O1
+    edges[plusZ[0]].next = plusZ[3];
 
-        plusY[1] = edges.create(HalfEdge(oct5, plusY[0], -1));   // O6 to O5
+    minusZ[0] = edges.create(HalfEdge(oct5, -1));            // O8 to O5
 
-        plusY[2] = edges.create(HalfEdge(oct6, plusY[1], -1));   // O2 to O6
+    minusZ[1] = edges.create(HalfEdge(oct8, minusZ[0], -1)); // O7 to O8
 
-        plusY[3] = edges.create(HalfEdge(oct2, plusY[2], -1));   // O1 to O2
+    minusZ[2] = edges.create(HalfEdge(oct7, minusZ[1], -1)); // O6 to O7
 
-        edges[plusY[0]].next = plusY[3];
+    minusZ[3] = edges.create(HalfEdge(oct6, minusZ[2], -1)); // O5 to O6
 
-        minusY[0] = edges.create(HalfEdge(oct3, -1));            // O7 to O3
+    edges[minusZ[0]].next = minusZ[3];
 
-        minusY[1] = edges.create(HalfEdge(oct7, minusY[0], -1)); // O8 to O7
+    plusY[0] = edges.create(HalfEdge(oct1, -1));             // O5 to O1
 
-        minusY[2] = edges.create(HalfEdge(oct8, minusY[1], -1)); // O4 to O8
+    plusY[1] = edges.create(HalfEdge(oct5, plusY[0], -1));   // O6 to O5
 
-        minusY[3] = edges.create(HalfEdge(oct4, minusY[2], -1)); // O3 to O4
+    plusY[2] = edges.create(HalfEdge(oct6, plusY[1], -1));   // O2 to O6
 
-        edges[minusY[0]].next = minusY[3];
+    plusY[3] = edges.create(HalfEdge(oct2, plusY[2], -1));   // O1 to O2
 
-        plusX[0] = edges.create(HalfEdge(oct1, -1));             // O4 to O1
+    edges[plusY[0]].next = plusY[3];
 
-        plusX[1] = edges.create(HalfEdge(oct4, plusX[0], -1));   // O8 to O4
+    minusY[0] = edges.create(HalfEdge(oct3, -1));            // O7 to O3
 
-        plusX[2] = edges.create(HalfEdge(oct8, plusX[1], -1));   // O5 to O8
+    minusY[1] = edges.create(HalfEdge(oct7, minusY[0], -1)); // O8 to O7
 
-        plusX[3] = edges.create(HalfEdge(oct5, plusX[2], -1));   // O1 to O5
+    minusY[2] = edges.create(HalfEdge(oct8, minusY[1], -1)); // O4 to O8
 
-        edges[plusX[0]].next = plusX[3];
+    minusY[3] = edges.create(HalfEdge(oct4, minusY[2], -1)); // O3 to O4
 
-        minusX[0] = edges.create(HalfEdge(oct2, -1));            // O6 to O2
+    edges[minusY[0]].next = minusY[3];
 
-        minusX[1] = edges.create(HalfEdge(oct6, minusX[0], -1)); // O7 to O6
+    plusX[0] = edges.create(HalfEdge(oct1, -1));             // O4 to O1
 
-        minusX[2] = edges.create(HalfEdge(oct7, minusX[1], -1)); // O3 to O7
+    plusX[1] = edges.create(HalfEdge(oct4, plusX[0], -1));   // O8 to O4
 
-        minusX[3] = edges.create(HalfEdge(oct3, minusX[2], -1)); // O2 to O3
+    plusX[2] = edges.create(HalfEdge(oct8, plusX[1], -1));   // O5 to O8
 
-        edges[minusX[0]].next = minusX[3];
+    plusX[3] = edges.create(HalfEdge(oct5, plusX[2], -1));   // O1 to O5
 
-        // Now we have to set the flips manually
-        edges[plusZ[0]].flip = plusY[3];
-        edges[plusZ[1]].flip = minusX[3];
-        edges[plusZ[2]].flip = minusY[3];
-        edges[plusZ[3]].flip = plusX[0];
+    edges[plusX[0]].next = plusX[3];
 
-        edges[minusZ[0]].flip = plusX[2];
-        edges[minusZ[1]].flip = minusY[1];
-        edges[minusZ[2]].flip = minusX[1];
-        edges[minusZ[3]].flip = plusY[1];
+    minusX[0] = edges.create(HalfEdge(oct2, -1));            // O6 to O2
 
-        edges[plusY[0]].flip = plusX[3];
-        edges[plusY[1]].flip = minusZ[3];
-        edges[plusY[2]].flip = minusX[0];
-        edges[plusY[3]].flip = plusZ[0];
+    minusX[1] = edges.create(HalfEdge(oct6, minusX[0], -1)); // O7 to O6
 
-        edges[minusY[0]].flip = minusX[2];
-        edges[minusY[1]].flip = minusZ[1];
-        edges[minusY[2]].flip = plusX[1];
-        edges[minusY[3]].flip = plusZ[2];
+    minusX[2] = edges.create(HalfEdge(oct7, minusX[1], -1)); // O3 to O7
 
-        edges[plusX[0]].flip = plusZ[3];
-        edges[plusX[1]].flip = minusY[2];
-        edges[plusX[2]].flip = minusZ[0];
-        edges[plusX[3]].flip = plusY[0];
+    minusX[3] = edges.create(HalfEdge(oct3, minusX[2], -1)); // O2 to O3
 
-        edges[minusX[0]].flip = plusY[2];
-        edges[minusX[1]].flip = minusZ[2];
-        edges[minusX[2]].flip = minusY[0];
-        edges[minusX[3]].flip = plusZ[1];
+    edges[minusX[0]].next = minusX[3];
 
-        // Set firstEdge to our favorite edge.
+    // std::cout << getNumberOfTimesMallocHasBeenCalled() << std::endl;;
 
-        firstEdge = plusX[0];
 
-    }
+    // Now we have to set the flips manually
+    edges[plusZ[0]].flip = plusY[3];
+    edges[plusZ[1]].flip = minusX[3];
+    edges[plusZ[2]].flip = minusY[3];
+    edges[plusZ[3]].flip = plusX[0];
+
+    edges[minusZ[0]].flip = plusX[2];
+    edges[minusZ[1]].flip = minusY[1];
+    edges[minusZ[2]].flip = minusX[1];
+    edges[minusZ[3]].flip = plusY[1];
+
+    edges[plusY[0]].flip = plusX[3];
+    edges[plusY[1]].flip = minusZ[3];
+    edges[plusY[2]].flip = minusX[0];
+    edges[plusY[3]].flip = plusZ[0];
+
+    edges[minusY[0]].flip = minusX[2];
+    edges[minusY[1]].flip = minusZ[1];
+    edges[minusY[2]].flip = plusX[1];
+    edges[minusY[3]].flip = plusZ[2];
+
+    edges[plusX[0]].flip = plusZ[3];
+    edges[plusX[1]].flip = minusY[2];
+    edges[plusX[2]].flip = minusZ[0];
+    edges[plusX[3]].flip = plusY[0];
+
+    edges[minusX[0]].flip = plusY[2];
+    edges[minusX[1]].flip = minusZ[2];
+    edges[minusX[2]].flip = minusY[0];
+    edges[minusX[3]].flip = plusZ[1];
+
+    // std::cout << getNumberOfTimesMallocHasBeenCalled() << std::endl;;
+
+
+    // Set firstEdge to our favorite edge.
+
+    firstEdge = plusX[0];
+
+    // std::cout << "After making cube:" << std::endl;
+    // std::cout << "    edges: " <<  edges.capacity() << ", " << edges.size() << ", " << edges.computeOccupancy() << std::endl;
+    // std::cout << "    vertices: " <<  vertices.capacity() << ", " << vertices.size() << ", " << vertices.computeOccupancy() << std::endl;
+
 }
 
 // voronoiCell& voronoiCell::operator=(voronoiCell rhs) {
@@ -439,15 +464,15 @@ bool voronoiCell::findSomeIncidentEdge(EdgeIndex &returnEdge) {
     // if(particle.index == 335 && neighborParticle.index == 8) {
     //     std::cout << "Particle 335: " << particle.position.X << ", " << particle.position.Y << ", " << particle.position.Z << std::endl;
     //     std::cout << "Particle 8: " << neighborParticle.position.X << ", " << neighborParticle.position.Y << ", " << neighborParticle.position.Z << std::endl;
-    //     for(auto iter = edges.begin(); iter != edges.end(); ++iter) {
+    // //     for(auto iter = edges.begin(); iter != edges.end(); ++iter) {
     //         // std::cout << planeSide(iter.getIndex()) << " " << planeDist(iter.getIndex()) << std::endl;
     //         std::cout << static_cast<unsigned short>((*iter).target) 
-    //                 << ": " << vertices[(*iter).target].position.X << ", "
-    //                 << vertices[(*iter).target].position.Y << ", "
-    //                 << vertices[(*iter).target].position.Z << std::endl;
+    // //                 << ": " << vertices[(*iter).target].position.X << ", "
+    // //                 << vertices[(*iter).target].position.Y << ", "
+    // //                 << vertices[(*iter).target].position.Z << std::endl;
     //         std::cout << iter.getIndex() << " with flip " << (*iter).flip << std::endl;
-    //     }
-    //     for(auto iter = vertices.begin(); iter != vertices.end(); ++iter) {
+    // //     }
+    // //     for(auto iter = vertices.begin(); iter != vertices.end(); ++iter) {
     //         std::cout << iter.getIndex() << ": " << planeSide(iter.getIndex()) << " " << planeDist(iter.getIndex()) << std::endl;
     //     }
     // }
@@ -469,7 +494,7 @@ bool voronoiCell::findSomeIncidentEdge(EdgeIndex &returnEdge) {
             flipSide = planeSide(edges[edges[testEdge].flip].target);
             maxDist = planeDist(testVertex);
             // if(particle.index == 335 && neighborParticle.index == 8) {
-            //     std::cout << "Found closer flip: " << testVertex << " " << testSide << " " << flipSide << " " << maxDist << std::endl;
+                // std::cout << "Found closer flip: " << testVertex << " " << testSide << " " << flipSide << " " << maxDist << std::endl;
             // }
         } else {
             EdgeIndex nextEdge = edges[testEdge].next;
@@ -486,7 +511,7 @@ bool voronoiCell::findSomeIncidentEdge(EdgeIndex &returnEdge) {
                 maxDist = planeDist(testVertex);
 
                 // if(particle.index == 335 && neighborParticle.index == 8) {
-                //     std::cout << "Found closer next: " << testVertex << " " << testSide << " " << flipSide << " " << maxDist << std::endl;
+                    // std::cout << "Found closer next: " << testVertex << " " << testSide << " " << flipSide << " " << maxDist << std::endl;
                 // }
 
             // and, if not, repeatedly examine the edges leaving the
@@ -499,7 +524,7 @@ bool voronoiCell::findSomeIncidentEdge(EdgeIndex &returnEdge) {
                        planeSide(edges[nextEdge].target) == planeSide(edges[edges[nextEdge].flip].target)) {
 
                     // if(particle.index == 335 && neighborParticle.index == 8) {
-                    //    std::cout << "Looking for closer: " << edges[nextEdge].target << " " << planeSide(edges[nextEdge].target) << " " << planeSide(edges[edges[nextEdge].flip].target) << " " << planeDist(edges[nextEdge].target) << std::endl;
+                       // std::cout << "Looking for closer: " << edges[nextEdge].target << " " << planeSide(edges[nextEdge].target) << " " << planeSide(edges[edges[nextEdge].flip].target) << " " << planeDist(edges[nextEdge].target) << std::endl;
                     // }
                     nextEdge = edges[edges[nextEdge].flip].next;
 
@@ -516,7 +541,7 @@ bool voronoiCell::findSomeIncidentEdge(EdgeIndex &returnEdge) {
                 flipSide = planeSide(edges[edges[testEdge].flip].target);
                 maxDist = planeDist(testVertex);
                 // if(particle.index == 335 && neighborParticle.index == 8) {
-                //     std::cout << "Found closer or incident: " << testVertex << " " << testSide << " " << flipSide << " " << maxDist << std::endl;
+                    // std::cout << "Found closer or incident: " << testVertex << " " << testSide << " " << flipSide << " " << maxDist << std::endl;
                 // }
             }
         }
@@ -574,8 +599,7 @@ EdgeIndex voronoiCell::addEdgePair(VertexIndex vertex1, VertexIndex vertex2) {
 }
 
 EdgeIndex voronoiCell::maintainFirstEdge(EdgeIndex edge) {
-
-    std::vector<EdgeIndex> testEdges;
+    testEdges.clear();
     testEdges.push_back(edge);
     std::size_t i = 0;
     //     std::cerr << "Edge: " << edge << ", size: " << edges.size();
@@ -628,17 +652,18 @@ void voronoiCell::cutCell(const Particle& neighbor, size_t index) {
 
     if (!cuttable) {
         // if(particle.index == 335 && index == 8){
-        //     std::cout << "Not cutting" << std::endl;
+            // std::cout << "Not cutting" << std::endl;
         // }
         // if(particle.index == 8 && index == 335){
-        //     std::cout << "Not cutting flipped" << std::endl;
+            // std::cout << "Not cutting flipped" << std::endl;
         // }
         return;
     }
 
     EdgeIndex nextIncidentEdge = startingIncidentEdge;
 
-    std::vector<EdgeIndex> outsideEdges;
+    outsideEdges.clear();
+
     EdgeIndex prevIncidentEdge = nextIncidentEdge;
     EdgeIndex lastInsideEdge;
 
@@ -725,38 +750,32 @@ void voronoiCell::cutCell(const Particle& neighbor, size_t index) {
     cleanUp(startingIncidentEdge);
 }
 
+
 void voronoiCell::cleanUp(EdgeIndex edge){
+    deleteStackEdge.clear();
+    deleteStackVertex.clear();
 
-    std::stack<EdgeIndex>* deleteStackEdge = new std::stack<EdgeIndex>;
+    deleteSearch(edge);
 
-    std::stack<VertexIndex>* deleteStackVertex = new std::stack<VertexIndex>;
-
-    deleteSearch(deleteStackEdge, deleteStackVertex, edge);
-
-    while (!deleteStackEdge->empty()) {
-        EdgeIndex topEdge = deleteStackEdge->top();
-        deleteStackEdge->pop();
+    while (!deleteStackEdge.empty()) {
+        EdgeIndex topEdge = deleteStackEdge.back();
+        deleteStackEdge.pop_back();
 
         edges.destroy(topEdge);
 
     }
-    while (!deleteStackVertex->empty()) {
-        VertexIndex topVertex = deleteStackVertex->top();
+    while (!deleteStackVertex.empty()) {
+        VertexIndex topVertex = deleteStackVertex.back();
 
-        deleteStackVertex->pop();
+        deleteStackVertex.pop_back();
 
         vertices.destroy(topVertex);
 
     }
-    delete deleteStackVertex;
-
-    delete deleteStackEdge;
 
 }
 
-void voronoiCell::deleteSearch(std::stack<EdgeIndex>* deleteStackEdge,
-                  std::stack<VertexIndex>* deleteStackVertex,
-                  EdgeIndex edge){
+void voronoiCell::deleteSearch(EdgeIndex edge){
 
 
         // Currently needs to watch out for problems with edges
@@ -764,15 +783,15 @@ void voronoiCell::deleteSearch(std::stack<EdgeIndex>* deleteStackEdge,
     if ((planeSide(edges[edge].target) == outside || planeSide(edges[edges[edge].flip].target) == outside)
 	  && !edges[edge].deleteFlag) {
 
-        deleteStackEdge->push(edge);
+        deleteStackEdge.push_back(edge);
         edges[edge].deleteFlag = true;
-        deleteSearch(deleteStackEdge, deleteStackVertex, edges[edge].next);
-        deleteSearch(deleteStackEdge, deleteStackVertex, edges[edge].flip);
+        deleteSearch(edges[edge].next);
+        deleteSearch(edges[edge].flip);
     }
 
     if (planeSide(edges[edge].target) == outside && !vertices[edges[edge].target].deleteFlag) {
 
-        deleteStackVertex->push(edges[edge].target);
+        deleteStackVertex.push_back(edges[edge].target);
         vertices[edges[edge].target].deleteFlag = true;
     }
 }
@@ -805,9 +824,9 @@ double voronoiCell::volume() {
     // triangles, which can then be used to decompose the cell into tetrahedra.
     for (std::size_t i = 0; i < faceVertices.size(); ++i) {
 
-        EdgeIndex firstBaseEdge = faceVertices[i].edges[0];
-        EdgeIndex secondBaseEdge = faceVertices[i].edges[1];
-        EdgeIndex thirdBaseEdge = faceVertices[i].edges[2];
+        EdgeIndex firstBaseEdge = faceVertices[i].firstEdge;
+        EdgeIndex secondBaseEdge = edges[firstBaseEdge].next;
+        EdgeIndex thirdBaseEdge = edges[secondBaseEdge].next;
 
         while (thirdBaseEdge != firstBaseEdge) {
 
@@ -850,8 +869,8 @@ void voronoiCell::neighbors(std::vector<int> &v) {
         // We defaulted the creator to particle during initialization,
         // so this is a check for if the "neigbor" is the boundary
         // Should default to -1
-        if (edges[faceVertices[i].edges[0]].creator != -1) {
-            v.push_back(edges[faceVertices[i].edges[0]].creator);
+        if (edges[faceVertices[i].firstEdge].creator != -1) {
+            v.push_back(edges[faceVertices[i].firstEdge].creator);
         }
     }
 
@@ -871,9 +890,9 @@ void voronoiCell::face_areas(std::vector<double> &v) {
     for (std::size_t i = 0; i < faceVertices.size(); ++i) {
         area = 0.0;
 
-        EdgeIndex firstBaseEdge = faceVertices[i].edges[0];
-        EdgeIndex secondBaseEdge = faceVertices[i].edges[1];
-        EdgeIndex thirdBaseEdge = faceVertices[i].edges[2];
+        EdgeIndex firstBaseEdge = faceVertices[i].firstEdge;
+        EdgeIndex secondBaseEdge = edges[firstBaseEdge].next;
+        EdgeIndex thirdBaseEdge = edges[secondBaseEdge].next;
 
         while (thirdBaseEdge != firstBaseEdge) {
 
@@ -921,8 +940,9 @@ void voronoiCell::getFaceVertex(EdgeIndex testEdge) {
     if (!edges[testEdge].seen) {
 
         FaceVertex newFaceVertex;
+        newFaceVertex.firstEdge = testEdge;
 
-        newFaceVertex.edges.push_back(testEdge);
+        // newFaceVertex.edges.push_back(testEdge);
 
         EdgeIndex otherEdge = edges[testEdge].next;
 
@@ -930,7 +950,7 @@ void voronoiCell::getFaceVertex(EdgeIndex testEdge) {
 
         while (otherEdge != testEdge) {
 
-            newFaceVertex.edges.push_back(otherEdge);
+            // newFaceVertex.edges.push_back(otherEdge);
             edges[otherEdge].seen = true;
 
             otherEdge = edges[otherEdge].next;
@@ -1010,47 +1030,40 @@ void voronoiCell::resetEdgesAndVertices(EdgeIndex edge) {
 
 void voronoiCell::reset(EdgeIndex edge){
 
-    std::stack<EdgeIndex>* seenStackEdge = new std::stack<EdgeIndex>;
 
-    std::stack<VertexIndex>* seenStackVertex = new std::stack<VertexIndex>;
 
-    seenSearch(seenStackEdge, seenStackVertex, edge);
+    seenSearch(edge);
 
-    while (!seenStackEdge->empty()) {
-        EdgeIndex topEdge = seenStackEdge->top();
-        seenStackEdge->pop();
+    while (!seenStackEdge.empty()) {
+        EdgeIndex topEdge = seenStackEdge.back();
+        seenStackEdge.pop_back();
 
         edges[topEdge].seen = false;
 
     }
-    while (!seenStackVertex->empty()) {
-        VertexIndex topVertex = seenStackVertex->top();
+    while (!seenStackVertex.empty()) {
+        VertexIndex topVertex = seenStackVertex.back();
 
-        seenStackVertex->pop();
+        seenStackVertex.pop_back();
 
         vertices[topVertex].seen = false;
     }
-    delete seenStackVertex;
-
-    delete seenStackEdge;
 
 };
 
-void voronoiCell::seenSearch(std::stack<EdgeIndex>* seenStackEdge,
-                  std::stack<VertexIndex>* seenStackVertex,
-                  EdgeIndex edge){
+void voronoiCell::seenSearch(EdgeIndex edge){
 
     // Currently needs to watch out for problems with edges
     // within the cutting plane
     if (!edges[edge].seen) {
-        seenStackEdge->push(edge);
+        seenStackEdge.push_back(edge);
         edges[edge].seen = true;
-        seenSearch(seenStackEdge, seenStackVertex, edges[edge].next);
-        seenSearch(seenStackEdge, seenStackVertex, edges[edge].flip);
+        seenSearch(edges[edge].next);
+        seenSearch(edges[edge].flip);
     }
 
     if (!vertices[edges[edge].target].seen) {
-        seenStackVertex->push(edges[edge].target);
+        seenStackVertex.push_back(edges[edge].target);
         vertices[edges[edge].target].seen = true;
     }
 };
@@ -1105,9 +1118,9 @@ std::size_t voronoiCell::get_memory_usage(){
     memory += sizeof(FaceVertex) * faceVertices.capacity();
     memory += sizeof(voronoiCell);
     memory += edges.get_memory_usage() + vertices.get_memory_usage();
-    std::cout << "Edges: " << edges.get_memory_usage() << std::endl;
-    std::cout << "Vertices: " << vertices.get_memory_usage() << std::endl;
-    std::cout << "voronoi cell: " << memory << std::endl;
+    // std::cout << "Edges: " << edges.get_memory_usage() << std::endl;
+    // std::cout << "Vertices: " << vertices.get_memory_usage() << std::endl;
+    // std::cout << "voronoi cell: " << memory << std::endl;
     return memory;
 }
 
@@ -1128,37 +1141,50 @@ cellContainer::cellContainer(std::vector<Particle> parts, double defaultLen,
     particles = parts;
 }
 
-voronoiCell cellContainer::makeCell(size_t particleIndex) {
+void cellContainer::makeCell(size_t particleIndex, voronoiCell& cell) {
 
 
     // Calculate the initial max radius of a cube
     double maxRadius = sqrt(3) * defaultLength;
 
-
+    std::cout << "Mallocs before reconstruct: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
+      
     // Initialize the voronoi cell as a cube...
-    voronoiCell cell = voronoiCell("cube", particleIndex, particles[particleIndex], maxRadius,
+    cell.reconstruct(particleIndex, particles[particleIndex], maxRadius,
         x_min, x_max, y_min, y_max, z_min, z_max);
 
+     std::cout << "Mallocs after reconstruct: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
+      
     // loop through our array of particles and cut the cell with planes
     // associated with each possible neighbor.
+    // std::cout << "Mallocs before arraydec: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
 
     std::array<double, 3> point = {{particles[particleIndex].position.X, particles[particleIndex].position.Y, particles[particleIndex].position.Z}};
 
-    std::vector<Particle*> NeighborParticles;
+    // std::cout << "Mallocs before vecdec: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
+
+    NeighborParticles.clear();
+    // std::cout << "Mallocs before neighborquery: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
 
     sds.neighborQuery(point, defaultLength, &NeighborParticles);
 
-
+        // std::cout << "Cutting with " << NeighborParticles.size() << " neighbors. Current mallocs: " << getNumberOfTimesMallocHasBeenCalled() << std::endl; 
     for (size_t i = 0; i < NeighborParticles.size(); ++i) {
         // This condition may need to be fixed.
 
+        // std::cout << "Mallocs before any cellcuts: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
+
         if ((NeighborParticles[i]->position != particles[particleIndex].position) && (particles[particleIndex].position.distanceTo(NeighborParticles[i]->position) < maxRadius)) {
+
+            // std::cout << "Mallocs before cellcut: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
 
             cell.cutCell(*NeighborParticles[i], NeighborParticles[i]->index);
         }
     }
 
-    return cell;
+    // std::cout << "Mallocs after " << NeighborParticles.size() << " cuts: "
+        // << getNumberOfTimesMallocHasBeenCalled() << std::endl;
+
 }
 
 cellContainer::~cellContainer() {
@@ -1185,12 +1211,12 @@ double cellContainer::sum_cell_volumes() {
         voronoiCell c;
         for(unsigned int i = 0; i < particles.size(); ++i) {
 
-            c = makeCell(i);
+            makeCell(i, c);
             double vol = c.volume();
             sum += vol;//c.volume();
             // std::cout << "Cell volume: " << vol << std::endl;
             // if(c.faceVertices.size() > 0) {
-            //     std::cout << "FACEVERTEX SIZE GREATER THAN 0: " << c.faceVertices.size() << std::endl;
+                // std::cout << "FACEVERTEX SIZE GREATER THAN 0: " << c.faceVertices.size() << std::endl;
             // }
         }
     // }
@@ -1208,12 +1234,13 @@ void cellContainer::put(int id, double px, double py, double pz) {
     particles.push_back(Particle(id, px, py, pz, particles.size()));
 }
 
-double cellContainer::findMaxNeighDist() {
-    double maxDist = 0;
+std::vector<double> cellContainer::findMaxNeighDist(double scale) {
+    std::vector<double> maxDists;
     voronoiCell c;
     for(size_t i = 0; i < particles.size(); ++i) {
+        double maxDist = 0;
         std::vector<int> neighborIndexes;
-        c = makeCell(i);
+        makeCell(i, c);
         c.neighbors(neighborIndexes);
         for (int i = 0; i < neighborIndexes.size(); ++i) {
             double dist = c.particle.position.distanceTo(particles[neighborIndexes[i]].position);
@@ -1221,8 +1248,9 @@ double cellContainer::findMaxNeighDist() {
                 maxDist = dist;
             }
         }
+        maxDists.push_back(maxDist*scale);
     }
-    return maxDist;
+    return maxDists;
 
 }
 
@@ -1230,7 +1258,7 @@ double cellContainer::findMaxNeighDist() {
 //     std::size_t memory = 0;
 //     memory += sizeof(Particle) * particles.capacity();
 //     memory += sizeof(cellContainer);
-//     std::cout << "Cell container: " << memory << std::endl;
+    // std::cout << "Cell container: " << memory << std::endl;
 //     for(auto cell : cells) {
 //         memory += cell->get_memory_usage();
 //     }
