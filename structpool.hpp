@@ -5,58 +5,34 @@
 #include <bitset>
 #include <iostream>
 #include <typeinfo>
+#include <type_traits>
 #include "verification.hpp"
+#include "wrapper.hpp"
 
 
-struct StructPoolDefaultTag {};
+namespace detail {
+    struct StructPoolDefaultTag {};
+}
 
 template <
     typename T,
     typename SizeType = unsigned short,
-    typename Tag = StructPoolDefaultTag
+    typename Tag = detail::StructPoolDefaultTag
 >
 class StructPool {
 public:
-    class Index {
-        friend class StructPool;
-
-    private:
-        SizeType value;
-
-    public:
-        constexpr Index() = default;
-        explicit constexpr Index(SizeType value) : value(value) {}
-        explicit constexpr operator SizeType() const {return value;}
-
-        friend constexpr bool operator==(const Index lhs, const Index rhs)
-        {
-            return lhs.value == rhs.value;
-        }
-
-        friend constexpr bool operator!=(const Index lhs, const Index rhs)
-        {
-            return lhs.value != rhs.value;
-        }
-
-        friend std::ostream& operator<<(std::ostream& stream, const Index index)
-        {
-            return (stream << index.value);
-        }
+    // The second argument is a tag, so that indices of different
+    // kinds of StructPool are considered different types
+    // so that they can't get mixed up
+    class Index : public wrapper::Wrapper<SizeType, StructPool<T, SizeType, Tag>> {
+        friend class StructPool<T, SizeType, Tag>;
+        using wrapper::Wrapper<SizeType, StructPool<T, SizeType, Tag>>::Wrapper;
     };
 
     static constexpr Index INVALID_INDEX
         {std::numeric_limits<SizeType>::max()};
     static constexpr SizeType MAX_SIZE
-        {static_cast<SizeType>(INVALID_INDEX.value - 1)};
-
-protected:
-    union ObjectOrIndex {
-        Index index;
-        T object;
-
-        ObjectOrIndex() {}
-        ~ObjectOrIndex() {}
-    };
+        {static_cast<SizeType>(static_cast<SizeType>(INVALID_INDEX) - 1)};
 
 public:
     // A Chunk is either active, and contains an object,
@@ -65,7 +41,13 @@ public:
     // Thus, together the inactive chunks form a linked list,
     // while the active chunks store data.
     struct Chunk {
-        ObjectOrIndex data;
+        union ObjectOrIndex {
+            Index index;
+            T object;
+
+            ObjectOrIndex() {}
+            ~ObjectOrIndex() {}
+        } data;
         bool active;
         bool marked;
 
@@ -120,6 +102,9 @@ public:
     };
 
 protected:
+    // ==================
+    // |  Data Members  |
+    // ==================
     Index first_available_;
     std::vector<Chunk> chunks_;
 
@@ -161,6 +146,12 @@ public:
     StructPool(std::size_t reserve)
         : first_available_(INVALID_INDEX), chunks_(reserve)
     { /* Done */ }
+
+    void clear()
+    {
+        chunks_.clear();
+        first_available_ = INVALID_INDEX;
+    }
 
     SizeType size() const
     {
@@ -268,7 +259,7 @@ public:
         Index index;
 
         maybe_const_iterator(StructPoolPointer pool)
-            : pool(pool), index(0)
+            : pool(pool), index(static_cast<SizeType>(0))
         {
             while (pool->inactive(index)) {
                 ++index.value;

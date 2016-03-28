@@ -4,6 +4,24 @@
 #include "structpool.hpp"
 
 
+struct Nontrivial {
+	int x;
+	Nontrivial(int x) : x(x) {
+		std::cout << "Nontrivial constructor " << x << std::endl;
+	}
+
+	~Nontrivial() {
+		std::cout << "Nontrivial destructor " << x << std::endl;
+	}
+
+	Nontrivial& operator=(const Nontrivial&) = delete;
+	Nontrivial& operator=(const Nontrivial&&) = delete;
+	Nontrivial(const Nontrivial&) = delete;
+	Nontrivial(const Nontrivial&&) = delete;
+};
+
+typedef StructPool<Nontrivial>::Index WhatHappens;
+
 struct Vertex {
 	double x, y, z;
 
@@ -41,6 +59,10 @@ union union_thingy {
 
 int main()
 {
+	StructPool<Vertex> x;
+	StructPool<Vertex> y;
+	x = y;
+
 	std::cout << "HalfEdge size: " << sizeof(HalfEdge) << std::endl;
 	std::cout << "StructPool<HalfEdge> union size: "
 			  << sizeof(union_thingy)
