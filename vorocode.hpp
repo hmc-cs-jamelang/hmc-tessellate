@@ -132,9 +132,9 @@ public:
 		// Should, you know, initialize stuff
 	}
 
-	inline void reconstruct(size_t particleIndex, const Particle& particle, double maxRadius,
-				double x_min, double x_max, double y_min, double y_max,
-				double z_min, double z_max);
+	inline void reconstruct(const size_t& particleIndex, const Particle& particle, const double& maxRadius,
+				const double& x_min, const double& x_max, const double& y_min, const double& y_max,
+				const double& z_min, const double& z_max);
 	// inline ~voronoiCell();
 
 	struct Particle particle;
@@ -162,6 +162,7 @@ public:
 	StructPool<HalfEdge> edges;
 	StructPool<Vertex> vertices;
 	std::vector<FaceVertex> faceVertices;
+	std::vector<Particle*> NeighborParticles;
 
 	inline std::size_t get_memory_usage();
 
@@ -279,7 +280,8 @@ public:
 	std::vector<Particle*> NeighborParticles;
 
 
-	inline void makeCell(size_t particleIndex, voronoiCell& cell);
+	// inline void makeCell(size_t particleIndex, voronoiCell& cell);
+	inline void makeCell(size_t particleIndex, voronoiCell& cell, double searchDist) const;
 	inline cellContainer(std::vector<Particle> parts, double defaultLen);
 	inline cellContainer(std::vector<Particle> parts, double defaultLen,
 				  double x_min, double x_max, double y_min, double y_max,

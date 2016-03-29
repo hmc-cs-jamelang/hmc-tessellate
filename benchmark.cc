@@ -156,14 +156,13 @@ runTest(const unsigned int numberOfTrials,
         double boxLength,
         vector<unsigned int> * const result,
         vector<unsigned int> * const resultDelimiters,
-        double * const initializationTime,
         double * const queryingTime,
         string voroVersion,
         double scale,
         double prec
         ) {
 
-  *initializationTime = std::numeric_limits<double>::max();
+  // *initializationTime = std::numeric_limits<double>::max();
   *queryingTime = std::numeric_limits<double>::max();
 
   bool firstRunDone = false;
@@ -171,13 +170,15 @@ runTest(const unsigned int numberOfTrials,
 
   for (unsigned int trialNumber = 0;
        trialNumber < numberOfTrials; ++trialNumber, firstRunDone=true) {
-    double thisTrialsInitializationTime = std::numeric_limits<double>::max();
+    // double thisTrialsInitializationTime = std::numeric_limits<double>::max();
     double thisTrialsQueryingTime = std::numeric_limits<double>::max();
 
 // Randomly add particles into the container
     if (voroVersion == "voro++") {
       resetNumberOfTimesMallocHasBeenCalled();
       const int n_x=6,n_y=6,n_z=6;
+      const high_resolution_clock::time_point beginTime = high_resolution_clock::now();
+
 
       voro::container con(-boxLength/2, boxLength/2, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2, 
       n_x, n_y, n_z, false, false, false, 8);
@@ -192,14 +193,18 @@ runTest(const unsigned int numberOfTrials,
       if (vl.start()) do {
         if (con.compute_cell(c,vl)) {
           double vol = c.volume();
-          if (firstRunDone) {
-            if (vols.find(vol*prec) == vols.end()) {
-              std::cout << "ERROR, new volume: " << vol << std::endl;
-            }
-          }
-          else {
-            vols.insert(vol*prec);
-          }
+
+          //COMMENTED OUT ERROR CHECKING FOR BENCHMARKING RESULTS
+          // if (firstRunDone) {
+          //   if (vols.find(vol*prec) == vols.end()) {
+          //     std::cout << "ERROR, new volume: " << vol << std::endl;
+          //   }
+          // }
+          // else {
+          //   vols.insert(vol*prec);
+          // }
+
+
           // std::cout << "Cell volume: " << vol << std::endl;
           vvol += vol;
         }
@@ -208,10 +213,14 @@ runTest(const unsigned int numberOfTrials,
       // double vvol=con.sum_cell_volumes();
       // std::cout << "voro++ volume: " << vvol << std::endl;
       // std::cout << "Malloc called: " << getNumberOfTimesMallocHasBeenCalled() << " times." << std::endl;
+      const high_resolution_clock::time_point endTime = high_resolution_clock::now();
+        thisTrialsQueryingTime = duration_cast<duration<double> >(endTime - beginTime).count();
     }
 
     if (voroVersion == "voro--") {
       resetNumberOfTimesMallocHasBeenCalled();
+      const high_resolution_clock::time_point beginTime = high_resolution_clock::now();
+
       cellContainer con(std::vector<Particle>(), 1/*(scale != 0) ? (boxLength/pow(particles.size(),1.0/3))*scale : boxLength*/, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2, -boxLength/2, boxLength/2);
       for(unsigned int i=0;i<particles.size();i++) {
           con.put(particles[i].id, particles[i].position.X, particles[i].position.Y, particles[i].position.Z);
@@ -222,32 +231,42 @@ runTest(const unsigned int numberOfTrials,
       con.sds.initialize(&con.particles[0], &con.particles[con.particles.size()]);
       
       voronoiCell c;
+      // #pragma omp parallel for private(c) reduction(+:vvol)
       for(unsigned int i = 0; i < con.particles.size(); ++i) {
         // std::cout << "Search distance for particle " << i << ": " << searchDist[i] << std::endl;
-        con.defaultLength = searchDist[i];
+        // con.defaultLength = searchDist[i];
         // std::cout << "Mallocs before cell " << i << ": " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
-        con.makeCell(i, c);
+        con.makeCell(i, c, searchDist[i]);
         // std::cout << "Mallocs after cell " << i << ": " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
         // std::cout << "Cell " << i << " data: " << std::endl;
         // std::cout << "    edges: " <<  c.edges.capacity() << ", " << c.edges.size() << ", " << c.edges.computeOccupancy() << std::endl;
         // std::cout << "    vertices: " <<  c.vertices.capacity() << ", " << c.vertices.size() << ", " << c.vertices.computeOccupancy() << std::endl;
         double vol = c.volume();
-        if (firstRunDone) {
-          if (vols.find(vol*prec) == vols.end()) {
-            std::cout << "ERROR, new volume: " << vol << std::endl;
-          }
-        }
-        else {
-          vols.insert(vol*prec);
-        }
-        vvol += vol;
-      }
 
+
+        //COMMENTED OUT ERROR CHECKING FOR BENCHMARKING
+        // if (firstRunDone) {
+        //   if (vols.find(vol*prec) == vols.end()) {
+        //     std::cout << "ERROR, new volume: " << vol << std::endl;
+        //   }
+        // }
+        // else {
+        //   vols.insert(vol*prec);
+        // }
+
+
+        vvol = vvol + vol;
+
+
+
+      }
       // Sum up the volumes, and check that this matches the container volume
       // double vvol=con.sum_cell_volumes();
       // std::cout << "voro-- volume: " << vvol << std::endl;
       // std::cout << "Malloc called: " << getNumberOfTimesMallocHasBeenCalled() << " times." << std::endl;
       // std::cout << "Diagram memory: " << con.get_memory_usage() << std::endl;
+      const high_resolution_clock::time_point endTime = high_resolution_clock::now();
+      thisTrialsQueryingTime = duration_cast<duration<double> >(endTime - beginTime).count();
     }
 
     result->resize(0);
@@ -257,10 +276,9 @@ runTest(const unsigned int numberOfTrials,
     //          result, resultDelimiters,
     //          &thisTrialsInitializationTime, &thisTrialsQueryingTime);
     // Take the minimum values from all trials
-    *initializationTime =
-      std::min(*initializationTime, thisTrialsInitializationTime);
-    *queryingTime =
-      std::min(*queryingTime, thisTrialsQueryingTime);
+    // *initializationTime =
+    //   std::min(*initializationTime, thisTrialsInitializationTime);
+    *queryingTime = thisTrialsQueryingTime;
 
   }
   return vols;
@@ -291,8 +309,8 @@ int main(int argc, char* argv[]) {
   // *************************** < Inputs> *************************************
   // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
-  const array<double, 2> numberOfPointsRange = {{1e3, 1e8}};
-  const unsigned int numberOfDataPoints      = 15;
+  const array<double, 2> numberOfPointsRange = {{1e2, 1e7}};
+  const unsigned int numberOfDataPoints      = 6;
   const unsigned int numberOfTrialsPerSize   = 3;
   const double neighborSearchDistance        = 1.0;
 
@@ -307,12 +325,7 @@ int main(int argc, char* argv[]) {
   }
   if (argc >= 4) {
     prec = atof(argv[3]);
-  }
-  // Utilities::interpolateNumberLinearlyOnLogScale(numberOfPointsRange[0],
-  //                                                numberOfPointsRange[1],
-  //                                                numberOfDataPoints,
-  //                                                dataPointIndex);
-  
+  }  
 
   // typedef PointScenarioGenerators::UniformRandomWithAverageNumberOfNeighbors UniformPointGenerator;
   // typedef PointScenarioGenerators::NonUniformRandomWithAverageNumberOfNeighbors NonUniformPointGenerator;
@@ -330,12 +343,12 @@ int main(int argc, char* argv[]) {
   Utilities::verifyThatDirectoryExists("data");
 
   // Open output files
-  // sprintf(sprintfBuffer, "%s%s_stlib_cellArray_results%s.csv",
-  //         prefix.c_str(), UniformPointGenerator::getName().c_str(), suffix.c_str());
-  // FILE * stlibCellArrayFileUniform = fopen(sprintfBuffer, "w");
-  // sprintf(sprintfBuffer, "%s%s_stlib_octTree_results%s.csv",
-  //         prefix.c_str(), UniformPointGenerator::getName().c_str(), suffix.c_str());
-  // FILE * stlibOctTreeFileUniform = fopen(sprintfBuffer, "w");
+  sprintf(sprintfBuffer, "%svoropp_results%s.csv",
+          prefix.c_str(), /*UniformPointGenerator::getName().c_str(), */suffix.c_str());
+  FILE * vppFileUniform = fopen(sprintfBuffer, "w");
+  sprintf(sprintfBuffer, "%svoromm_results%s.csv",
+          prefix.c_str(), /*UniformPointGenerator::getName().c_str(), */suffix.c_str());
+  FILE * vmmFileUniform = fopen(sprintfBuffer, "w");
   // sprintf(sprintfBuffer, "%s%s_stlib_kdTree_results%s.csv",
   //         prefix.c_str(), UniformPointGenerator::getName().c_str(), suffix.c_str());
   // FILE * stlibKdTreeFileUniform = fopen(sprintfBuffer, "w");
@@ -383,6 +396,11 @@ int main(int argc, char* argv[]) {
        dataPointIndex < numberOfDataPoints;
        ++dataPointIndex) {
 
+    numberOfPoints = Utilities::interpolateNumberLinearlyOnLogScale(numberOfPointsRange[0],
+                                               numberOfPointsRange[1],
+                                               numberOfDataPoints,
+                                               dataPointIndex);
+
     high_resolution_clock::time_point thisSizesTic =
       high_resolution_clock::now();
 
@@ -399,18 +417,67 @@ int main(int argc, char* argv[]) {
         pointsUniform.push_back(Particle(i,x,y,z,i));
     }
 
-    // if (numberOfPoints <= 1000) {
-      cellContainer con(std::vector<Particle>(), neighborSearchDistance, -neighborSearchDistance/2, neighborSearchDistance/2, -neighborSearchDistance/2, neighborSearchDistance/2, -neighborSearchDistance/2, neighborSearchDistance/2);
+    assert(pointsUniform.size() == numberOfPoints);
 
+    // if (numberOfPoints <= 1000) {
+      voro::container con(-neighborSearchDistance/2, neighborSearchDistance/2, -neighborSearchDistance/2, neighborSearchDistance/2, -neighborSearchDistance/2, neighborSearchDistance/2, 
+      6, 6, 6, false, false, false, 8);
       for(unsigned int i=0;i<pointsUniform.size();i++) {
-        con.put(pointsUniform[i].id, pointsUniform[i].position.X, pointsUniform[i].position.Y, pointsUniform[i].position.Z);
+        con.put(i, pointsUniform[i].position.X, pointsUniform[i].position.Y, pointsUniform[i].position.Z);
       }
-      con.initialize();
-      std::vector<double> searchDist = con.findMaxNeighDist(scale);
+      std::vector<double> searchDist;
+      voro::c_loop_all cl(con);
+      voro::voronoicell_neighbor vpneigh;
+      std::vector<std::vector<int>> neighbors;
+      neighbors.resize(numberOfPoints);
+      searchDist.resize(numberOfPoints);
+
+      std::vector<int> temp;
+      if(cl.start()){
+        do {
+          if(con.compute_cell(vpneigh,cl)) {
+            temp.clear();
+            vpneigh.neighbors(temp);
+            // neighbors[cl.pid()] = temp;
+            double maxDist = 0;
+            for (int j : temp) {
+              if (j < 0) {
+                continue;
+              }
+              assert(cl.pid() < pointsUniform.size());
+              assert(j < pointsUniform.size());
+              double dist = pointsUniform[cl.pid()].position.distanceTo(pointsUniform[j].position);
+              if (dist > maxDist) {
+                maxDist = dist;
+              }
+            }
+            assert(cl.pid() < searchDist.size());
+            searchDist[cl.pid()] = maxDist * 1.1;
+          }
+        } while(cl.inc());
+      }
+
+      // for (int i = 0; i < neighbors.size(); ++i){
+      //   double maxDist = 0;
+      //   for (int j : neighbors[i]) {
+      //     double dist = pointsUniform[i].position.distanceTo(pointsUniform[j].position);
+      //     if (dist > maxDist) {
+      //       maxDist = dist;
+      //     }
+      //   }
+        // std::cout << "Search distance: " << maxDist << std::endl;
+        // searchDist[i] = maxDist;
+
+      // }
+
+
+      // std::vector<double> searchDist = con.findMaxNeighDist(scale);
       double max = *std::max_element(std::begin(searchDist),std::end(searchDist));
       double min = *std::min_element(searchDist.begin(),searchDist.end());
 
-      std::cout << "Difference between max (" << max << ") and min (" << min << ") search distance: " << max-min << std::endl;
+      // std::cout << "Difference between max (" << max << ") and min (" << min << ") search distance: " << max-min << std::endl;
+
+
     // }
     // // else {
     // //   searchDist = (neighborSearchDistance/pow(numberOfPoints, 1/3.0))*5;
@@ -454,12 +521,11 @@ int main(int argc, char* argv[]) {
             neighborSearchDistance,
             &result,
             &resultDelimiters,
-            &initializationTime,
             &queryingTime,
             "voro++",
             scale, prec);
-    fprintf(sanic, "%10.4e, %10.4e, %10.4e\n",
-            double(numberOfPoints), initializationTime, queryingTime);
+    fprintf(vppFileUniform, "%10.4e, %10.4e\n",
+            double(numberOfPoints), queryingTime);
     std::cout<<"finished voro++"<<std::endl;
 
     high_resolution_clock::time_point thisSizesToc =
@@ -481,12 +547,11 @@ int main(int argc, char* argv[]) {
             neighborSearchDistance,
             &result,
             &resultDelimiters,
-            &initializationTime,
             &queryingTime,
             "voro--",
             scale, prec);
-    fprintf(sanic, "%10.4e, %10.4e, %10.4e\n",
-            double(numberOfPoints), initializationTime, queryingTime);
+    fprintf(vmmFileUniform, "%10.4e, %10.4e\n",
+            double(numberOfPoints), queryingTime);
     std::cout<<"finished voro--"<<std::endl;
 
     /*high_resolution_clock::time_point*/ thisSizesToc =
@@ -825,8 +890,7 @@ int main(int argc, char* argv[]) {
 //   }
 
 
-//   fclose(stlibCellArrayFileUniform);
-//   fclose(stlibCellArrayFileNonUniform);
+
 //   fclose(stlibOctTreeFileUniform);
 //   // fclose(stlibOctTreeFileNonUniform);
 //   fclose(stlibKdTreeFileUniform);
@@ -840,6 +904,8 @@ int main(int argc, char* argv[]) {
 
 //   return 0;
 }
-fclose(sanic);
+  fclose(vppFileUniform);
+  fclose(vmmFileUniform);
+// fclose(sanic);
 return 0;
 }

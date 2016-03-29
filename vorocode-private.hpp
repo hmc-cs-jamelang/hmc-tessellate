@@ -140,10 +140,10 @@ HalfEdge::HalfEdge(VertexIndex vertex, EdgeIndex edge1, EdgeIndex edge2, size_t 
 
 // HalfEdge* firstEdge = getFirstEdge();
 
-void voronoiCell::reconstruct(size_t particleIndex, const Particle& seedParticle,
-                         double MaxRadius, double x_min, double x_max,
-                         double y_min, double y_max, double z_min, double z_max) {
-    //std::cout << "Start reconstruct: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;;
+void voronoiCell::reconstruct(const size_t& particleIndex, const Particle& seedParticle,
+                         const double& MaxRadius, const double& x_min, const double& x_max,
+                         const double& y_min, const double& y_max, const double& z_min, const double& z_max) {
+    // std::cout << "Start reconstruct: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;;
 
     vertices.clear();
     edges.clear();
@@ -154,6 +154,8 @@ void voronoiCell::reconstruct(size_t particleIndex, const Particle& seedParticle
 
     maxRadius = MaxRadius;
     faceVertices.clear();
+
+
 
     // std::cout << "Before making cube:" << std::endl;
     // std::cout << "    edges: " <<  edges.capacity() << ", " << edges.size()  << std::endl;
@@ -1141,20 +1143,19 @@ cellContainer::cellContainer(std::vector<Particle> parts, double defaultLen,
     particles = parts;
 }
 
-void cellContainer::makeCell(size_t particleIndex, voronoiCell& cell) {
+void cellContainer::makeCell(size_t particleIndex, voronoiCell& cell, double searchDist) const {
 
 
     // Calculate the initial max radius of a cube
-    double maxRadius = sqrt(3) * defaultLength;
+    double maxRadius = sqrt(3) * searchDist;
 
-    std::cout << "Mallocs before reconstruct: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
+
+    // std::cout << "Mallocs before reconstruct: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
       
     // Initialize the voronoi cell as a cube...
     cell.reconstruct(particleIndex, particles[particleIndex], maxRadius,
         x_min, x_max, y_min, y_max, z_min, z_max);
 
-     std::cout << "Mallocs after reconstruct: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
-      
     // loop through our array of particles and cut the cell with planes
     // associated with each possible neighbor.
     // std::cout << "Mallocs before arraydec: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
@@ -1163,22 +1164,22 @@ void cellContainer::makeCell(size_t particleIndex, voronoiCell& cell) {
 
     // std::cout << "Mallocs before vecdec: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
 
-    NeighborParticles.clear();
+    cell.NeighborParticles.clear();
     // std::cout << "Mallocs before neighborquery: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
 
-    sds.neighborQuery(point, defaultLength, &NeighborParticles);
+    sds.neighborQuery(point, searchDist, &cell.NeighborParticles);
 
         // std::cout << "Cutting with " << NeighborParticles.size() << " neighbors. Current mallocs: " << getNumberOfTimesMallocHasBeenCalled() << std::endl; 
-    for (size_t i = 0; i < NeighborParticles.size(); ++i) {
+    for (size_t i = 0; i < cell.NeighborParticles.size(); ++i) {
         // This condition may need to be fixed.
 
         // std::cout << "Mallocs before any cellcuts: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
 
-        if ((NeighborParticles[i]->position != particles[particleIndex].position) && (particles[particleIndex].position.distanceTo(NeighborParticles[i]->position) < maxRadius)) {
+        if ((cell.NeighborParticles[i]->position != particles[particleIndex].position) && (particles[particleIndex].position.distanceTo(cell.NeighborParticles[i]->position) < maxRadius)) {
 
             // std::cout << "Mallocs before cellcut: " << getNumberOfTimesMallocHasBeenCalled() << std::endl;
 
-            cell.cutCell(*NeighborParticles[i], NeighborParticles[i]->index);
+            cell.cutCell(*(cell.NeighborParticles[i]), cell.NeighborParticles[i]->index);
         }
     }
 
@@ -1205,20 +1206,20 @@ double cellContainer::sum_cell_volumes() {
     double sum = 0;
 
     // Need to put in an initialize function. DO NOT KEEP HERE
-    sds.initialize(&particles[0], &particles[particles.size()]);
+    // sds.initialize(&particles[0], &particles[particles.size()]);
 
-    // if(!calculated) {
-        voronoiCell c;
-        for(unsigned int i = 0; i < particles.size(); ++i) {
+    // // if(!calculated) {
+    //     voronoiCell c;
+    //     for(unsigned int i = 0; i < particles.size(); ++i) {
 
-            makeCell(i, c);
-            double vol = c.volume();
-            sum += vol;//c.volume();
+    //         makeCell(i, c);
+    //         double vol = c.volume();
+    //         sum += vol;//c.volume();
             // std::cout << "Cell volume: " << vol << std::endl;
             // if(c.faceVertices.size() > 0) {
                 // std::cout << "FACEVERTEX SIZE GREATER THAN 0: " << c.faceVertices.size() << std::endl;
             // }
-        }
+        // }
     // }
     // else {
 
@@ -1236,20 +1237,21 @@ void cellContainer::put(int id, double px, double py, double pz) {
 
 std::vector<double> cellContainer::findMaxNeighDist(double scale) {
     std::vector<double> maxDists;
-    voronoiCell c;
-    for(size_t i = 0; i < particles.size(); ++i) {
-        double maxDist = 0;
-        std::vector<int> neighborIndexes;
-        makeCell(i, c);
-        c.neighbors(neighborIndexes);
-        for (int i = 0; i < neighborIndexes.size(); ++i) {
-            double dist = c.particle.position.distanceTo(particles[neighborIndexes[i]].position);
-            if(dist > maxDist) {
-                maxDist = dist;
-            }
-        }
-        maxDists.push_back(maxDist*scale);
-    }
+    // voronoiCell c;
+    // #pragma omp for
+    // for(size_t i = 0; i < particles.size(); ++i) {
+    //     double maxDist = 0;
+    //     std::vector<int> neighborIndexes;
+    //     makeCell(i, c);
+    //     c.neighbors(neighborIndexes);
+    //     for (int i = 0; i < neighborIndexes.size(); ++i) {
+    //         double dist = c.particle.position.distanceTo(particles[neighborIndexes[i]].position);
+    //         if(dist > maxDist) {
+    //             maxDist = dist;
+    //         }
+    //     }
+    //     maxDists.push_back(maxDist*scale);
+    // }
     return maxDists;
 
 }
