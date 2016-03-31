@@ -620,7 +620,6 @@ EdgeIndex voronoiCell::maintainFirstEdge(EdgeIndex edge) {
         i++;
         edge = testEdges[i];
     }
-
     return edge;
 
     // if (planeSide(edge->flip->target) != outside) {
@@ -859,7 +858,6 @@ double voronoiCell::tetVolume(VertexIndex vertex1, VertexIndex vertex2,
 // Takes by reference a vector that will become filled with
 // the ids of the neighbors of this cell.
 void voronoiCell::neighbors(std::vector<int> &v) {
-
     // We want to only call face_vertices when it
     // hasn't already been called
     if (faceVertices.size() == 0) {
@@ -875,7 +873,6 @@ void voronoiCell::neighbors(std::vector<int> &v) {
             v.push_back(edges[faceVertices[i].firstEdge].creator);
         }
     }
-
 }
 
 void voronoiCell::face_areas(std::vector<double> &v) {
@@ -920,7 +917,6 @@ double voronoiCell::triArea(VertexIndex vertex1, VertexIndex vertex2,
 }
 
 void voronoiCell::face_vertices(std::vector<int> &v) {
-
     resetEdgesAndVertices(firstEdge);
     getFaceVertex(firstEdge);
 

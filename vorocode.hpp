@@ -70,13 +70,6 @@ typedef struct Particle {
 	inline Particle(int Id, double x, double y, double z, size_t index);
 	inline Particle(int Id, Vector3 pos, size_t index);
 	inline Particle(void);
-
-	// index should not be an int, nor should the default group be 0
-	inline Particle(double x, double y, double z, int index, int id, int group = 0)
-	{
-		// yeah no
-	}
-
 } Particle;
 
 typedef struct HalfEdge {
@@ -114,15 +107,9 @@ enum side {inside, outside, incident};
 
 class voronoiCell{
 public:
-	inline voronoiCell()
-	{
-		// do nothing
-	}
+	inline voronoiCell();
 
-	inline void clear()
-	{
-		// Probably should reset some stuff
-	}
+	// inline void clear();
 
 	// inline voronoiCell& operator=(voronoiCell& rhs) = default;
 
