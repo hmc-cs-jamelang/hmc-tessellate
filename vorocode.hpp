@@ -107,7 +107,7 @@ enum side {inside, outside, incident};
 
 class voronoiCell{
 public:
-	inline voronoiCell();
+	// inline voronoiCell();
 
 	// inline void clear();
 

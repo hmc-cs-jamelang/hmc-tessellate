@@ -67,7 +67,7 @@ namespace voro {
 
 		void computeVertices(std::vector<double> &v) {
 			ensurePolyComputed();
-			poly_->vertices(v);
+			poly_->computeVertices(v);
 		}
 		void computeVertices(double x, double y, double z, std::vector<double> &v) {
 			return computeVertices(v);
@@ -145,7 +145,7 @@ namespace voro {
 		our_size_t addParticle(double x, double y, double z, int id)
 		{
 			our_size_t index = size();
-			particles_.push_back(Particle(id, x, y, z));
+			particles_.push_back(Particle(id, x, y, z, id));
 			groups_.push_back(DEFAULT_GROUP);
 			return index;
 		}
@@ -153,7 +153,7 @@ namespace voro {
 		our_size_t addParticle(double x, double y, double z, int id, int group)
 		{
 			our_size_t index = size();
-			particles_.push_back(Particle(id, x, y, z));
+			particles_.push_back(Particle(id, x, y, z, id));
 			groups_.push_back(group);
 			return index;
 		}
@@ -212,12 +212,13 @@ namespace voro {
 
 		Polyhedron* computePolyhedron(our_size_t i)
 		{
-			Polyhedron* poly = new Polyhedron("cube", 100000000, particles_[i], 100000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
+			Polyhedron* poly = new Polyhedron();
+			poly->reconstruct(i, particles_[i], 100000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
 
 			our_size_t end = particles_.size();
 			for (our_size_t index = 0; index < end; ++index) {
 				if (index != i) {
-					poly->cutCell(particles_[index]);
+					poly->cutCell(particles_[index], index);
 				}
 			}
 
@@ -226,15 +227,18 @@ namespace voro {
 
 		Polyhedron* computePolyhedron(double x, double y, double z)
 		{
-			Particle p = Particle(DEFAULT_INDEX, x, y, z);
-			Polyhedron* poly = new Polyhedron("cube", 100000000, p, 100000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
+			Particle p = Particle(DEFAULT_INDEX, x, y, z, DEFAULT_INDEX);
+			Polyhedron* poly = new Polyhedron();
+			our_size_t ind = 0;
+			poly->reconstruct(ind, p, 100000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
 
 			// our_size_t end = particles_.size();
 			// for (our_size_t index = 0; index < end; ++index) {
 			// 	poly->cutCell(particles_[index]);
 			// }
-			for (auto& particle : particles_) {
-				poly->cutCell(particle);
+			our_size_t end = particles_.size();
+			for (our_size_t index = 0; index < end; ++index) {
+				poly->cutCell(particles_[index], index);
 			}
 
 			return poly;
@@ -242,12 +246,13 @@ namespace voro {
 
 		Polyhedron* computePolyhedron(our_size_t i, TargetGroup targetGroup)
 		{
-			Polyhedron* poly = new Polyhedron("cube", 10000000, particles_[i], 10000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
+			Polyhedron* poly = new Polyhedron();
+			poly->reconstruct(i, particles_[i], 100000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
 
 			our_size_t end = particles_.size();
 			for (our_size_t index = 0; index < end; ++index) {
 				if (targetGroup.count(groups_[index]) && index != i) {
-					poly->cutCell(particles_[index]);
+					poly->cutCell(particles_[index], index);
 				}
 			}
 
@@ -256,13 +261,15 @@ namespace voro {
 
 		Polyhedron* computePolyhedron(double x, double y, double z, TargetGroup targetGroup)
 		{
-			Particle p = Particle(DEFAULT_INDEX, x, y, z);
-			Polyhedron* poly = new Polyhedron("cube", 10000000, p, 10000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
+			Particle p = Particle(DEFAULT_INDEX, x, y, z, DEFAULT_INDEX);
+			Polyhedron* poly = new Polyhedron();
+			our_size_t index = 0;
+			poly->reconstruct(index, p, 100000000, xmin_, xMAX_, ymin_, yMAX_, zmin_, zMAX_);
 
 			our_size_t end = particles_.size();
 			for (our_size_t index = 0; index < end; ++index) {
 				if (targetGroup.count(groups_[index])) {
-					poly->cutCell(particles_[index]);
+					poly->cutCell(particles_[index], index);
 				}
 			}
 
