@@ -396,10 +396,10 @@ int main(int argc, char* argv[]) {
        dataPointIndex < numberOfDataPoints;
        ++dataPointIndex) {
 
-    numberOfPoints = Utilities::interpolateNumberLinearlyOnLogScale(numberOfPointsRange[0],
-                                               numberOfPointsRange[1],
-                                               numberOfDataPoints,
-                                               dataPointIndex);
+    // numberOfPoints = Utilities::interpolateNumberLinearlyOnLogScale(numberOfPointsRange[0],
+    //                                            numberOfPointsRange[1],
+    //                                            numberOfDataPoints,
+    //                                            dataPointIndex);
 
     high_resolution_clock::time_point thisSizesTic =
       high_resolution_clock::now();
@@ -407,6 +407,8 @@ int main(int argc, char* argv[]) {
     // generate points
     vector<Particle> pointsUniform;
     vector<Particle> pointsNonUniform;
+
+    numberOfPoints = 1e7;
 
     // Randomly add particles into the container
     for(unsigned int i=0;i<numberOfPoints;i++) {
@@ -513,27 +515,27 @@ int main(int argc, char* argv[]) {
     // =========================================================================
     // ************************** < do voro++ > ********************************
     // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    thisSizesTic = high_resolution_clock::now();
+    // thisSizesTic = high_resolution_clock::now();
 
-    std::multiset<long> voropp = runTest(numberOfTrialsPerSize,
-            pointsUniform,
-            searchDist,
-            neighborSearchDistance,
-            &result,
-            &resultDelimiters,
-            &queryingTime,
-            "voro++",
-            scale, prec);
-    fprintf(vppFileUniform, "%10.4e, %10.4e\n",
-            double(numberOfPoints), queryingTime);
-    std::cout<<"finished voro++"<<std::endl;
+    // std::multiset<long> voropp = runTest(numberOfTrialsPerSize,
+    //         pointsUniform,
+    //         searchDist,
+    //         neighborSearchDistance,
+    //         &result,
+    //         &resultDelimiters,
+    //         &queryingTime,
+    //         "voro++",
+    //         scale, prec);
+    // fprintf(vppFileUniform, "%10.4e, %10.4e\n",
+    //         double(numberOfPoints), queryingTime);
+    // std::cout<<"finished voro++"<<std::endl;
 
-    high_resolution_clock::time_point thisSizesToc =
-      high_resolution_clock::now();
-    double thisSizesElapsedTime =
-      duration_cast<duration<double> >(thisSizesToc - thisSizesTic).count();
-    printf("finished %8.2e points in %6.2f seconds\n", double(numberOfPoints),
-           thisSizesElapsedTime);
+    // high_resolution_clock::time_point thisSizesToc =
+    //   high_resolution_clock::now();
+    // double thisSizesElapsedTime =
+    //   duration_cast<duration<double> >(thisSizesToc - thisSizesTic).count();
+    // printf("finished %8.2e points in %6.2f seconds\n", double(numberOfPoints),
+    //        thisSizesElapsedTime);
 
 
     // =========================================================================
@@ -554,67 +556,67 @@ int main(int argc, char* argv[]) {
             double(numberOfPoints), queryingTime);
     std::cout<<"finished voro--"<<std::endl;
 
-    /*high_resolution_clock::time_point*/ thisSizesToc =
+    high_resolution_clock::time_point thisSizesToc =
       high_resolution_clock::now();
-    /*double*/ thisSizesElapsedTime =
+    double thisSizesElapsedTime =
       duration_cast<duration<double> >(thisSizesToc - thisSizesTic).count();
     printf("finished %8.2e points in %6.2f seconds\n", double(numberOfPoints),
            thisSizesElapsedTime);
 
-    if (voropp != voromm) {
-      std::cout << "SHIT GAIZ NO!!!! Different volumes produced!" << std::endl;
-      std::size_t diff = 0;
+    // if (voropp != voromm) {
+    //   std::cout << "SHIT GAIZ NO!!!! Different volumes produced!" << std::endl;
+    //   std::size_t diff = 0;
 
-      std::set<long> seen;
+    //   std::set<long> seen;
 
-      for (auto x : voromm) {
-        if (seen.find(x) != seen.end()) {
-          continue;
-        }
-        seen.insert(x);
+    //   for (auto x : voromm) {
+    //     if (seen.find(x) != seen.end()) {
+    //       continue;
+    //     }
+    //     seen.insert(x);
 
-        std::size_t mm = voromm.count(x);
-        std::size_t pp;
-        if (voropp.find(x) == voropp.end()) {
-          pp = 0;
-        }
-        else {
-          pp = voropp.count(x);
-        }
+    //     std::size_t mm = voromm.count(x);
+    //     std::size_t pp;
+    //     if (voropp.find(x) == voropp.end()) {
+    //       pp = 0;
+    //     }
+    //     else {
+    //       pp = voropp.count(x);
+    //     }
 
-        if (pp < mm) {
-          diff += (mm - pp);
-          std::cout << "Different volume: " << (x/prec) << ", counts " << mm << " vs. " << pp << std::endl;
-        }
-      }
+    //     if (pp < mm) {
+    //       diff += (mm - pp);
+    //       std::cout << "Different volume: " << (x/prec) << ", counts " << mm << " vs. " << pp << std::endl;
+    //     }
+    //   }
 
-      seen.clear();
-      for (auto x : voropp) {
-        if (seen.find(x) != seen.end()) {
-          continue;
-        }
-        seen.insert(x);
+    //   seen.clear();
+    //   for (auto x : voropp) {
+    //     if (seen.find(x) != seen.end()) {
+    //       continue;
+    //     }
+    //     seen.insert(x);
 
-        std::size_t pp = voropp.count(x);
-        std::size_t mm;
-        if (voromm.find(x) == voromm.end()) {
-          mm = 0;
-        }
-        else {
-          mm = voromm.count(x);
-        }
+    //     std::size_t pp = voropp.count(x);
+    //     std::size_t mm;
+    //     if (voromm.find(x) == voromm.end()) {
+    //       mm = 0;
+    //     }
+    //     else {
+    //       mm = voromm.count(x);
+    //     }
 
-        if (mm < pp) {
-          std::cout << "Different volume: " << (x/prec) << ", counts " << mm << " vs. " << pp << std::endl;
-        }
-      }
+    //     if (mm < pp) {
+    //       std::cout << "Different volume: " << (x/prec) << ", counts " << mm << " vs. " << pp << std::endl;
+    //     }
+    //   }
 
-      std::cout << "Num different: " << diff << std::endl;
-      std::cout << "Percentage different: " << diff/numberOfPoints << std::endl;
-    }
-    else {
-      std::cout << "voro++ and voro-- produced the same volumes to prec " << (1/prec) << std::endl;
-    }
+    //   std::cout << "Num different: " << diff << std::endl;
+    //   std::cout << "Percentage different: " << diff/numberOfPoints << std::endl;
+    // }
+    // else {
+    //   std::cout << "voro++ and voro-- produced the same volumes to prec " << (1/prec) << std::endl;
+    // }
 
 //     // =========================================================================
 //     // ********************** < do stlib cellArray > ***************************

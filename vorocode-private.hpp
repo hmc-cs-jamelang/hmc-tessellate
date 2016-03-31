@@ -567,6 +567,7 @@ EdgeIndex voronoiCell::findNextIncidentEdge(EdgeIndex orig) {
     EdgeIndex cross = edges[orig].next;
 
     while (planeSide(edges[cross].target) == outside){
+        std::cerr << cross << std::endl;
         cross = edges[cross].next;
     }
 

@@ -77,6 +77,21 @@ typedef struct Particle {
 		// yeah no
 	}
 
+	inline x()
+	{
+		position.X;
+	}
+
+	inline y()
+	{
+		position.Y;
+	}
+
+	inline z()
+	{
+		position.Z;
+	}
+
 } Particle;
 
 typedef struct HalfEdge {
