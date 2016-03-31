@@ -70,6 +70,11 @@ typedef struct Particle {
 	inline Particle(int Id, double x, double y, double z, size_t index);
 	inline Particle(int Id, Vector3 pos, size_t index);
 	inline Particle(void);
+
+	inline double x() const {position.X;}
+	inline double y() const {position.Y;}
+	inline double z() const {position.Z;}
+
 } Particle;
 
 typedef struct HalfEdge {
@@ -249,7 +254,7 @@ struct Location :
 	public std::unary_function<Particle*, std::array<double,3> > {
 	result_type
 	inline operator()(argument_type r) {
-		result_type location = {{r->position.X, r->position.Y, r->position.Z}};
+		result_type location = {{r->x(), r->y(), r->z()}};
 		return location;
 	}
 };
