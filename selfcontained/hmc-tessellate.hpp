@@ -197,6 +197,12 @@ namespace hmc {
             {
                 for (SizeType index : search) {
                     if (index != particleIndex) {
+                        if (particleIndex == 8285 && index == 5218) {
+                            std::cerr << "I DID try..." << std::endl;
+                        }
+                        if (particleIndex == 8285 && index == 4170) {
+                            std::cerr << "Bastard..." << std::endl;
+                        }
                         poly.cutWithPlane(
                             index,
                             Plane::between(position, particles_[index].position)

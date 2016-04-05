@@ -253,7 +253,7 @@ namespace hmc {
                     dist = d;
                 }
             }
-            return 2*dist;
+            return 2*1.0001*3*dist;
         }
 
         void buildCube(double xmin, double xMAX,

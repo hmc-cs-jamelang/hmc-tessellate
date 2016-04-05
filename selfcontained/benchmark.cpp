@@ -329,7 +329,7 @@ struct AllData {
 
 
 
-using CheckType = Check<void>;
+using CheckType = Check<AllData>;
 constexpr std::size_t DEFAULT_NUM_POINTS = 100;
 constexpr bool shrinkwrap = false;
 constexpr double shrinkwrapPadding = 1.00001;
