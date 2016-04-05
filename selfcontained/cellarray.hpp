@@ -269,18 +269,21 @@ namespace spatial
 		// Get the x-index of a cell with given x-coordinate
 		std::size_t getXIndex(double x) const
 		{
+			if (x >= xmax_) {return num_cells_dim_ - 1;}
 			return std::size_t( (x - xmin_) * cell_size_inv_x_ );
 		}
 
 		// Get the y-index of a cell with given y-coordinate
 		std::size_t getYIndex(double y) const
 		{
+			if (y >= ymax_) {return num_cells_dim_ - 1;}
 			return std::size_t( (y - ymin_) * cell_size_inv_y_ );
 		}
 
 		// Get the z-index of a cell with given z-coordinate
 		std::size_t getZIndex(double z) const
 		{
+			if (z >= zmax_) {return num_cells_dim_ - 1;}
 			return std::size_t( (z - zmin_) * cell_size_inv_z_ );
 		}
 
@@ -323,6 +326,19 @@ namespace spatial
 		 * Necessary for compilation. Does not do anything yet.
 		 */
 		void neighborQuery(const std::array<double, 3>& point, std::vector<PointType*>& NeighborParticles);
+
+		friend std::ostream& operator<<(std::ostream& out, const Celery& c)
+		{
+			out << "Cell Array: " << c.points_.size() << " points, " << c.delimiters_.size()-1 << " cells." << std::endl;
+			for (std::size_t d = 0; d < c.delimiters_.size() - 1; ++d) {
+				out << "Cell " << d << std::endl << "  ";
+				for (std::size_t i = c.delimiters_[d]; i < c.delimiters_[d+1]; ++i) {
+					out << " " << c.points_[i];
+				}
+				out << std::endl;
+			}
+			return out;
+		}
 	};
 }
 

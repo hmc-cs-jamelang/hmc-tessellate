@@ -22,6 +22,11 @@ namespace hmc {
         Particle(int id, double x, double y, double z)
             : id(id), position(x, y, z)
         { /* Done */ }
+
+        friend std::ostream& operator<<(std::ostream& out, const Particle& p)
+        {
+            return out << "{id = " << p.id << ", pos = " << p.position << "}";
+        }
     };
 
     inline void computeVoronoiCell(const Diagram&, SizeType, Vector3, Polyhedron&);
@@ -116,8 +121,8 @@ namespace hmc {
 
         friend const Particle& getParticle(const Diagram&, SizeType);
 
-        using SDS = TrivialSDS<SizeType>;
-        //using SDS = CellArray<SizeType>;
+        //using SDS = TrivialSDS<SizeType>;
+        using SDS = CellArray<SizeType>;
 
     protected:
         Polyhedron containerShape_;
@@ -157,6 +162,8 @@ namespace hmc {
                     return particles_[index].position;
                 }
             );
+
+            std::cerr << spatialStructure_ << std::endl;
         }
 
         template <typename FillDiagramWithParticles>
@@ -205,7 +212,9 @@ namespace hmc {
             VERIFY(poly.isClear());
             poly = containerShape_;
 
+            std::cerr << "  " << particleIndex << " ns:";
             for (SizeType index : spatialStructure_.search(position, searchRadius)) {
+                std::cerr << " " << index;
                 if (index != particleIndex) {
                     poly.cutWithPlane(
                         index,
@@ -213,6 +222,7 @@ namespace hmc {
                     );
                 }
             }
+            std::cerr << std::endl;
 
         }
     };

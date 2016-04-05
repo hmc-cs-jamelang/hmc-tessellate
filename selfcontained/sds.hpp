@@ -116,5 +116,10 @@ namespace hmc {
             std::vector<PointHandle> v;
             return ExpandingSearch {v.begin(), v.end()};
         }
+
+        friend std::ostream& operator<<(std::ostream& out, const CellArray& c)
+        {
+            return out << c.cellarray_;
+        }
     };
 }

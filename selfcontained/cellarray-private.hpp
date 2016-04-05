@@ -270,6 +270,10 @@ namespace spatial
 		std::size_t yMaxIndex = getYIndex(yhigh);
 		std::size_t zMaxIndex = getZIndex(zhigh);
 
+		std::cerr << "Loop, x: 0 -> " << xMaxIndex << ", "
+		          << "y: 0 -> " << yMaxIndex << ", "
+		          << "z: 0 -> " << zMaxIndex << std::endl;
+
 		for (std::size_t i = getXIndex(xlow); i <= xMaxIndex; ++i) {
 			for (std::size_t j = getYIndex(ylow); j <= yMaxIndex; ++j) {
 				for (std::size_t k = getZIndex(zlow); k <= zMaxIndex; ++k) {
@@ -314,7 +318,8 @@ namespace spatial
 
 						std::size_t cell = getCellFromIndices(i, j, k);
 						if (cell + 1 >= delimiters_.size()) {
-							std::cerr << "Error, " << cell << " / " << delimiters_.size() << std::endl;
+							std::cerr << "Error. Indices " << i << ", " << j << ", " << k
+							          << ", calculated cell " << cell << " / " << delimiters_.size() -1 << std::endl;
 							continue;
 						}
 						for (std::size_t pt = delimiters_[cell]; pt < delimiters_[cell+1]; ++pt) {

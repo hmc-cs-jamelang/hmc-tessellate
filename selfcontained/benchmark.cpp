@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <chrono>
 #include <limits>
-#include <unordered_set>
+#include <set>
 #include <cstdlib>
 
 #include "utilities.hpp"
@@ -30,14 +30,16 @@
     void outputMallocs(char const* = "") {}
 #endif
 
-struct Particle {
-    int id;
-    hmc::Vector3 position;
+// struct Particle {
+//     int id;
+//     hmc::Vector3 position;
 
-    Particle(int id, double x, double y, double z)
-        : id(id), position(x, y, z)
-    {}
-};
+//     Particle(int id, double x, double y, double z)
+//         : id(id), position(x, y, z)
+//     {}
+// };
+
+using Particle = hmc::Particle;
 
 using ParticleList = std::vector<Particle>;
 
@@ -170,30 +172,30 @@ struct Check {
         hmc[c.getParticle().id] = Data {c};
     }
 
-    void check() {
+    void check(const ParticleList& particles) {
         assert(hmc.size() == voropp.size());
         bool allMatch = true;
         for (std::size_t i = 0; i < hmc.size(); ++i) {
             if (!(hmc[i] == voropp[i])) {
                 allMatch = false;
-                std::cerr << "Mismatched data for particle "
-                          << i << ":" << std::endl;
+                std::cerr << "!! Mismatched data for particle "
+                          << i << ": " << particles[i] << std::endl;
 
                 std::cerr << "  Voro++:" << std::endl;
-                std::cerr << voropp[i] << std::endl;
+                std::cerr << "    " << voropp[i] << std::endl;
 
                 std::cerr << "  HMC:" << std::endl;
-                std::cerr << hmc[i] << std::endl;
+                std::cerr << "    " << hmc[i] << std::endl;
             }
             else if (verbose) {
-                std::cerr << "Matching data for particle "
-                          << i << ":" << std::endl;
+                std::cerr << "** Matching data for particle "
+                          << i << ": "<< particles[i] << std::endl;
 
                 std::cerr << "  Voro++:" << std::endl;
-                std::cerr << voropp[i] << std::endl;
+                std::cerr << "    " << voropp[i] << std::endl;
 
                 std::cerr << "  HMC:" << std::endl;
-                std::cerr << hmc[i] << std::endl;
+                std::cerr << "    " << hmc[i] << std::endl;
             }
         }
 
@@ -207,6 +209,7 @@ struct Check {
         else {
             std::cerr << std::endl
                       << "!! FAILURE !!"
+                      << std::endl
                       << "Voro++ and HMC do NOT agree on " << checkedData()
                       << std::endl;
         }
@@ -219,7 +222,7 @@ struct Check<void, verbose> {
     Check(std::size_t) {}
     void operator() (int, voro::voronoicell_neighbor&) {}
     void operator() (hmc::Cell&) {}
-    void check() {
+    void check(const ParticleList&) {
         if (verbose) {
             std::cerr << "No verbose output: not checking any data." << std::endl;
         }
@@ -248,7 +251,7 @@ struct Volume {
 
 struct Neighbors {
     static constexpr char const* checkedData() {return "neighbors";}
-    std::unordered_set<int> neighbors;
+    std::set<int> neighbors;
 
     Neighbors() = default;
     Neighbors(voro::voronoicell_neighbor& c) {
@@ -319,7 +322,7 @@ struct AllData {
 
 
 
-using CheckType = Check<Neighbors>;
+using CheckType = Check<Neighbors, true>;
 constexpr std::size_t DEFAULT_NUM_POINTS = 100;
 constexpr bool shrinkwrap = true;
 
@@ -394,7 +397,7 @@ int main(int argc, char* argv[]) {
         runTrial<voro_pp>(boxLength, particles, check);
         runTrial<hmc_tessellate, shrinkwrap>(boxLength, particles, check, ds);
 
-        check.check();
+        check.check(particles);
     };
 
     runDoubleTrial(numPoints);
