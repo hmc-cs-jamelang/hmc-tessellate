@@ -70,7 +70,7 @@ namespace hmc {
 
     template <typename PointHandle>
     class CellArray {
-    protected:
+    public:
         using SizeType = std::size_t;
         spatial::Celery<SizeType> cellarray_;
 
@@ -86,9 +86,10 @@ namespace hmc {
             cellarray_.initialize(begin, end, getPointFromHandle);
         }
 
-        std::vector<PointHandle> search(Vector3 position, double searchRadius) const
+        const std::vector<PointHandle>& search(Vector3 position, double searchRadius) const
         {
-            std::vector<PointHandle> v;
+            static std::vector<PointHandle> v;
+            v.clear();
             cellarray_.findNeighborsInCellRadius(position.x, position.y, position.z, searchRadius, v);
             return v;
         }
@@ -98,23 +99,39 @@ namespace hmc {
 
         protected:
             using Iterator = typename std::vector<PointHandle>::const_iterator;
-            Iterator it_, end_;
+            const spatial::Celery<SizeType>& cellarray_;
+            const Vector3 position_;
+            std::vector<PointHandle> neighbors_;
+            unsigned shell_ = 0;
+            bool done_ = false;
 
             ExpandingSearch() = delete;
-            ExpandingSearch(Iterator begin, Iterator end) : it_(begin), end_(end) {}
+            ExpandingSearch(const spatial::Celery<SizeType>& cellarray,
+                            Vector3 position)
+                : cellarray_(cellarray), position_(position)
+            {
+                expandSearch(0);
+            }
 
         public:
-            Iterator begin() const { return it_; }
-            Iterator end() const { return end_; }
+            Iterator begin() const { return neighbors_.begin(); }
+            Iterator end() const { return neighbors_.end(); }
 
-            bool done() const { return it_ == end_; }
-            void expandSearch(double) { it_ = end_; }
+            bool done() const { return done_; }
+            void expandSearch(double maxRadius)
+            {
+                neighbors_.clear();
+                done_ = !cellarray_.findNeighborsInShell(
+                            position_.x, position_.y, position_.z,
+                            shell_, maxRadius, neighbors_
+                        );
+                ++shell_;
+            }
         };
 
-        ExpandingSearch expandingSearch(Vector3) const
+        ExpandingSearch expandingSearch(Vector3 position) const
         {
-            std::vector<PointHandle> v;
-            return ExpandingSearch {v.begin(), v.end()};
+            return ExpandingSearch {cellarray_, position};
         }
 
         friend std::ostream& operator<<(std::ostream& out, const CellArray& c)
@@ -122,4 +139,5 @@ namespace hmc {
             return out << c.cellarray_;
         }
     };
+
 }

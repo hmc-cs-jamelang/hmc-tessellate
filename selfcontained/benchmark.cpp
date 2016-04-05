@@ -58,7 +58,13 @@ void runTrial(const double boxLength,
         std::cerr << "Voro++, ";
     }
     else /* hmc_tessellate */ {
-        std::cerr << "HMC, ";
+        std::cerr << "HMC";
+        if (useDistances) {
+            std::cerr << " with shrinkwrap, ";
+        }
+        else {
+            std::cerr << " auto-finding, ";
+        }
     }
     std::cerr << numPoints << " particles, "
               << "checking " << CheckType::checkedData() << std::endl;
@@ -113,6 +119,8 @@ void runTrial(const double boxLength,
         }
     }
 
+    outputMallocs();
+
     auto totalTime = std::chrono::high_resolution_clock::now() - startTime;
     std::cerr << "Completed in "
               << std::chrono::duration<double, std::milli> {totalTime}.count()
@@ -148,7 +156,6 @@ void runTrial(const double boxLength,
                   << std::setprecision(oldPrecision);
     }
 
-    outputMallocs();
     std::cerr << std::endl;
 }
 
@@ -322,9 +329,10 @@ struct AllData {
 
 
 
-using CheckType = Check<Neighbors, true>;
+using CheckType = Check<void>;
 constexpr std::size_t DEFAULT_NUM_POINTS = 100;
-constexpr bool shrinkwrap = true;
+constexpr bool shrinkwrap = false;
+constexpr double shrinkwrapPadding = 1.00001;
 
 
 
@@ -388,11 +396,16 @@ int main(int argc, char* argv[]) {
                     double d2 = distance(particles[i].position, particles[n].position);
                     if (d2 > d) { d = d2; }
                 }
-                ds.push_back(d);
+                ds.push_back(shrinkwrapPadding * d);
             }
         }
+        // else {
+        //     Check<void> q {numPoints};
+        //     runTrial<voro_pp>(boxLength, particles, q);
+        // }
 
         CheckType check {numPoints};
+
 
         runTrial<voro_pp>(boxLength, particles, check);
         runTrial<hmc_tessellate, shrinkwrap>(boxLength, particles, check, ds);

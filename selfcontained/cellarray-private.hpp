@@ -270,9 +270,9 @@ namespace spatial
 		std::size_t yMaxIndex = getYIndex(yhigh);
 		std::size_t zMaxIndex = getZIndex(zhigh);
 
-		std::cerr << "Loop, x: 0 -> " << xMaxIndex << ", "
-		          << "y: 0 -> " << yMaxIndex << ", "
-		          << "z: 0 -> " << zMaxIndex << std::endl;
+		// std::cerr << "Loop, x: 0 -> " << xMaxIndex << ", "
+		//           << "y: 0 -> " << yMaxIndex << ", "
+		//           << "z: 0 -> " << zMaxIndex << std::endl;
 
 		for (std::size_t i = getXIndex(xlow); i <= xMaxIndex; ++i) {
 			for (std::size_t j = getYIndex(ylow); j <= yMaxIndex; ++j) {
@@ -314,18 +314,18 @@ namespace spatial
 
 					// Since we search through cells in a grid, some cells (i.e. corners) might actually
 					// be outside of the search radius. Therefore, we check for and skip these cells.
-					if (checkCellInRange(x, y, z, radius, i, j, k)) {
+					//if (checkCellInRange(x, y, z, radius, i, j, k)) {
 
 						std::size_t cell = getCellFromIndices(i, j, k);
-						if (cell + 1 >= delimiters_.size()) {
-							std::cerr << "Error. Indices " << i << ", " << j << ", " << k
-							          << ", calculated cell " << cell << " / " << delimiters_.size() -1 << std::endl;
-							continue;
-						}
+						// if (cell + 1 >= delimiters_.size()) {
+						// 	std::cerr << "Error. Indices " << i << ", " << j << ", " << k
+						// 	          << ", calculated cell " << cell << " / " << delimiters_.size() -1 << std::endl;
+						// 	continue;
+						// }
 						for (std::size_t pt = delimiters_[cell]; pt < delimiters_[cell+1]; ++pt) {
 							pts.push_back(points_[pt]);
 						}
-					}
+					//}
 				}
 			}
 		}
@@ -368,6 +368,37 @@ namespace spatial
 				}
 			}
 		}
+	}
+
+	template <typename PointType>
+	bool Celery<PointType>::findNeighborsInShell(double x, double y, double z, unsigned shell, double maxRadius, std::vector<PointType>& pts) const
+	{
+		auto addPoints = [&](unsigned c) {
+			for (unsigned pi = delimiters_[c]; pi < delimiters_[c+1]; ++pi) {
+				pts.push_back(points_[pi]);
+			}
+		};
+
+		if (shell == 0) {
+			addPoints(getCell(x, y, z));
+			return true;
+		}
+
+		auto xi = getXIndex(x), yi = getYIndex(y), zi = getZIndex(z);
+		auto inv = std::min(cell_size_inv_x_, std::min(cell_size_inv_y_, cell_size_inv_z_));
+		auto dist = (shell - 1) / inv;
+		if (dist > maxRadius) { return false; }
+
+		for (auto xs : {xi - shell, xi, xi + shell}) if (xs >= 0 && xs < num_cells_dim_) {
+			for (auto ys : {yi - shell, yi, yi + shell}) if (ys >= 0 && ys < num_cells_dim_) {
+				for (auto zs : {zi - shell, zi, zi + shell}) if (zs >= 0 && zs < num_cells_dim_) {
+					if (xs == xi && ys == yi && zs == zi) {continue;}
+					addPoints(getCellFromIndices(xs, ys, zs));
+				}
+			}
+		}
+
+		return true;
 	}
 
 	template <typename PointType>

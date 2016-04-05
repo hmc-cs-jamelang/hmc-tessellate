@@ -31,7 +31,7 @@ malloc_count.o:
 benchmark: benchmark.cpp $(HMC_DEP)
 	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS) $(VORO_INCLUDE)
 
-mallocs: benchmark.cpp malloc_count.o
+mallocs: benchmark.cpp malloc_count.o $(HMC_DEP)
 	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS) $(VORO_INCLUDE) $(COUNT_MALLOCS)
 
 celerytest: celerytest.cpp cellarray.hpp cellarray-private.hpp

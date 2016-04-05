@@ -244,9 +244,16 @@ namespace hmc {
             return vol;
         }
 
-        double maximumNeighborDistance()
+        double maximumNeighborDistance(Vector3 particlePosition)
         {
-            return 0;
+            double dist = 0;
+            for (auto& v : vertices_) {
+                double d = distance(particlePosition, v);
+                if (d > dist) {
+                    dist = d;
+                }
+            }
+            return 2*dist;
         }
 
         void buildCube(double xmin, double xMAX,

@@ -153,22 +153,30 @@ namespace spatial
 		template <typename XYZPoint>
 		std::size_t getCell(XYZPoint point) const
 		{
-			std::size_t xIndex = std::size_t( (point.x - xmin_) * cell_size_inv_x_ );
-			std::size_t yIndex = std::size_t( (point.y - ymin_) * cell_size_inv_y_ );
-			std::size_t zIndex = std::size_t( (point.z - zmin_) * cell_size_inv_z_ );
+			return getCell(point.x, point.y, point.z);
+			// std::size_t xIndex = std::size_t( (point.x - xmin_) * cell_size_inv_x_ );
+			// std::size_t yIndex = std::size_t( (point.y - ymin_) * cell_size_inv_y_ );
+			// std::size_t zIndex = std::size_t( (point.z - zmin_) * cell_size_inv_z_ );
 
-			return xIndex * pow(num_cells_dim_, 2) + yIndex * num_cells_dim_ + zIndex;
+			// return xIndex * pow(num_cells_dim_, 2) + yIndex * num_cells_dim_ + zIndex;
 		}
 
 		// Get the cell value that would be assigned to a point with coordinates
 		// x, y, z.
 		std::size_t getCell(double x, double y, double z) const
 		{
-			std::size_t xIndex = std::size_t( (x - xmin_) * cell_size_inv_x_ );
-			std::size_t yIndex = std::size_t( (y - ymin_) * cell_size_inv_y_ );
-			std::size_t zIndex = std::size_t( (z - zmin_) * cell_size_inv_z_ );
+			auto result = getCellFromIndices(
+						getXIndex(x),
+						getYIndex(y),
+						getZIndex(z)
+					);
+			// std::cerr << "(" << x << ", " << y << ", " << z << ") -> " << result << std::endl;
+			return result;
+			// std::size_t xIndex = std::size_t( (x - xmin_) * cell_size_inv_x_ );
+			// std::size_t yIndex = std::size_t( (y - ymin_) * cell_size_inv_y_ );
+			// std::size_t zIndex = std::size_t( (z - zmin_) * cell_size_inv_z_ );
 
-			return xIndex * pow(num_cells_dim_, 2) + yIndex * num_cells_dim_ + zIndex;
+			// return xIndex * pow(num_cells_dim_, 2) + yIndex * num_cells_dim_ + zIndex;
 		}
 
 		// Get the inverse size of a cell in the x dimension
@@ -270,26 +278,26 @@ namespace spatial
 		std::size_t getXIndex(double x) const
 		{
 			if (x >= xmax_) {return num_cells_dim_ - 1;}
-			return std::size_t( (x - xmin_) * cell_size_inv_x_ );
+			return std::min(std::size_t( (x - xmin_) * cell_size_inv_x_ ), num_cells_dim_ - 1);
 		}
 
 		// Get the y-index of a cell with given y-coordinate
 		std::size_t getYIndex(double y) const
 		{
 			if (y >= ymax_) {return num_cells_dim_ - 1;}
-			return std::size_t( (y - ymin_) * cell_size_inv_y_ );
+			return std::min(std::size_t( (y - ymin_) * cell_size_inv_y_ ), num_cells_dim_ - 1);
 		}
 
 		// Get the z-index of a cell with given z-coordinate
 		std::size_t getZIndex(double z) const
 		{
-			if (z >= zmax_) {return num_cells_dim_ - 1;}
-			return std::size_t( (z - zmin_) * cell_size_inv_z_ );
+			return std::min(std::size_t( (z - zmin_) * cell_size_inv_z_ ), num_cells_dim_ - 1);
 		}
 
 		// Get the cell from x-, y-, and z-indices in the cell array
 		std::size_t getCellFromIndices(std::size_t xIndex, std::size_t yIndex, std::size_t zIndex) const
 		{
+			// std::cerr << "xi = " << xIndex << ", yi = " << yIndex << ", zi = " << zIndex << std::endl;
 			return xIndex * pow(num_cells_dim_, 2) + yIndex * num_cells_dim_ + zIndex;
 		}
 
@@ -308,6 +316,8 @@ namespace spatial
 		void findNeighborsInCellRadius(double x, double y, double z, double radius, std::vector<PointType*>& pts) const;
 
 		void findNeighborsInCellRadius(double x, double y, double z, double radius, std::vector<PointType>& pts) const;
+
+		bool findNeighborsInShell(double x, double y, double z, unsigned shell, double maxRadius, std::vector<PointType>& pts) const;
 
 
 		/*
@@ -330,10 +340,13 @@ namespace spatial
 		friend std::ostream& operator<<(std::ostream& out, const Celery& c)
 		{
 			out << "Cell Array: " << c.points_.size() << " points, " << c.delimiters_.size()-1 << " cells." << std::endl;
+			out << "  " << "(" << c.xmin_ << ", " << c.ymin_ << ", " << c.zmin_ << ") x (" << c.xmax_ << ", " << c.ymax_ << ", " << c.zmax_ << ")" << std::endl;
+
 			for (std::size_t d = 0; d < c.delimiters_.size() - 1; ++d) {
-				out << "Cell " << d << std::endl << "  ";
+				out << "Cell " << d << " (" << c.delimiters_[d] << " -> " << c.delimiters_[d+1] << ")" << std::endl;
 				for (std::size_t i = c.delimiters_[d]; i < c.delimiters_[d+1]; ++i) {
-					out << " " << c.points_[i];
+					out << "  " << c.points_[i]
+					    << " (" << c.cells_[i] << ")" << std::endl;
 				}
 				out << std::endl;
 			}
