@@ -116,8 +116,8 @@ namespace hmc {
 
         friend const Particle& getParticle(const Diagram&, SizeType);
 
-        //using SDS = TrivialSDS<SizeType>;
-        using SDS = CellArray<SizeType>;
+        using SDS = TrivialSDS<SizeType>;
+        //using SDS = CellArray<SizeType>;
 
     protected:
         Polyhedron containerShape_;

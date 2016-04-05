@@ -123,8 +123,8 @@ namespace spatial
 
 		xmin_ -= xscl;
 		xmax_ += xscl;
-		ymin_ -= zscl;
-		ymax_ += zscl;
+		ymin_ -= yscl;
+		ymax_ += yscl;
 		zmin_ -= zscl;
 		zmax_ += zscl;
 	}
