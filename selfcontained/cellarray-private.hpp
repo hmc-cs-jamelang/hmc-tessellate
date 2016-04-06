@@ -371,12 +371,16 @@ namespace spatial
 	}
 
 	template <typename PointType>
-	bool Celery<PointType>::findNeighborsInShell(double x, double y, double z, unsigned shell, double maxRadius, std::vector<PointType>& pts) const
+	bool Celery<PointType>::findNeighborsInShell(double x, double y, double z, int shell, double maxRadius, std::vector<PointType>& pts) const
 	{
-		auto addPoints = [&](unsigned c) {
+		auto addPoints = [&](unsigned c) -> void {
 			for (unsigned pi = delimiters_[c]; pi < delimiters_[c+1]; ++pi) {
 				pts.push_back(points_[pi]);
 			}
+		};
+
+		auto valid = [&](unsigned index) -> bool {
+			return /*index >= 0 && */index < num_cells_dim_;
 		};
 
 		if (shell == 0) {
@@ -384,18 +388,33 @@ namespace spatial
 			return true;
 		}
 
-		auto xi = getXIndex(x), yi = getYIndex(y), zi = getZIndex(z);
-		auto inv = std::min(cell_size_inv_x_, std::min(cell_size_inv_y_, cell_size_inv_z_));
-		auto dist = (shell - 1) / inv;
-		if (dist > maxRadius) { return false; }
+		int xi = getXIndex(x), yi = getYIndex(y), zi = getZIndex(z);
+		auto inv = std::max(cell_size_inv_x_, std::max(cell_size_inv_y_, cell_size_inv_z_));
+		decltype(shell) maxShell = maxRadius * inv + 1;
 
-		for (auto xs : {xi - shell, xi, xi + shell}) if (xs >= 0 && xs < num_cells_dim_) {
-			for (auto ys : {yi - shell, yi, yi + shell}) if (ys >= 0 && ys < num_cells_dim_) {
-				for (auto zs : {zi - shell, zi, zi + shell}) if (zs >= 0 && zs < num_cells_dim_) {
-					if (xs == xi && ys == yi && zs == zi) {continue;}
-					addPoints(getCellFromIndices(xs, ys, zs));
-				}
-			}
+		if (shell > maxShell) { return false; }
+		auto innerShell = shell - 1;
+
+
+		for (int i : {xi - shell, xi + shell}) if (valid(i))
+		for (int j = yi - shell; j <= yi + shell; ++j) if (valid(j))
+		for (int k = zi - shell; k <= zi + shell; ++k) if (valid(k))
+		{
+			addPoints(getCellFromIndices(i, j, k));
+		}
+
+		for (int j : {yi - shell, yi + shell}) if (valid(j))
+		for (int i = xi - innerShell; i <= xi + innerShell; ++i) if (valid(i))
+		for (int k = zi - shell; k <= zi + shell; ++k) if (valid(k))
+		{
+			addPoints(getCellFromIndices(i, j, k));
+		}
+
+		for (int k : {zi - shell, zi + shell}) if (valid(k))
+		for (int i = xi - innerShell; i <= xi + innerShell; ++i) if (valid(i))
+		for (int j = yi - innerShell; j <= yi + innerShell; ++j) if (valid(j))
+		{
+			addPoints(getCellFromIndices(i, j, k));
 		}
 
 		return true;

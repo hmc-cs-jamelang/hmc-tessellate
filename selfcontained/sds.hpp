@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <iterator>
+#include <iostream>
 
 #include "vectormath.hpp"
 #include "cellarray.hpp"

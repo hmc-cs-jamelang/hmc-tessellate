@@ -317,7 +317,7 @@ namespace spatial
 
 		void findNeighborsInCellRadius(double x, double y, double z, double radius, std::vector<PointType>& pts) const;
 
-		bool findNeighborsInShell(double x, double y, double z, unsigned shell, double maxRadius, std::vector<PointType>& pts) const;
+		bool findNeighborsInShell(double x, double y, double z, int shell, double maxRadius, std::vector<PointType>& pts) const;
 
 
 		/*

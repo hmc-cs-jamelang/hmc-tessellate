@@ -160,7 +160,7 @@ void runTrial(const double boxLength,
 }
 
 
-template <typename Data, bool verbose = false>
+template <typename Data, int verbose = 1>
 struct Check {
     static constexpr char const* checkedData() {return Data::checkedData();}
     std::vector<Data> voropp;
@@ -183,26 +183,33 @@ struct Check {
         assert(hmc.size() == voropp.size());
         bool allMatch = true;
         for (std::size_t i = 0; i < hmc.size(); ++i) {
-            if (!(hmc[i] == voropp[i])) {
-                allMatch = false;
-                std::cerr << "!! Mismatched data for particle "
-                          << i << ": " << particles[i] << std::endl;
-
-                std::cerr << "  Voro++:" << std::endl;
-                std::cerr << "    " << voropp[i] << std::endl;
-
-                std::cerr << "  HMC:" << std::endl;
-                std::cerr << "    " << hmc[i] << std::endl;
+            if (verbose == 0) {
+                if (!(hmc[i] == voropp[i])) {
+                    allMatch = false;
+                }
             }
-            else if (verbose) {
-                std::cerr << "** Matching data for particle "
-                          << i << ": "<< particles[i] << std::endl;
+            else {
+                if (!(hmc[i] == voropp[i])) {
+                    allMatch = false;
+                    std::cerr << "!! Mismatched data for particle "
+                              << i << ": " << particles[i] << std::endl;
 
-                std::cerr << "  Voro++:" << std::endl;
-                std::cerr << "    " << voropp[i] << std::endl;
+                    std::cerr << "  Voro++:" << std::endl;
+                    std::cerr << "    " << voropp[i] << std::endl;
 
-                std::cerr << "  HMC:" << std::endl;
-                std::cerr << "    " << hmc[i] << std::endl;
+                    std::cerr << "  HMC:" << std::endl;
+                    std::cerr << "    " << hmc[i] << std::endl;
+                }
+                else if (verbose > 1) {
+                    std::cerr << "** Matching data for particle "
+                              << i << ": "<< particles[i] << std::endl;
+
+                    std::cerr << "  Voro++:" << std::endl;
+                    std::cerr << "    " << voropp[i] << std::endl;
+
+                    std::cerr << "  HMC:" << std::endl;
+                    std::cerr << "    " << hmc[i] << std::endl;
+                }
             }
         }
 
@@ -223,7 +230,7 @@ struct Check {
     }
 };
 
-template <bool verbose>
+template <int verbose>
 struct Check<void, verbose> {
     static constexpr char const* checkedData() {return "nothing";}
     Check(std::size_t) {}

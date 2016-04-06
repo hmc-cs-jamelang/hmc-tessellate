@@ -190,19 +190,31 @@ namespace hmc {
         {
             VERIFY(poly.isClear());
             poly = containerShape_;
+            double rad = 0;
+
+            // auto furthestNeighborDistance = [&](){
+            //     std::vector<SizeType> ns;
+            //     poly.computeNeighbors(ns);
+            //     double dist = 0;
+            //     int is = -1;
+            //     for (auto i : ns) if (i != -1) {
+            //         double d = distance(particles_[i].position, position);
+            //         // std::cerr << "  :: " << i << " -> " << d << std::endl;
+            //         if (d > dist) {
+            //             dist = d;
+            //             is = i;
+            //         }
+            //     }
+            //     // std::cerr << "[" << is << "] ";
+            //     return dist;
+            // };
 
             for (auto search = spatialStructure_.expandingSearch(position);
                       !search.done();
-                      search.expandSearch(poly.maximumNeighborDistance(position)))
+                      search.expandSearch(rad = poly.maximumNeighborDistance(position)))
             {
                 for (SizeType index : search) {
                     if (index != particleIndex) {
-                        if (particleIndex == 8285 && index == 5218) {
-                            std::cerr << "I DID try..." << std::endl;
-                        }
-                        if (particleIndex == 8285 && index == 4170) {
-                            std::cerr << "Bastard..." << std::endl;
-                        }
                         poly.cutWithPlane(
                             index,
                             Plane::between(position, particles_[index].position)
@@ -210,13 +222,18 @@ namespace hmc {
                     }
                 }
             }
+            // std::cerr << particleIndex << " done at " << rad << std::endl;
+            // std::cerr << "  " << particleIndex << " furthest neighbor "
+            //     << furthestNeighborDistance() << " ("
+            //     << 1.00001 * furthestNeighborDistance() << ")" << std::endl;
         }
 
         void computeVoronoiCell(SizeType particleIndex, Vector3 position,
                                 Polyhedron& poly, double searchRadius) const
         {
-            constexpr bool tryExpanding = false;
-            if (tryExpanding) {
+            // std::cerr << particleIndex << " search radius is " << searchRadius << std::endl;
+            constexpr bool tryExpanding = true;
+            if (!tryExpanding) {
                 VERIFY(poly.isClear());
                 poly = containerShape_;
 
@@ -254,6 +271,27 @@ namespace hmc {
                     }
                 }
             }
+
+            // auto furthestNeighborDistance = [&](){
+            //     std::vector<SizeType> ns;
+            //     poly.computeNeighbors(ns);
+            //     double dist = 0;
+            //     int is = -1;
+            //     for (auto i : ns) if (i != -1) {
+            //         double d = distance(particles_[i].position, position);
+            //         // std::cerr << "  :: " << i << " -> " << d << std::endl;
+            //         if (d > dist) {
+            //             dist = d;
+            //             is = i;
+            //         }
+            //     }
+            //     // std::cerr << "[" << is << "] ";
+            //     return dist;
+            // };
+
+            // std::cerr << "  " << particleIndex << " furthest neighbor "
+            //     << furthestNeighborDistance() << " ("
+            //     << 1.00001 * furthestNeighborDistance() << ")" << std::endl;
         }
     };
 
