@@ -2,10 +2,6 @@
  * cellarray.hpp
  *
  * Implementation of a basic 3-D cell array.
- *
- * The cell array is a very efficient spatial data structure for storing evenly
- * distributed points. However, it is far less effective when points are
- * concentrated in a specific area.
  */
 
 #pragma once
@@ -17,12 +13,20 @@
 
 namespace spatial
 {
-
+	/*
+	 * Celery
+	 *
+	 * The cell array is a very efficient spatial data structure for storing evenly
+	 * distributed points. However, it is far less effective when points are
+	 * concentrated in a specific area.
+	 */
 	template<typename PointType>
 	class Celery
 	{
 
 	private:
+
+		struct DistanceIndex;
 
 		// The ideal number of particles in a cell. Used to determine the
 		// size of a cell.
@@ -45,6 +49,9 @@ namespace spatial
 
 		// The number of cells in each dimension.
 		std::size_t num_cells_dim_;
+
+		// The order in which to search through cells
+		std::vector<DistanceIndex> search_order_;
 
 	private:
 
@@ -100,7 +107,6 @@ namespace spatial
 		template<typename F>
 		void computeBoundsFromPoints(PointType begin, PointType end, F getPoint);
 
-
 		/*
 		 * insert
 		 *
@@ -110,21 +116,9 @@ namespace spatial
 		template<typename F>
 		void insert(PointType point, F getPoint);
 
-		/*
-		 * insert
-		 *
-		 * Inserts a set of points into the cell array. Assumes the points have
-		 * x, y, and z coordinate data members.
-		 */
 		template<typename PointIterator, typename F>
 		void insert(PointIterator begin, PointIterator end, F getPoint);
 
-		/*
-		 * insert
-		 *
-		 * Inserts a set of points into the cell array. Assumes the points have
-		 * x, y, and z coordinate data members.
-		 */
 		template<typename F>
 		void insert(PointType begin, PointType end, F getPoint);
 
@@ -137,11 +131,6 @@ namespace spatial
 		void initializeCellArray();
 
 	public:
-		void reserve(std::size_t size)
-		{
-			points_.reserve(size);
-			cells_.reserve(size);
-		}
 
 		// Get the number of cells in each dimension
 		std::size_t getNumCellsDim() const
@@ -154,29 +143,13 @@ namespace spatial
 		std::size_t getCell(XYZPoint point) const
 		{
 			return getCell(point.x, point.y, point.z);
-			// std::size_t xIndex = std::size_t( (point.x - xmin_) * cell_size_inv_x_ );
-			// std::size_t yIndex = std::size_t( (point.y - ymin_) * cell_size_inv_y_ );
-			// std::size_t zIndex = std::size_t( (point.z - zmin_) * cell_size_inv_z_ );
-
-			// return xIndex * pow(num_cells_dim_, 2) + yIndex * num_cells_dim_ + zIndex;
 		}
 
 		// Get the cell value that would be assigned to a point with coordinates
 		// x, y, z.
 		std::size_t getCell(double x, double y, double z) const
 		{
-			auto result = getCellFromIndices(
-						getXIndex(x),
-						getYIndex(y),
-						getZIndex(z)
-					);
-			// std::cerr << "(" << x << ", " << y << ", " << z << ") -> " << result << std::endl;
-			return result;
-			// std::size_t xIndex = std::size_t( (x - xmin_) * cell_size_inv_x_ );
-			// std::size_t yIndex = std::size_t( (y - ymin_) * cell_size_inv_y_ );
-			// std::size_t zIndex = std::size_t( (z - zmin_) * cell_size_inv_z_ );
-
-			// return xIndex * pow(num_cells_dim_, 2) + yIndex * num_cells_dim_ + zIndex;
+			return getCellFromIndices(getXIndex(x), getYIndex(y), getZIndex(z));
 		}
 
 		// Get the inverse size of a cell in the x dimension
@@ -262,7 +235,7 @@ namespace spatial
 				: value_vector(val_vect)
 			{};
 
-			bool operator()(std::size_t i1, std::size_t i2) const
+			bool operator()(std::size_t i1, std::size_t i2)
 			{
 				return value_vector[i1] < value_vector[i2];
 			}
@@ -297,7 +270,6 @@ namespace spatial
 		// Get the cell from x-, y-, and z-indices in the cell array
 		std::size_t getCellFromIndices(std::size_t xIndex, std::size_t yIndex, std::size_t zIndex) const
 		{
-			// std::cerr << "xi = " << xIndex << ", yi = " << yIndex << ", zi = " << zIndex << std::endl;
 			return xIndex * pow(num_cells_dim_, 2) + yIndex * num_cells_dim_ + zIndex;
 		}
 
@@ -314,11 +286,6 @@ namespace spatial
 		 * Stores pointers to the points in those cells in a vector.
 		 */
 		void findNeighborsInCellRadius(double x, double y, double z, double radius, std::vector<PointType*>& pts) const;
-
-		void findNeighborsInCellRadius(double x, double y, double z, double radius, std::vector<PointType>& pts) const;
-
-		bool findNeighborsInShell(double x, double y, double z, int shell, double maxRadius, std::vector<PointType>& pts) const;
-
 
 		/*
 		 * findNeighborsInRealRadius
@@ -337,21 +304,125 @@ namespace spatial
 		 */
 		void neighborQuery(const std::array<double, 3>& point, std::vector<PointType*>& NeighborParticles);
 
-		friend std::ostream& operator<<(std::ostream& out, const Celery& c)
-		{
-			out << "Cell Array: " << c.points_.size() << " points, " << c.delimiters_.size()-1 << " cells." << std::endl;
-			out << "  " << "(" << c.xmin_ << ", " << c.ymin_ << ", " << c.zmin_ << ") x (" << c.xmax_ << ", " << c.ymax_ << ", " << c.zmax_ << ")" << std::endl;
+	private:
 
-			for (std::size_t d = 0; d < c.delimiters_.size() - 1; ++d) {
-				out << "Cell " << d << " (" << c.delimiters_[d] << " -> " << c.delimiters_[d+1] << ")" << std::endl;
-				for (std::size_t i = c.delimiters_[d]; i < c.delimiters_[d+1]; ++i) {
-					out << "  " << c.points_[i]
-					    << " (" << c.cells_[i] << ")" << std::endl;
-				}
-				out << std::endl;
+		// A struct that contains a combination of distance information and indices to a cell. Used for
+		// sorting cells by distance when searching for neighbors.
+		struct DistanceIndex {
+			double dist;
+			int i, j, k;
+
+			DistanceIndex(double distance, int ind1, int ind2, int ind3)
+				: dist(distance), i(ind1), j(ind2), k(ind3)
+			{}
+
+			friend bool operator<(const Celery<PointType>::DistanceIndex& di1,
+								  const Celery<PointType>::DistanceIndex& di2)
+			{
+				return (di1.dist < di2.dist);
 			}
-			return out;
-		}
+		};
+
+		/*
+		 * createSearchArray
+		 *
+		 * Create a sorted array of cells to search in order of distance.
+		 */
+		void createSearchArray();
+
+	public:
+
+		/*
+		 * ExpandingSearch
+		 *
+		 * A class with the capability to automatically search outward from a point within a search
+		 * radius. Cells will never be searched more than once, since this class will only search
+		 * outward from the last searched cell.
+		 */
+		class ExpandingSearch
+		{
+		private:
+			const Celery& stalk_;
+
+			// Store the index of the last searched cell
+			std::size_t last_search_index_ = 0;
+
+			// Store the x, y, and z cell indices of the cell to search from
+			int x_index_, y_index_, z_index_;
+
+			bool done_ = false;
+
+		public:
+			// Don't use the default constructor
+			ExpandingSearch() = delete;
+
+			/*
+			 * Constructor
+			 *
+			 * Create an ExpandingSearch from a point at the given 3-D coordinates.
+			 */
+			ExpandingSearch(const Celery& yourCrush, double x, double y, double z)
+				: stalk_(yourCrush)
+			{
+				x_index_ = stalk_.getXIndex(x);
+				y_index_ = stalk_.getYIndex(y);
+				z_index_ = stalk_.getZIndex(z);
+			}
+
+			bool done() const
+			{
+				return done_;
+			}
+
+			/*
+			 * expand
+			 *
+			 * Search outward, adding all points from previously unsearched cells within maxRadius of
+			 * the searching cell. The points are stored in searchPoints.
+			 */
+			void expand(double maxRadius, std::vector<PointType>& searchPoints)
+			{
+				std::size_t searchOrderSize = stalk_.search_order_.size();
+				std::size_t searchIndex = last_search_index_;
+				double finalDistance = stalk_.search_order_[searchIndex].dist;
+
+				if (searchIndex >= searchOrderSize || finalDistance > maxRadius) {
+					done_ = true;
+					return;
+				}
+
+				for (; searchIndex < searchOrderSize && stalk_.search_order_[searchIndex].dist <= finalDistance; ++searchIndex) {
+					last_search_index_ = searchIndex;
+
+					int xToSearch = x_index_ + stalk_.search_order_[searchIndex].i;
+					int yToSearch = y_index_ + stalk_.search_order_[searchIndex].j;
+					int zToSearch = z_index_ + stalk_.search_order_[searchIndex].k;
+
+					auto invalid = [this](int i) -> bool
+					{
+						return i < 0 || (unsigned) i >= stalk_.num_cells_dim_;
+					};
+
+					if (invalid(xToSearch) || invalid(yToSearch) || invalid(zToSearch)) {
+						continue;
+					}
+
+					std::size_t cellIndex = stalk_.getCellFromIndices(xToSearch, yToSearch, zToSearch);
+					std::size_t cellBegin = stalk_.delimiters_[cellIndex];
+					std::size_t cellEnd = stalk_.delimiters_[cellIndex + 1];
+
+					for (std::size_t i = cellBegin; i < cellEnd; ++i) {
+						searchPoints.push_back(stalk_.points_[i]);
+					}
+				}
+
+				// We broke out of the loop because we exceeded the cached searchOrder.
+				// We could be good little gnomes and do a more expensive search here,
+				// or we could, you know, not.
+				last_search_index_ += 1;
+
+			}
+		};
 	};
 }
 

@@ -248,7 +248,7 @@ struct Check<void, verbose> {
 
 struct Volume {
     static constexpr char const* checkedData() {return "volumes";}
-    static constexpr double TOLERANCE = 1e-9;
+    static constexpr double TOLERANCE = 1e-11;
     double volume;
 
     Volume() = default;
@@ -336,10 +336,87 @@ struct AllData {
 
 
 
-using CheckType = Check<AllData>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+using CheckType = Check<AllData, 0>;
 constexpr std::size_t DEFAULT_NUM_POINTS = 100;
 constexpr bool shrinkwrap = false;
 constexpr double shrinkwrapPadding = 1.00001;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

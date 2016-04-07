@@ -3,6 +3,7 @@
 #include <vector>
 #include <iterator>
 #include <iostream>
+#include <limits>
 
 #include "vectormath.hpp"
 #include "cellarray.hpp"
@@ -90,8 +91,8 @@ namespace hmc {
         const std::vector<PointHandle>& search(Vector3 position, double searchRadius) const
         {
             static std::vector<PointHandle> v;
-            v.clear();
-            cellarray_.findNeighborsInCellRadius(position.x, position.y, position.z, searchRadius, v);
+            // v.clear();
+            // cellarray_.findNeighborsInCellRadius(position.x, position.y, position.z, searchRadius, v);
             return v;
         }
 
@@ -100,33 +101,31 @@ namespace hmc {
 
         protected:
             using Iterator = typename std::vector<PointHandle>::const_iterator;
-            const spatial::Celery<SizeType>& cellarray_;
-            const Vector3 position_;
+
+            // const spatial::Celery<SizeType>& cellarray_;
+            spatial::Celery<SizeType>::ExpandingSearch search_;
+            // const Vector3 position_;
             std::vector<PointHandle> neighbors_;
-            unsigned shell_ = 0;
+            // unsigned shell_ = 0;
             bool done_ = false;
 
             ExpandingSearch() = delete;
             ExpandingSearch(const spatial::Celery<SizeType>& cellarray,
                             Vector3 position)
-                : cellarray_(cellarray), position_(position)
+                : search_(cellarray, position.x, position.y, position.z)
             {
-                expandSearch(0);
+                search_.expand(std::numeric_limits<double>::max(), neighbors_);
             }
 
         public:
             Iterator begin() const { return neighbors_.begin(); }
             Iterator end() const { return neighbors_.end(); }
 
-            bool done() const { return done_; }
+            bool done() const { return search_.done(); }
             void expandSearch(double maxRadius)
             {
                 neighbors_.clear();
-                done_ = !cellarray_.findNeighborsInShell(
-                            position_.x, position_.y, position_.z,
-                            shell_, maxRadius, neighbors_
-                        );
-                ++shell_;
+                search_.expand(maxRadius, neighbors_);
             }
         };
 
