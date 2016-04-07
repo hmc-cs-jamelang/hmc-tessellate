@@ -102,7 +102,7 @@ namespace hmc {
             using Iterator = typename std::vector<PointHandle>::const_iterator;
             const spatial::Celery<SizeType>& cellarray_;
             const Vector3 position_;
-            std::vector<PointHandle> neighbors_;
+            static std::vector<PointHandle> neighbors_;
             unsigned shell_ = 0;
             bool done_ = false;
 
@@ -141,4 +141,6 @@ namespace hmc {
         }
     };
 
+    template <typename PointHandle>
+    std::vector<PointHandle> CellArray<PointHandle>::ExpandingSearch::neighbors_ {};
 }

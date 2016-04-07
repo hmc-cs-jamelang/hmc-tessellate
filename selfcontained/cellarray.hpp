@@ -14,6 +14,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <vector>
+#include <array>
 
 namespace spatial
 {
