@@ -114,7 +114,7 @@ namespace hmc {
                             Vector3 position)
                 : search_(cellarray, position.x, position.y, position.z)
             {
-                search_.expand(std::numeric_limits<double>::max(), neighbors_);
+                expandSearch(std::numeric_limits<double>::max());
             }
 
         public:
@@ -125,7 +125,7 @@ namespace hmc {
             void expandSearch(double maxRadius)
             {
                 neighbors_.clear();
-                search_.expand(maxRadius, neighbors_);
+                search_.expand(maxRadius, ExpandingSearch::neighbors_);
             }
         };
 

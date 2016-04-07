@@ -362,12 +362,11 @@ namespace spatial
 			 * Create an ExpandingSearch from a point at the given 3-D coordinates.
 			 */
 			ExpandingSearch(const Celery& yourCrush, double x, double y, double z)
-				: stalk_(yourCrush)
-			{
-				x_index_ = stalk_.getXIndex(x);
-				y_index_ = stalk_.getYIndex(y);
-				z_index_ = stalk_.getZIndex(z);
-			}
+				: stalk_(yourCrush),
+				  x_index_(stalk_.getXIndex(x)),
+				  y_index_(stalk_.getYIndex(y)),
+				  z_index_(stalk_.getZIndex(z))
+			{ /* Done */ }
 
 			bool done() const
 			{
@@ -394,9 +393,10 @@ namespace spatial
 				for (; searchIndex < searchOrderSize && stalk_.search_order_[searchIndex].dist <= finalDistance; ++searchIndex) {
 					last_search_index_ = searchIndex;
 
-					int xToSearch = x_index_ + stalk_.search_order_[searchIndex].i;
-					int yToSearch = y_index_ + stalk_.search_order_[searchIndex].j;
-					int zToSearch = z_index_ + stalk_.search_order_[searchIndex].k;
+					auto&& searchIndices = stalk_.search_order_[searchIndex];
+					int xToSearch = x_index_ + searchIndices.i;
+					int yToSearch = y_index_ + searchIndices.j;
+					int zToSearch = z_index_ + searchIndices.k;
 
 					auto invalid = [this](int i) -> bool
 					{
