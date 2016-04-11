@@ -287,6 +287,9 @@ namespace spatial
 		 */
 		void findNeighborsInCellRadius(double x, double y, double z, double radius, std::vector<PointType*>& pts) const;
 
+		void findNeighborsInCellRadius(double x, double y, double z, double radius, std::vector<PointType>& pts) const;
+
+
 		/*
 		 * findNeighborsInRealRadius
 		 *
@@ -296,6 +299,9 @@ namespace spatial
 		 * outside of the specified radius.
 		 */
 		void findNeighborsInRealRadius(double x, double y, double z, double radius, std::vector<PointType*>& pts) const;
+
+		bool findNeighborsInShell(double x, double y, double z, int shell, double maxRadius, std::vector<PointType>& pts) const;
+
 
 		/*
 		 * neighborQuery

@@ -278,13 +278,48 @@ namespace spatial
 
 						std::size_t cell = getCellFromIndices(i, j, k);
 						for (std::size_t pt = delimiters_[cell]; pt < delimiters_[cell+1]; ++pt) {
-							pts.push_back(&points_[pt]);
+							pts.push_back(const_cast<PointType*>(&points_[pt]));
 						}
 					}
 				}
 			}
 		}
 	}
+
+	template<typename PointType>
+	void Celery<PointType>::findNeighborsInCellRadius(double x, double y, double z, double radius,
+													  std::vector<PointType>& pts) const
+	{
+		double xlow = std::max(x - radius, xmin_);
+		double ylow = std::max(y - radius, ymin_);
+		double zlow = std::max(z - radius, zmin_);
+
+		double xhigh = std::min(x + radius, xmax_);
+		double yhigh = std::min(y + radius, ymax_);
+		double zhigh = std::min(z + radius, zmax_);
+
+		std::size_t xMaxIndex = getXIndex(xhigh);
+		std::size_t yMaxIndex = getYIndex(yhigh);
+		std::size_t zMaxIndex = getZIndex(zhigh);
+
+		for (std::size_t i = getXIndex(xlow); i <= xMaxIndex; ++i) {
+			for (std::size_t j = getYIndex(ylow); j <= yMaxIndex; ++j) {
+				for (std::size_t k = getZIndex(zlow); k <= zMaxIndex; ++k) {
+
+					// Since we search through cells in a grid, some cells (i.e. corners) might actually
+					// be outside of the search radius. Therefore, we check for and skip these cells.
+					if (checkCellInRange(x, y, z, radius, i, j, k)) {
+
+						std::size_t cell = getCellFromIndices(i, j, k);
+						for (std::size_t pt = delimiters_[cell]; pt < delimiters_[cell+1]; ++pt) {
+							pts.push_back(points_[pt]);
+						}
+					}
+				}
+			}
+		}
+	}
+
 
 	template<typename PointType>
 	void Celery<PointType>::findNeighborsInRealRadius(double x, double y, double z, double radius,
@@ -333,6 +368,15 @@ namespace spatial
 	template<typename PointType>
 	void Celery<PointType>::createSearchArray()
 	{
+
+		// auto distance = [&](int i, int j, int k) -> double {
+		// 	return pow(i / cell_size_inv_x_, 2) + pow(j / cell_size_inv_y_, 2) + pow(k / cell_size_inv_z_, 2);
+		// };
+
+		auto distance = [&](int i, int j, int k) -> double {
+			return pow(i, 2) + pow(j, 2) + pow(k, 2);
+		};
+
 		int maxIndex = num_cells_dim_ - 1;
 
 		search_order_.emplace_back(0, 0, 0, 0);
@@ -341,7 +385,7 @@ namespace spatial
 			for (int j = 0; j < maxIndex; ++j) {
 				for (int k = 0; k < maxIndex; ++k) {
 
-					double dist = sqrt(pow(i, 2) + pow(j, 2) + pow(k, 2));
+					double dist = distance(i, j, k);
 					search_order_.emplace_back(dist, i+1, j+1, k+1);
 					search_order_.emplace_back(dist, i+1, j+1, -k-1);
 					search_order_.emplace_back(dist, i+1, -j-1, k+1);
@@ -357,7 +401,7 @@ namespace spatial
 		for (int i = 0; i < maxIndex; ++i) {
 			for (int j = 0; j < maxIndex; ++j) {
 
-				double dist = sqrt(pow(i, 2) + pow(j, 2));
+				double dist = distance(i, j, 0);
 				search_order_.emplace_back(dist, i+1, j+1, 0);
 				search_order_.emplace_back(dist, i+1, -j-1, 0);
 				search_order_.emplace_back(dist, -i-1, j+1, 0);
@@ -368,7 +412,7 @@ namespace spatial
 		for (int i = 0; i < maxIndex; ++i) {
 			for (int k = 0; k < maxIndex; ++k) {
 
-				double dist = sqrt(pow(i, 2) + pow(k, 2));
+				double dist = distance(i, 0, k);
 				search_order_.emplace_back(dist, i+1, 0, k+1);
 				search_order_.emplace_back(dist, i+1, 0, -k-1);
 				search_order_.emplace_back(dist, -i-1, 0, k+1);
@@ -379,7 +423,7 @@ namespace spatial
 		for (int j = 0; j < maxIndex; ++j) {
 			for (int k = 0; k < maxIndex; ++k) {
 
-				double dist = sqrt(pow(j, 2) + pow(k, 2));
+				double dist = distance(0, j, k);
 				search_order_.emplace_back(dist, 0, j+1, k+1);
 				search_order_.emplace_back(dist, 0, j+1, -k-1);
 				search_order_.emplace_back(dist, 0, -j-1, k+1);
@@ -403,6 +447,56 @@ namespace spatial
 		}
 
 		std::sort(search_order_.begin(), search_order_.end());
+	}
+
+	template <typename PointType>
+	bool Celery<PointType>::findNeighborsInShell(double x, double y, double z, int shell, double maxRadius, std::vector<PointType>& pts) const
+	{
+		auto addPoints = [&](unsigned c) -> void {
+			for (unsigned pi = delimiters_[c]; pi < delimiters_[c+1]; ++pi) {
+				pts.push_back(points_[pi]);
+			}
+		};
+
+		auto valid = [&](unsigned index) -> bool {
+			return /*index >= 0 && */index < num_cells_dim_;
+		};
+
+		if (shell == 0) {
+			addPoints(getCell(x, y, z));
+			return true;
+		}
+
+		int xi = getXIndex(x), yi = getYIndex(y), zi = getZIndex(z);
+		auto inv = std::max(cell_size_inv_x_, std::max(cell_size_inv_y_, cell_size_inv_z_));
+		decltype(shell) maxShell = maxRadius * inv + 1;
+
+		if (shell > maxShell) { return false; }
+		auto innerShell = shell - 1;
+
+
+		for (int i : {xi - shell, xi + shell}) if (valid(i))
+		for (int j = yi - shell; j <= yi + shell; ++j) if (valid(j))
+		for (int k = zi - shell; k <= zi + shell; ++k) if (valid(k))
+		{
+			addPoints(getCellFromIndices(i, j, k));
+		}
+
+		for (int j : {yi - shell, yi + shell}) if (valid(j))
+		for (int i = xi - innerShell; i <= xi + innerShell; ++i) if (valid(i))
+		for (int k = zi - shell; k <= zi + shell; ++k) if (valid(k))
+		{
+			addPoints(getCellFromIndices(i, j, k));
+		}
+
+		for (int k : {zi - shell, zi + shell}) if (valid(k))
+		for (int i = xi - innerShell; i <= xi + innerShell; ++i) if (valid(i))
+		for (int j = yi - innerShell; j <= yi + innerShell; ++j) if (valid(j))
+		{
+			addPoints(getCellFromIndices(i, j, k));
+		}
+
+		return true;
 	}
 
 }
