@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+// #include <queue>
 #include <functional>
 #include <unordered_set>
 #include <iterator>
@@ -77,6 +78,33 @@ namespace hmc {
         std::vector<VertexIndex> verticesToDestroy_;
         std::vector<EdgeIndex> edgesToDestroy_;
 
+
+        // struct VertexDistance {
+        //     VertexIndex vi;
+        //     double dist;
+
+        //     VertexDistance(VertexIndex vi, double dist)
+        //         : vi(vi), dist(dist)
+        //     { /* Done */ }
+
+        //     friend bool operator<(const VertexDistance& a, const VertexDistance& b)
+        //     {
+        //         return a.dist < b.dist;
+        //     }
+
+        //     friend bool operator==(const VertexDistance& a, const VertexDistance& b)
+        //     {
+        //         return a.vi == b.vi;
+        //     }
+
+        //     friend bool operator!=(const VertexDistance& a, const VertexDistance& b)
+        //     {
+        //         return a.vi != b.vi;
+        //     }
+        // };
+
+        // std::priority_queue<VertexDistance> vertexDistances_;
+
         void clear()
         {
             root_ = INVALID_EDGE;
@@ -109,6 +137,39 @@ namespace hmc {
         VertexIndex& source(EdgeIndex ei) {return target(flip(ei));}
         FaceIndex& face(EdgeIndex ei) {return edges_[ei].face;}
         EdgeIndex& startingEdge(FaceIndex fi) {return faces_[fi].startingEdge;}
+
+        template <typename... Edge_Constructor_Args>
+        EdgeIndex createEdge(Edge_Constructor_Args... args)
+        {
+            return edges_.create(args...);
+        }
+
+        template <typename... Vertex_Constructor_Args>
+        VertexIndex createVertex(Vertex_Constructor_Args... args)
+        {
+            return vertices_.create(args...);
+        }
+
+        template <typename... Face_Constructor_Args>
+        FaceIndex createFace(Face_Constructor_Args... args)
+        {
+            return faces_.create(args...);
+        }
+
+        void destroy(EdgeIndex ei)
+        {
+            edges_.destroy(ei);
+        }
+
+        void destroy(VertexIndex vi)
+        {
+            vertices_.destroy(vi);
+        }
+
+        void destroy(FaceIndex fi)
+        {
+            faces_.destroy(fi);
+        }
 
         VERIFICATION(
             void verifyIsValidPolyhedron()
@@ -307,7 +368,7 @@ namespace hmc {
             auto V = [&](Vertices VERIFICATION(expected),
                          double x, double y, double z)
             {
-                VERIFICATION(VertexIndex v =) vertices_.create(x, y, z);
+                VERIFICATION(VertexIndex v =) createVertex(x, y, z);
                 VERIFY(
                     static_cast<VertexPool::SizeType>(v)
                       ==
@@ -347,7 +408,7 @@ namespace hmc {
             auto E = [&](FaceIndex face, Edges VERIFICATION(expected),
                          Edges flip, Vertices target, Edges next)
             {
-                VERIFICATION(EdgeIndex e =) edges_.create(
+                VERIFICATION(EdgeIndex e =) createEdge(
                     face,
                     VertexIndex {static_cast<VertexPool::SizeType>(target)},
                     EdgeIndex {static_cast<EdgePool::SizeType>(flip)},
@@ -362,7 +423,7 @@ namespace hmc {
 
             auto F = [&](Edges startingEdge) -> FaceIndex
             {
-                return faces_.create(
+                return createFace(
                     -1,
                     EdgeIndex {static_cast<EdgePool::SizeType>(startingEdge)}
                 );
@@ -627,7 +688,7 @@ namespace hmc {
 
             auto createIntersection = [&](VertexIndex a, VertexIndex b) -> VertexIndex
             {
-                return vertices_.create(plane.intersection(vertices_[a], vertices_[b]));
+                return createVertex(plane.intersection(vertices_[a], vertices_[b]));
             };
 
             // =================================================================
@@ -642,8 +703,8 @@ namespace hmc {
             EdgeIndex outgoingEdge = firstOutgoingEdge;
             VertexIndex previousIntersection = INVALID_VERTEX;
 
-            EdgeIndex firstOutsideFaceEdge = edges_.create();
-            FaceIndex outsideFace = faces_.create(faceid, firstOutsideFaceEdge);
+            EdgeIndex firstOutsideFaceEdge = createEdge();
+            FaceIndex outsideFace = createFace(faceid, firstOutsideFaceEdge);
             face(firstOutsideFaceEdge) = outsideFace;
             EdgeIndex outsideFaceEdge = firstOutsideFaceEdge;
 
@@ -679,7 +740,7 @@ namespace hmc {
                     // we know won't end up getting destroyed
                     startingEdge(currentFace) = outgoingEdge;
 
-                    EdgeIndex bridge = edges_.create(
+                    EdgeIndex bridge = createEdge(
                         /* face */ currentFace,
                         /* vertex */ currentIntersection,
                         /* flip edge */ outsideFaceEdge,
@@ -689,7 +750,7 @@ namespace hmc {
                     flip(outsideFaceEdge) = bridge;
                     next(outgoingEdge) = bridge;
 
-                    outsideFaceEdge = edges_.create(
+                    outsideFaceEdge = createEdge(
                         /* face */ outsideFace,
                         /* vertex */ currentIntersection,
                         /* flip edge */ INVALID_EDGE,
@@ -717,11 +778,11 @@ namespace hmc {
             VERIFY(firstOutsideFaceEdge != outsideFaceEdge);
             target(firstOutsideFaceEdge) = target(outsideFaceEdge);
             next(firstOutsideFaceEdge) = next(outsideFaceEdge);
-            edges_.destroy(outsideFaceEdge);
+            destroy(outsideFaceEdge);
 
             // Cleanup
             for (VertexIndex vi : verticesToDestroy_) {
-                if (vertices_.active(vi)) { vertices_.destroy(vi); }
+                if (vertices_.active(vi)) { destroy(vi); }
             }
             verticesToDestroy_.clear();
 
@@ -741,7 +802,7 @@ namespace hmc {
                     EdgeIndex ei = edgesToDestroy_[i];
                     // Store an edge inside the deletion region
                     edgesToDestroy_.push_back(flip(ei));
-                    edges_.destroy(ei);
+                    destroy(ei);
                 }
 
                 // Next, we do an exhaustive search of the region to destroy,
@@ -781,14 +842,14 @@ namespace hmc {
             if (!edges_.active(ei)) { return false; }
 
             HalfEdge edge = edges_[ei];
-            edges_.destroy(ei);
+            destroy(ei);
             markSweep(edge.flip);
             markSweep(edge.next);
             if (vertices_.active(edge.target)) {
-                vertices_.destroy(edge.target);
+                destroy(edge.target);
             }
             if (faces_.active(edge.face)) {
-                faces_.destroy(edge.face);
+                destroy(edge.face);
             }
             return true;
         }

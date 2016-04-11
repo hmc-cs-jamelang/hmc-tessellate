@@ -327,6 +327,11 @@ namespace spatial
 			{
 				return (di1.dist < di2.dist);
 			}
+
+			friend std::ostream& operator<<(std::ostream& out, const DistanceIndex& di)
+			{
+				return out << "{dist = " << di.dist << ", (" << di.i << ", " << di.j << ", " << di.k << ")}";
+			}
 		};
 
 		/*
@@ -348,31 +353,46 @@ namespace spatial
 		class ExpandingSearch
 		{
 		private:
-			const Celery& stalk_;
+			const Celery* stalk_;
 
 			// Store the index of the last searched cell
-			std::size_t last_search_index_ = 0;
+			std::size_t last_search_index_;
 
 			// Store the x, y, and z cell indices of the cell to search from
 			int x_index_, y_index_, z_index_;
 
-			bool done_ = false;
+			bool done_;
 
 		public:
 			// Don't use the default constructor
-			ExpandingSearch() = delete;
+			ExpandingSearch() = default;
 
 			/*
 			 * Constructor
 			 *
 			 * Create an ExpandingSearch from a point at the given 3-D coordinates.
 			 */
-			ExpandingSearch(const Celery& yourCrush, double x, double y, double z)
-				: stalk_(yourCrush)
+			// ExpandingSearch(const Celery& yourCrush, double x, double y, double z)
+			// 	: stalk_(yourCrush)
+			// {
+			// 	x_index_ = stalk_->getXIndex(x);
+			// 	y_index_ = stalk_->getYIndex(y);
+			// 	z_index_ = stalk_->getZIndex(z);
+			// }
+
+			void initialize(const Celery& yourCrush, double x, double y, double z)
 			{
-				x_index_ = stalk_.getXIndex(x);
-				y_index_ = stalk_.getYIndex(y);
-				z_index_ = stalk_.getZIndex(z);
+				clear();
+				stalk_ = &yourCrush;
+				x_index_ = stalk_->getXIndex(x);
+				y_index_ = stalk_->getYIndex(y);
+				z_index_ = stalk_->getZIndex(z);
+			}
+
+			void clear()
+			{
+				last_search_index_ = 0;
+				done_ = false;
 			}
 
 			bool done() const
@@ -388,45 +408,51 @@ namespace spatial
 			 */
 			void expand(double maxRadius, std::vector<PointType>& searchPoints)
 			{
-				std::size_t searchOrderSize = stalk_.search_order_.size();
+				std::size_t searchOrderSize = stalk_->search_order_.size();
 				std::size_t searchIndex = last_search_index_;
-				double finalDistance = stalk_.search_order_[searchIndex].dist;
+				double finalDistance = stalk_->search_order_[searchIndex].dist;
 
 				if (searchIndex >= searchOrderSize || finalDistance > maxRadius) {
 					done_ = true;
 					return;
 				}
 
-				for (; searchIndex < searchOrderSize && stalk_.search_order_[searchIndex].dist <= finalDistance; ++searchIndex) {
+				for (; searchIndex < searchOrderSize; ++searchIndex) {
 					last_search_index_ = searchIndex;
 
-					int xToSearch = x_index_ + stalk_.search_order_[searchIndex].i;
-					int yToSearch = y_index_ + stalk_.search_order_[searchIndex].j;
-					int zToSearch = z_index_ + stalk_.search_order_[searchIndex].k;
+					if (stalk_->search_order_[searchIndex].dist > finalDistance) {
+						return;
+					}
+
+					int xToSearch = x_index_ + stalk_->search_order_[searchIndex].i;
+					int yToSearch = y_index_ + stalk_->search_order_[searchIndex].j;
+					int zToSearch = z_index_ + stalk_->search_order_[searchIndex].k;
 
 					auto invalid = [this](int i) -> bool
 					{
-						return i < 0 || (unsigned) i >= stalk_.num_cells_dim_;
+						return i < 0 || (unsigned) i >= stalk_->num_cells_dim_;
 					};
 
 					if (invalid(xToSearch) || invalid(yToSearch) || invalid(zToSearch)) {
 						continue;
 					}
 
-					std::size_t cellIndex = stalk_.getCellFromIndices(xToSearch, yToSearch, zToSearch);
-					std::size_t cellBegin = stalk_.delimiters_[cellIndex];
-					std::size_t cellEnd = stalk_.delimiters_[cellIndex + 1];
+					std::size_t cellIndex = stalk_->getCellFromIndices(xToSearch, yToSearch, zToSearch);
+					std::size_t cellBegin = stalk_->delimiters_[cellIndex];
+					std::size_t cellEnd = stalk_->delimiters_[cellIndex + 1];
 
 					for (std::size_t i = cellBegin; i < cellEnd; ++i) {
-						searchPoints.push_back(stalk_.points_[i]);
+						searchPoints.push_back(stalk_->points_[i]);
 					}
 				}
 
 				// We broke out of the loop because we exceeded the cached searchOrder.
 				// We could be good little gnomes and do a more expensive search here,
 				// or we could, you know, not.
-				last_search_index_ += 1;
-
+				// static int times = 0;
+				// std::cerr << "Ohhhhh.... " << times++ << std::endl;
+				// std::cerr << searchIndex << " / " << searchOrderSize << "; " << finalDistance << " / " << stalk_->search_order_[searchIndex].dist << std::endl;
+				last_search_index_ = searchIndex;
 			}
 		};
 	};

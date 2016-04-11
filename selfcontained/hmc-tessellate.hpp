@@ -11,6 +11,7 @@
 
 namespace hmc {
     using SizeType = std::size_t;
+    using SDS = CellArray<SizeType>;
 
     class Diagram;
     class Cell;
@@ -29,8 +30,8 @@ namespace hmc {
         }
     };
 
-    inline void computeVoronoiCell(const Diagram&, SizeType, Vector3, Polyhedron&);
-    inline void computeVoronoiCell(const Diagram&, SizeType, Vector3, Polyhedron&, double);
+    inline void computeVoronoiCell(const Diagram&, SizeType, Vector3, Polyhedron&, SDS::ExpandingSearch&);
+    inline void computeVoronoiCell(const Diagram&, SizeType, Vector3, Polyhedron&, SDS::ExpandingSearch&, double);
 
     inline const Particle& getParticle(const Diagram&, SizeType);
 
@@ -55,6 +56,7 @@ namespace hmc {
         Polyhedron poly_;
         bool polyComputed_;
         double searchRadius_;
+        SDS::ExpandingSearch search_;
 
     public:
         Cell() : diagram_(nullptr), polyComputed_(false) {}
@@ -105,10 +107,10 @@ namespace hmc {
 
             if (!polyComputed_) {
                 if (searchRadius_ == 0) {
-                    computeVoronoiCell(*diagram_, index_, position_, poly_);
+                    computeVoronoiCell(*diagram_, index_, position_, poly_, search_);
                 }
                 else {
-                    computeVoronoiCell(*diagram_, index_, position_, poly_, searchRadius_);
+                    computeVoronoiCell(*diagram_, index_, position_, poly_, search_, searchRadius_);
                 }
                 polyComputed_ = true;
             }
@@ -116,13 +118,13 @@ namespace hmc {
     };
 
     class Diagram {
-        friend void computeVoronoiCell(const Diagram&, SizeType, Vector3, Polyhedron&);
-        friend void computeVoronoiCell(const Diagram&, SizeType, Vector3, Polyhedron&, double);
+        friend void computeVoronoiCell(const Diagram&, SizeType, Vector3, Polyhedron&, SDS::ExpandingSearch&);
+        friend void computeVoronoiCell(const Diagram&, SizeType, Vector3, Polyhedron&, SDS::ExpandingSearch&, double);
 
         friend const Particle& getParticle(const Diagram&, SizeType);
 
-        //using SDS = TrivialSDS<SizeType>;
-        using SDS = CellArray<SizeType>;
+        // using SDS = TrivialSDS<SizeType>;
+        // using SDS = ShellArray<SizeType>;
 
     protected:
         Polyhedron containerShape_;
@@ -186,11 +188,10 @@ namespace hmc {
             return CellInfo(*this, index, particles_[index].position, searchRadius);
         }
 
-        void computeVoronoiCell(SizeType particleIndex, Vector3 position, Polyhedron& poly) const
+        void computeVoronoiCell(SizeType particleIndex, Vector3 position, Polyhedron& poly, SDS::ExpandingSearch& search) const
         {
             VERIFY(poly.isClear());
             poly = containerShape_;
-            double rad = 0;
 
             // auto furthestNeighborDistance = [&](){
             //     std::vector<SizeType> ns;
@@ -209,9 +210,9 @@ namespace hmc {
             //     return dist;
             // };
 
-            for (auto search = spatialStructure_.expandingSearch(position);
-                      !search.done();
-                      search.expandSearch(rad = poly.maximumNeighborDistance(position)))
+            for (search.startSearch(spatialStructure_, position);
+                 !search.done();
+                 search.expandSearch(poly.maximumNeighborDistance(position)))
             {
                 for (SizeType index : search) {
                     if (index != particleIndex) {
@@ -229,7 +230,8 @@ namespace hmc {
         }
 
         void computeVoronoiCell(SizeType particleIndex, Vector3 position,
-                                Polyhedron& poly, double searchRadius) const
+                                Polyhedron& poly, SDS::ExpandingSearch& search,
+                                double searchRadius) const
         {
             // std::cerr << particleIndex << " search radius is " << searchRadius << std::endl;
             constexpr bool tryExpanding = true;
@@ -257,9 +259,9 @@ namespace hmc {
                 VERIFY(poly.isClear());
                 poly = containerShape_;
 
-                for (auto search = spatialStructure_.expandingSearch(position);
-                          !search.done();
-                          search.expandSearch(searchRadius))
+                for (search.startSearch(spatialStructure_, position);
+                     !search.done();
+                     search.expandSearch(searchRadius))
                 {
                     for (SizeType index : search) {
                         if (index != particleIndex) {
@@ -298,18 +300,20 @@ namespace hmc {
     inline void computeVoronoiCell(const Diagram& diagram,
                                    SizeType index,
                                    Vector3 position,
-                                   Polyhedron& poly)
+                                   Polyhedron& poly,
+                                   SDS::ExpandingSearch& search)
     {
-        diagram.computeVoronoiCell(index, position, poly);
+        diagram.computeVoronoiCell(index, position, poly, search);
     }
 
     inline void computeVoronoiCell(const Diagram& diagram,
                                    SizeType index,
                                    Vector3 position,
                                    Polyhedron& poly,
+                                   SDS::ExpandingSearch& search,
                                    double searchRadius)
     {
-        diagram.computeVoronoiCell(index, position, poly, searchRadius);
+        diagram.computeVoronoiCell(index, position, poly, search, searchRadius);
     }
 
     inline const Particle& getParticle(const Diagram& diagram, SizeType index)

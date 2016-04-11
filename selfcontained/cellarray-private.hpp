@@ -369,13 +369,13 @@ namespace spatial
 	void Celery<PointType>::createSearchArray()
 	{
 
-		// auto distance = [&](int i, int j, int k) -> double {
-		// 	return pow(i / cell_size_inv_x_, 2) + pow(j / cell_size_inv_y_, 2) + pow(k / cell_size_inv_z_, 2);
-		// };
-
 		auto distance = [&](int i, int j, int k) -> double {
-			return pow(i, 2) + pow(j, 2) + pow(k, 2);
+			return sqrt(pow(i / cell_size_inv_x_, 2) + pow(j / cell_size_inv_y_, 2) + pow(k / cell_size_inv_z_, 2));
 		};
+
+		// auto distance = [&](int i, int j, int k) -> double {
+		// 	return sqrt(pow(i, 2) + pow(j, 2) + pow(k, 2));
+		// };
 
 		int maxIndex = num_cells_dim_ - 1;
 
@@ -432,18 +432,21 @@ namespace spatial
 		}
 
 		for (int i = 0; i < maxIndex; ++i) {
-			search_order_.emplace_back(i, i+1, 0, 0);
-			search_order_.emplace_back(i, -i-1, 0, 0);
+			double dist = distance(i, 0, 0);
+			search_order_.emplace_back(dist, i+1, 0, 0);
+			search_order_.emplace_back(dist, -i-1, 0, 0);
 		}
 
 		for (int j = 0; j < maxIndex; ++j) {
-			search_order_.emplace_back(j, 0, j+1, 0);
-			search_order_.emplace_back(j, 0, -j-1, 0);
+			double dist = distance(0, j, 0);
+			search_order_.emplace_back(dist, 0, j+1, 0);
+			search_order_.emplace_back(dist, 0, -j-1, 0);
 		}
 
 		for (int k = 0; k < maxIndex; ++k) {
-			search_order_.emplace_back(k, 0, 0, k+1);
-			search_order_.emplace_back(k, 0, 0, -k-1);
+			double dist = distance(0, 0, k);
+			search_order_.emplace_back(dist, 0, 0, k+1);
+			search_order_.emplace_back(dist, 0, 0, -k-1);
 		}
 
 		std::sort(search_order_.begin(), search_order_.end());
