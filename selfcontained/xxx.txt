@@ -1,0 +1,308 @@
+Generating 10 particles.
+Random state: "1327350436"
+Voro++, 10 particles, checking nothing
+Completed in 1.50199 ms
+Volume correct (1)
+
+HMC auto-finding, 10 particles, checking nothing
+Completed in 0.220765 ms
+Volume correct (1)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 100 particles.
+Random state: "1564636413"
+Voro++, 100 particles, checking nothing
+Completed in 6.92335 ms
+Volume nearly correct:
+  Got 1.0000000000000004, expected 1
+  Off by 4.4408920985006262e-16
+    = 2 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 100 particles, checking nothing
+Completed in 4.25244 ms
+Volume correct (1)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 300 particles.
+Random state: "752085591"
+Voro++, 300 particles, checking nothing
+Completed in 17.171 ms
+Volume nearly correct:
+  Got 0.99999999999999989, expected 1
+  Off by -1.1102230246251565e-16
+    = -0.5 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 300 particles, checking nothing
+Completed in 21.6308 ms
+Volume nearly correct:
+  Got 0.99999999999999967, expected 1
+  Off by -3.3306690738754696e-16
+    = -1.5 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 700 particles.
+Random state: "1320284479"
+Voro++, 700 particles, checking nothing
+Completed in 27.5097 ms
+Volume nearly correct:
+  Got 1.0000000000000004, expected 1
+  Off by 4.4408920985006262e-16
+    = 2 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 700 particles, checking nothing
+Completed in 54.7163 ms
+Volume nearly correct:
+  Got 0.99999999999999978, expected 1
+  Off by -2.2204460492503131e-16
+    = -1 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 100 particles.
+Random state: "1642633323"
+Voro++, 100 particles, checking nothing
+Completed in 6.92258 ms
+Volume nearly correct:
+  Got 0.99999999999999978, expected 1
+  Off by -2.2204460492503131e-16
+    = -1 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 100 particles, checking nothing
+Completed in 4.59571 ms
+Volume nearly correct:
+  Got 1.0000000000000002, expected 1
+  Off by 2.2204460492503131e-16
+    = 1 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 1000 particles.
+Random state: "1022423438"
+Voro++, 1000 particles, checking nothing
+Completed in 37.4476 ms
+Volume nearly correct:
+  Got 0.99999999999999944, expected 1
+  Off by -5.5511151231257827e-16
+    = -2.5 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 1000 particles, checking nothing
+Completed in 78.4477 ms
+Volume nearly correct:
+  Got 1.0000000000000002, expected 1
+  Off by 2.2204460492503131e-16
+    = 1 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 3000 particles.
+Random state: "205735983"
+Voro++, 3000 particles, checking nothing
+Completed in 113.312 ms
+Volume nearly correct:
+  Got 1.0000000000000022, expected 1
+  Off by 2.2204460492503131e-15
+    = 10 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 3000 particles, checking nothing
+Completed in 181.438 ms
+Volume nearly correct:
+  Got 1.0000000000000009, expected 1
+  Off by 8.8817841970012523e-16
+    = 4 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 7000 particles.
+Random state: "1198676264"
+Voro++, 7000 particles, checking nothing
+Completed in 259.008 ms
+Volume nearly correct:
+  Got 0.99999999999999822, expected 1
+  Off by -1.7763568394002505e-15
+    = -8 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 7000 particles, checking nothing
+Completed in 449.056 ms
+Volume nearly correct:
+  Got 0.99999999999999911, expected 1
+  Off by -8.8817841970012523e-16
+    = -4 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 1000 particles.
+Random state: "1513316614"
+Voro++, 1000 particles, checking nothing
+Completed in 32.2937 ms
+Volume nearly correct:
+  Got 0.99999999999999989, expected 1
+  Off by -1.1102230246251565e-16
+    = -0.5 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 1000 particles, checking nothing
+Completed in 69.888 ms
+Volume nearly correct:
+  Got 0.99999999999999956, expected 1
+  Off by -4.4408920985006262e-16
+    = -2 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 10000 particles.
+Random state: "1833412194"
+Voro++, 10000 particles, checking nothing
+Completed in 376.812 ms
+Volume nearly correct:
+  Got 1.0000000000000002, expected 1
+  Off by 2.2204460492503131e-16
+    = 1 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 10000 particles, checking nothing
+Completed in 668.417 ms
+Volume nearly correct:
+  Got 0.99999999999999789, expected 1
+  Off by -2.1094237467877974e-15
+    = -9.5 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 30000 particles.
+Random state: "274042310"
+Voro++, 30000 particles, checking nothing
+Completed in 1706.92 ms
+Volume nearly correct:
+  Got 1.0000000000000033, expected 1
+  Off by 3.3306690738754696e-15
+    = 15 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 30000 particles, checking nothing
+Completed in 2345.91 ms
+Volume nearly correct:
+  Got 1.0000000000000058, expected 1
+  Off by 5.773159728050814e-15
+    = 26 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 70000 particles.
+Random state: "1515166937"
+Voro++, 70000 particles, checking nothing
+Completed in 6508.93 ms
+Volume nearly correct:
+  Got 0.99999999999999512, expected 1
+  Off by -4.8849813083506888e-15
+    = -22 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 70000 particles, checking nothing
+Completed in 5393.78 ms
+Volume nearly correct:
+  Got 1.0000000000000009, expected 1
+  Off by 8.8817841970012523e-16
+    = 4 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 100000 particles.
+Random state: "189967713"
+Voro++, 100000 particles, checking nothing
+Completed in 10607.9 ms
+Volume nearly correct:
+  Got 0.99999999999999145, expected 1
+  Off by -8.5487172896137054e-15
+    = -38.5 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 100000 particles, checking nothing
+Completed in 8672.84 ms
+Volume nearly correct:
+  Got 0.99999999999999167, expected 1
+  Off by -8.3266726846886741e-15
+    = -37.5 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 300000 particles.
+Random state: "1557931697"
+Voro++, 300000 particles, checking nothing
+Completed in 68106.5 ms
+Volume nearly correct:
+  Got 1.0000000000000016, expected 1
+  Off by 1.5543122344752192e-15
+    = 7 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 300000 particles, checking nothing
+Completed in 29821.2 ms
+Volume nearly correct:
+  Got 0.99999999999999212, expected 1
+  Off by -7.8825834748386114e-15
+    = -35.5 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 700000 particles.
+Random state: "2126355556"
+Voro++, 700000 particles, checking nothing
+Completed in 299459 ms
+Volume nearly correct:
+  Got 0.99999999999996181, expected 1
+  Off by -3.8191672047105385e-14
+    = -172 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 700000 particles, checking nothing
+Completed in 92345.4 ms
+Volume nearly correct:
+  Got 1.0000000000000111, expected 1
+  Off by 1.1102230246251565e-14
+    = 50 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.
+Generating 1000000 particles.
+Random state: "73264343"
+Voro++, 1000000 particles, checking nothing
+Completed in 566601 ms
+Volume nearly correct:
+  Got 1.0000000000000135, expected 1
+  Off by 1.354472090042691e-14
+    = 61 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+HMC auto-finding, 1000000 particles, checking nothing
+Completed in 133822 ms
+Volume nearly correct:
+  Got 0.99999999999999756, expected 1
+  Off by -2.4424906541753444e-15
+    = -11 * machine epsilon
+  (Machine epsilon: 2.2204460492503131e-16)
+
+No verbose output: not checking any data.
+No data checked. There is no guarantee that the results are correct.

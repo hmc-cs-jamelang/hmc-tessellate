@@ -190,7 +190,7 @@ namespace hmc {
         {
             VERIFY(poly.isClear());
             poly = containerShape_;
-            double rad = 0;
+            double rad = std::numeric_limits<double>::max();
 
             // auto furthestNeighborDistance = [&](){
             //     std::vector<SizeType> ns;

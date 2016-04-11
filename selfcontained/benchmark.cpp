@@ -46,13 +46,12 @@ using ParticleList = std::vector<Particle>;
 enum Tessellator {voro_pp, hmc_tessellate};
 
 template <Tessellator package, bool useDistances = false, typename CheckType>
-void runTrial(const double boxLength,
+void runTrial(const double dx, const double dy, const double dz,
               const ParticleList& particles,
               CheckType& record,
               std::vector<double> distances = std::vector<double> {})
 {
     const std::size_t numPoints = particles.size();
-    const double bl2 = boxLength/2;
 
     if (package == voro_pp) {
         std::cerr << "Voro++, ";
@@ -72,13 +71,13 @@ void runTrial(const double boxLength,
     resetNumberOfTimesMallocHasBeenCalled();
 
     double vvol = 0;
-    const double expectedVol = boxLength*boxLength*boxLength;
+    const double expectedVol = dx*dy*dz*8;
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
     if (package == voro_pp) {
         const int n_x=6, n_y=6, n_z=6;
-        voro::container con {-bl2, bl2, -bl2, bl2, -bl2, bl2,
+        voro::container con {-dx, dx, -dy, dy, -dz, dz,
                             n_x, n_y, n_z, false, false, false, 8};
 
         for (auto& p : particles) {
@@ -97,7 +96,7 @@ void runTrial(const double boxLength,
     }
 
     else /* hmc tessellate */ {
-        hmc::Diagram diagram = hmc::Diagram::cube(-bl2, bl2, -bl2, bl2, -bl2, bl2);
+        hmc::Diagram diagram = hmc::Diagram::cube(-dx, dx, -dy, dy, -dz, dz);
         diagram.initialize([&](){
             for (auto& p : particles) {
                 diagram.addParticle(p.id, p.position.x, p.position.y, p.position.z);
@@ -354,9 +353,6 @@ constexpr double shrinkwrapPadding = 1.00001;
 
 
 
-
-
-
 int main(int argc, char* argv[]) {
     std::size_t numPoints = DEFAULT_NUM_POINTS;
 
@@ -382,12 +378,14 @@ int main(int argc, char* argv[]) {
                   << "Random state: \"" << hmc::utilities::get_random_state()
                   << "\"" << std::endl;
         particles.clear();
-        const double bl2 = boxLength/2;
+        const double dx = 1*boxLength/2;
+        const double dy = 1*boxLength/2;
+        const double dz = 1*boxLength/2;
         for (std::size_t i = 0; i < numPoints; ++i) {
             particles.emplace_back(i,
-                hmc::utilities::uniform(-bl2, bl2),
-                hmc::utilities::uniform(-bl2, bl2),
-                hmc::utilities::uniform(-bl2, bl2)
+                hmc::utilities::uniform(-dx, dx),
+                hmc::utilities::uniform(-dy, dy),
+                hmc::utilities::uniform(-dz, dz)
             );
         }
 
@@ -395,7 +393,7 @@ int main(int argc, char* argv[]) {
         Check<Neighbors> ns {numPoints};
 
         if (shrinkwrap) {
-            runTrial<voro_pp>(boxLength, particles, ns);
+            runTrial<voro_pp>(dx, dy, dz, particles, ns);
 
             for (unsigned n = 0; n < ns.voropp.size(); ++n) {
                 double d = 0;
@@ -414,8 +412,8 @@ int main(int argc, char* argv[]) {
         CheckType check {numPoints};
 
 
-        runTrial<voro_pp>(boxLength, particles, check);
-        runTrial<hmc_tessellate, shrinkwrap>(boxLength, particles, check, ds);
+        runTrial<voro_pp>(dx, dy, dz, particles, check);
+        runTrial<hmc_tessellate, shrinkwrap>(dx, dy, dz, particles, check, ds);
 
         check.check(particles);
     };
