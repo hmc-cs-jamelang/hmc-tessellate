@@ -406,6 +406,54 @@ namespace spatial
 			 * Search outward, adding all points from previously unsearched cells within maxRadius of
 			 * the searching cell. The points are stored in searchPoints.
 			 */
+
+			// void expand(double maxRadius, std::vector<PointType>& searchPoints)
+			// {
+			// 	auto& searchOrder = stalk_->search_order_;
+			// 	auto searchOrderSize = searchOrder.size();
+			// 	if (last_search_index_ >= searchOrderSize) {
+			// 		done_ = true;
+			// 		return;
+			// 	}
+
+			// 	if (searchOrder[last_search_index_].dist > maxRadius) {
+			// 		done_ = true;
+			// 		return;
+			// 	}
+
+			// 	constexpr int searchIncrease = 10;
+			// 	const auto maxIndex = std::min(last_search_index_ + searchIncrease, stalk_->search_order_.size());
+
+			// 	auto index = last_search_index_;
+			// 	for (; index < maxIndex; ++index) {
+			// 		if (searchOrder[last_search_index_].dist > maxRadius) {
+			// 			return;
+			// 		}
+
+			// 		int xToSearch = x_index_ + stalk_->search_order_[index].i;
+			// 		int yToSearch = y_index_ + stalk_->search_order_[index].j;
+			// 		int zToSearch = z_index_ + stalk_->search_order_[index].k;
+
+			// 		auto invalid = [this](int i) -> bool
+			// 		{
+			// 			return i < 0 || (unsigned) i >= stalk_->num_cells_dim_;
+			// 		};
+
+			// 		if (invalid(xToSearch) || invalid(yToSearch) || invalid(zToSearch)) {
+			// 			continue;
+			// 		}
+
+			// 		std::size_t cellIndex = stalk_->getCellFromIndices(xToSearch, yToSearch, zToSearch);
+			// 		std::size_t cellBegin = stalk_->delimiters_[cellIndex];
+			// 		std::size_t cellEnd = stalk_->delimiters_[cellIndex + 1];
+
+			// 		for (std::size_t i = cellBegin; i < cellEnd; ++i) {
+			// 			searchPoints.push_back(stalk_->points_[i]);
+			// 		}
+			// 	}
+			// 	last_search_index_ = index;
+			// }
+
 			void expand(double maxRadius, std::vector<PointType>& searchPoints)
 			{
 				std::size_t searchOrderSize = stalk_->search_order_.size();

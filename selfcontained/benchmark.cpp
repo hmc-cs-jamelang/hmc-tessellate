@@ -43,13 +43,15 @@ using Particle = hmc::Particle;
 
 using ParticleList = std::vector<Particle>;
 
+const std::vector<double> defaultDists {};
+
 enum Tessellator {voro_pp, hmc_tessellate};
 
 template <Tessellator package, bool useDistances = false, typename CheckType>
 void runTrial(const double boxLength,
               const ParticleList& particles,
               CheckType& record,
-              std::vector<double> distances = std::vector<double> {})
+              const std::vector<double>& distances = defaultDists)
 {
     const std::size_t numPoints = particles.size();
     const double bl2 = boxLength/2;

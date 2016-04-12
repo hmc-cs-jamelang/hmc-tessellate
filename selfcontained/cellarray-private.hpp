@@ -4,6 +4,8 @@
  * Implementation file for cellarray.hpp
  */
 
+#include <limits>
+
 namespace spatial
 {
 
@@ -66,72 +68,122 @@ namespace spatial
 	template<typename PointIterator, typename F>
 	void Celery<PointType>::computeBoundsFromPoints(PointIterator begin, PointIterator end, F getPoint)
 	{
-		std::vector<double> xvals, yvals, zvals;
+		xmin_ = ymin_ = zmin_ = std::numeric_limits<double>::max();
+		xmax_ = ymax_ = zmax_ = std::numeric_limits<double>::min();
+
+		auto adjust = [](double coord, double& min, double& max) {
+			if (coord < min) { min = coord; }
+			if (coord > max) { max = coord; }
+		};
+
 		for (auto i = begin; i < end; ++i) {
 			auto&& p = getPoint(*i);
-			xvals.push_back(p.x);
-			yvals.push_back(p.y);
-			zvals.push_back(p.z);
+			adjust(p.x, xmin_, xmax_);
+			adjust(p.y, ymin_, ymax_);
+			adjust(p.z, zmin_, zmax_);
 		}
 
-		std::sort(xvals.begin(), xvals.end());
-		std::sort(yvals.begin(), yvals.end());
-		std::sort(zvals.begin(), zvals.end());
+		auto separate = [](double& min, double& max) {
+			// if (min == max) {
+			// 	max += std::numeric_limits<double>::epsilon();
+			// }
+		};
 
-		xmin_ = xvals.front();
-		xmax_ = xvals.back();
-		ymin_ = yvals.front();
-		ymax_ = yvals.back();
-		zmin_ = zvals.front();
-		zmax_ = zvals.back();
+		separate(xmin_, xmax_);
+		separate(ymin_, ymax_);
+		separate(zmin_, zmax_);
 
-		// Make the bounding box slightly larger than the extreme values of the points
-		double xscl = 0.01 * (xmax_ - xmin_);
-		double yscl = 0.01 * (ymax_ - ymin_);
-		double zscl = 0.01 * (zmax_ - zmin_);
+		// std::vector<double> xvals, yvals, zvals;
+		// for (auto i = begin; i < end; ++i) {
+		// 	auto&& p = getPoint(*i);
+		// 	xvals.push_back(p.x);
+		// 	yvals.push_back(p.y);
+		// 	zvals.push_back(p.z);
+		// }
 
-		xmin_ -= xscl;
-		xmax_ += xscl;
-		ymin_ -= yscl;
-		ymax_ += yscl;
-		zmin_ -= zscl;
-		zmax_ += zscl;
+		// std::sort(xvals.begin(), xvals.end());
+		// std::sort(yvals.begin(), yvals.end());
+		// std::sort(zvals.begin(), zvals.end());
+
+		// xmin_ = xvals.front();
+		// xmax_ = xvals.back();
+		// ymin_ = yvals.front();
+		// ymax_ = yvals.back();
+		// zmin_ = zvals.front();
+		// zmax_ = zvals.back();
+
+		// // Make the bounding box slightly larger than the extreme values of the points
+		// double xscl = 0.01 * (xmax_ - xmin_);
+		// double yscl = 0.01 * (ymax_ - ymin_);
+		// double zscl = 0.01 * (zmax_ - zmin_);
+
+		// xmin_ -= xscl;
+		// xmax_ += xscl;
+		// ymin_ -= yscl;
+		// ymax_ += yscl;
+		// zmin_ -= zscl;
+		// zmax_ += zscl;
 	}
 
 	template<typename PointType>
 	template<typename F>
 	void Celery<PointType>::computeBoundsFromPoints(PointType begin, PointType end, F getPoint)
 	{
-		std::vector<double> xvals, yvals, zvals;
+		xmin_ = ymin_ = zmin_ = std::numeric_limits<double>::max();
+		xmax_ = ymax_ = zmax_ = std::numeric_limits<double>::min();
+
+		auto adjust = [](double coord, double& min, double& max) {
+			if (coord < min) { min = coord; }
+			if (coord > max) { max = coord; }
+		};
+
 		for (auto i = begin; i < end; ++i) {
 			auto&& p = getPoint(i);
-			xvals.push_back(p.x);
-			yvals.push_back(p.y);
-			zvals.push_back(p.z);
+			adjust(p.x, xmin_, xmax_);
+			adjust(p.y, ymin_, ymax_);
+			adjust(p.z, zmin_, zmax_);
 		}
 
-		std::sort(xvals.begin(), xvals.end());
-		std::sort(yvals.begin(), yvals.end());
-		std::sort(zvals.begin(), zvals.end());
+		auto separate = [](double& min, double& max) {
+			// if (min == max) {
+			// 	max += std::numeric_limits<double>::epsilon();
+			// }
+		};
 
-		xmin_ = xvals.front();
-		xmax_ = xvals.back();
-		ymin_ = yvals.front();
-		ymax_ = yvals.back();
-		zmin_ = zvals.front();
-		zmax_ = zvals.back();
+		separate(xmin_, xmax_);
+		separate(ymin_, ymax_);
+		separate(zmin_, zmax_);
 
-		// Make the bounding box slightly larger than the extreme values of the points
-		double xscl = 0.01 * (xmax_ - xmin_);
-		double yscl = 0.01 * (ymax_ - ymin_);
-		double zscl = 0.01 * (zmax_ - zmin_);
+		// std::vector<double> xvals, yvals, zvals;
+		// for (auto i = begin; i < end; ++i) {
+		// 	auto&& p = getPoint(i);
+		// 	xvals.push_back(p.x);
+		// 	yvals.push_back(p.y);
+		// 	zvals.push_back(p.z);
+		// }
 
-		xmin_ -= xscl;
-		xmax_ += xscl;
-		ymin_ -= yscl;
-		ymax_ += yscl;
-		zmin_ -= zscl;
-		zmax_ += zscl;
+		// std::sort(xvals.begin(), xvals.end());
+		// std::sort(yvals.begin(), yvals.end());
+		// std::sort(zvals.begin(), zvals.end());
+
+		// xmin_ = xvals.front();
+		// xmax_ = xvals.back();
+		// ymin_ = yvals.front();
+		// ymax_ = yvals.back();
+		// zmin_ = zvals.front();
+		// zmax_ = zvals.back();
+
+		// // Make the bounding box slightly larger than the extreme values of the points
+		// double xscl = 0.01 * (xmax_ - xmin_);
+		// double yscl = 0.01 * (ymax_ - ymin_);
+		// double zscl = 0.01 * (zmax_ - zmin_);
+
+		// xmin_ -= xscl;
+		// xmax_ += xscl;
+		// ymin_ -= yscl;
+		// ymax_ += yscl;
+		// zmin_ -= zscl;
+		// zmax_ += zscl;
 	}
 
 	template<typename PointType>
