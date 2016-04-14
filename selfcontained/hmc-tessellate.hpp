@@ -240,46 +240,24 @@ namespace hmc {
                                 double searchRadius) const
         {
             // std::cerr << particleIndex << " search radius is " << searchRadius << std::endl;
-            constexpr bool tryExpanding = true;
-            if (!tryExpanding) {
-                VERIFY(poly.isClear());
-                poly = containerShape_;
-
+			VERIFY(poly.isClear());
+			poly = containerShape_;
+			
                 // std::cerr << "  " << particleIndex
                 //     // << " (" << spatialStructure_.cellarray_.getCells()[particleIndex]
                 //     // << ") "
                 //     << " ns:";
-                for (SizeType index : spatialStructure_.search(position, searchRadius)) {
+			for (SizeType index : spatialStructure_.search(position, searchRadius)) {
                     // std::cerr << " " << index;
-                    if (index != particleIndex) {
-                        poly.cutWithPlane(
-                            index,
-                            Plane::between(position, particles_[index].position)
-                        );
-                    }
-                }
+				if (index != particleIndex) {
+					poly.cutWithPlane(
+						index,
+						Plane::between(position, particles_[index].position)
+                    );
+				}
+			}
                 // std::cerr << std::endl;
-            }
-
-            else {
-                VERIFY(poly.isClear());
-                poly = containerShape_;
-
-                for (search.startSearch(spatialStructure_, position);
-                     !search.done();
-                     search.expandSearch(searchRadius))
-                {
-                    for (SizeType index : search) {
-                        if (index != particleIndex) {
-                            poly.cutWithPlane(
-                                index,
-                                Plane::between(position, particles_[index].position)
-                            );
-                        }
-                    }
-                }
-            }
-
+			
             // auto furthestNeighborDistance = [&](){
             //     std::vector<SizeType> ns;
             //     poly.computeNeighbors(ns);

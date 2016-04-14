@@ -30,7 +30,7 @@ namespace spatial
 
 		// The ideal number of particles in a cell. Used to determine the
 		// size of a cell.
-		static const std::size_t cell_density_ = 10;
+		static const std::size_t cell_density_ = 5;
 
 		// The domain of the cell array.
 		double xmin_, xmax_, ymin_, ymax_, zmin_, zmax_;
@@ -43,6 +43,9 @@ namespace spatial
 
 		// The delimiters for each cell.
 		std::vector<std::size_t> delimiters_;
+
+		// The size of a cell in each dimension.
+		double cell_size_x_, cell_size_y_, cell_size_z_;
 
 		// The inverse size of a cell in each dimension.
 		double cell_size_inv_x_, cell_size_inv_y_, cell_size_inv_z_;
@@ -248,7 +251,7 @@ namespace spatial
 				return n * n;
 			};
 
-			return sq(x1 - x2) + sq(y1 - y2) + sq(z1 - z2);
+			return sqrt( sq(x1 - x2) + sq(y1 - y2) + sq(z1 - z2) );
 		}
 
 		// Get the x-index of a cell with given x-coordinate

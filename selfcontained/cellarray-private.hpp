@@ -197,9 +197,13 @@ namespace spatial
 		// Round up by adding 1 after truncation
 		num_cells_dim_ = std::size_t( (double) cellsPerDim / cellDensityPerDim ) + 1;
 
-		cell_size_inv_x_ = (double) num_cells_dim_ / (xmax_ - xmin_);
-		cell_size_inv_y_ = (double) num_cells_dim_ / (ymax_ - zmin_);
-		cell_size_inv_z_ = (double) num_cells_dim_ / (ymax_ - zmin_);
+		cell_size_x_ = (xmax_ - xmin_) / num_cells_dim_;
+		cell_size_y_ = (ymax_ - ymin_) / num_cells_dim_;
+		cell_size_z_ = (zmax_ - zmin_) / num_cells_dim_;
+
+		cell_size_inv_x_ = num_cells_dim_ / (xmax_ - xmin_);
+		cell_size_inv_y_ = num_cells_dim_ / (ymax_ - zmin_);
+		cell_size_inv_z_ = num_cells_dim_ / (ymax_ - zmin_);
 	}
 
 	template<typename PointType>
@@ -278,30 +282,18 @@ namespace spatial
 	bool Celery<PointType>::checkCellInRange(double x, double y, double z, double dist,
 											 std::size_t xIndex, std::size_t yIndex, std::size_t zIndex) const
 	{
-		double cellx, celly, cellz;
+		auto sq = [&](double yomama) -> double {
+			return yomama * yomama;
+		};
 
-		if (getXIndex(x) > xIndex) {
-			cellx = (xIndex + 1) / cell_size_inv_x_;
-		}
-		else {
-			cellx = xIndex / cell_size_inv_x_;
-		}
+		auto distance = [&](int i, int j, int k) -> double {
+			return sq(i * cell_size_x_) + sq(j * cell_size_y_) + sq(k * cell_size_z_);
+		};
 
-		if (getYIndex(y) > yIndex) {
-			celly = (yIndex + 1) / cell_size_inv_y_;
-		}
-		else {
-			celly = yIndex / cell_size_inv_y_;
-		}
-
-		if (getZIndex(z) > zIndex) {
-			cellz = (zIndex + 1) / cell_size_inv_z_;
-		}
-		else {
-			cellz = zIndex / cell_size_inv_z_;
-		}
-
-		return (euclidDist(x, y, z, cellx, celly, cellz) <= dist);
+		auto offset = [](int coord, int index) -> int {
+			return std::max(0, std::abs(coord - index) - 1);
+		};
+		return distance(offset(getXIndex(x), xIndex), offset(getYIndex(y), yIndex), offset(getZIndex(z), zIndex)) <= dist*dist;
 	}
 
 	template<typename PointType>
@@ -426,7 +418,7 @@ namespace spatial
 		};
 
 		auto distance = [&](int i, int j, int k) -> double {
-			return sq(i / cell_size_inv_x_) + sq(j / cell_size_inv_y_) + sq(k / cell_size_inv_z_);
+			return sq(i * cell_size_x_) + sq(j * cell_size_y_) + sq(k * cell_size_z_);
 		};
 
 		int maxIndex = num_cells_dim_ - 1;

@@ -91,8 +91,8 @@ namespace hmc {
         const std::vector<PointHandle>& search(Vector3 position, double searchRadius) const
         {
             static std::vector<PointHandle> v;
-            // v.clear();
-            // cellarray_.findNeighborsInCellRadius(position.x, position.y, position.z, searchRadius, v);
+            v.clear();
+            cellarray_.findNeighborsInCellRadius(position.x, position.y, position.z, searchRadius, v);
             return v;
         }
 
