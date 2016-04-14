@@ -244,7 +244,11 @@ namespace spatial
 		// Helper function for computing the distance between two sets of 3-D coordinates
 		double euclidDist(double x1, double y1, double z1, double x2, double y2, double z2) const
 		{
-			return sqrt( pow(x1 - x2, 2) + pow(y1 - y2, 2) + pow(z1 - z2, 2) );
+			auto sq = [&](double n) -> double {
+				return n * n;
+			};
+
+			return sq(x1 - x2) + sq(y1 - y2) + sq(z1 - z2);
 		}
 
 		// Get the x-index of a cell with given x-coordinate
@@ -270,7 +274,7 @@ namespace spatial
 		// Get the cell from x-, y-, and z-indices in the cell array
 		std::size_t getCellFromIndices(std::size_t xIndex, std::size_t yIndex, std::size_t zIndex) const
 		{
-			return xIndex * pow(num_cells_dim_, 2) + yIndex * num_cells_dim_ + zIndex;
+			return xIndex * num_cells_dim_ * num_cells_dim_ + yIndex * num_cells_dim_ + zIndex;
 		}
 
 		// Check whether any part of a cell is within a certain distance of a point
@@ -407,74 +411,32 @@ namespace spatial
 			 * the searching cell. The points are stored in searchPoints.
 			 */
 
-			// void expand(double maxRadius, std::vector<PointType>& searchPoints)
-			// {
-			// 	auto& searchOrder = stalk_->search_order_;
-			// 	auto searchOrderSize = searchOrder.size();
-			// 	if (last_search_index_ >= searchOrderSize) {
-			// 		done_ = true;
-			// 		return;
-			// 	}
-
-			// 	if (searchOrder[last_search_index_].dist > maxRadius) {
-			// 		done_ = true;
-			// 		return;
-			// 	}
-
-			// 	constexpr int searchIncrease = 10;
-			// 	const auto maxIndex = std::min(last_search_index_ + searchIncrease, stalk_->search_order_.size());
-
-			// 	auto index = last_search_index_;
-			// 	for (; index < maxIndex; ++index) {
-			// 		if (searchOrder[last_search_index_].dist > maxRadius) {
-			// 			return;
-			// 		}
-
-			// 		int xToSearch = x_index_ + stalk_->search_order_[index].i;
-			// 		int yToSearch = y_index_ + stalk_->search_order_[index].j;
-			// 		int zToSearch = z_index_ + stalk_->search_order_[index].k;
-
-			// 		auto invalid = [this](int i) -> bool
-			// 		{
-			// 			return i < 0 || (unsigned) i >= stalk_->num_cells_dim_;
-			// 		};
-
-			// 		if (invalid(xToSearch) || invalid(yToSearch) || invalid(zToSearch)) {
-			// 			continue;
-			// 		}
-
-			// 		std::size_t cellIndex = stalk_->getCellFromIndices(xToSearch, yToSearch, zToSearch);
-			// 		std::size_t cellBegin = stalk_->delimiters_[cellIndex];
-			// 		std::size_t cellEnd = stalk_->delimiters_[cellIndex + 1];
-
-			// 		for (std::size_t i = cellBegin; i < cellEnd; ++i) {
-			// 			searchPoints.push_back(stalk_->points_[i]);
-			// 		}
-			// 	}
-			// 	last_search_index_ = index;
-			// }
-
 			void expand(double maxRadius, std::vector<PointType>& searchPoints)
 			{
-				std::size_t searchOrderSize = stalk_->search_order_.size();
-				std::size_t searchIndex = last_search_index_;
-				double finalDistance = stalk_->search_order_[searchIndex].dist;
-
-				if (searchIndex >= searchOrderSize || finalDistance > maxRadius) {
+				auto& searchOrder = stalk_->search_order_;
+				auto searchOrderSize = searchOrder.size();
+				if (last_search_index_ >= searchOrderSize) {
 					done_ = true;
 					return;
 				}
 
-				for (; searchIndex < searchOrderSize; ++searchIndex) {
-					last_search_index_ = searchIndex;
+				if (searchOrder[last_search_index_].dist > maxRadius) {
+					done_ = true;
+					return;
+				}
 
-					if (stalk_->search_order_[searchIndex].dist > finalDistance) {
+				constexpr int searchIncrease = 5;
+				const auto maxIndex = std::min(last_search_index_ + searchIncrease, stalk_->search_order_.size());
+
+				auto index = last_search_index_;
+				for (; index < maxIndex; ++index) {
+					if (searchOrder[last_search_index_].dist > maxRadius) {
 						return;
 					}
 
-					int xToSearch = x_index_ + stalk_->search_order_[searchIndex].i;
-					int yToSearch = y_index_ + stalk_->search_order_[searchIndex].j;
-					int zToSearch = z_index_ + stalk_->search_order_[searchIndex].k;
+					int xToSearch = x_index_ + stalk_->search_order_[index].i;
+					int yToSearch = y_index_ + stalk_->search_order_[index].j;
+					int zToSearch = z_index_ + stalk_->search_order_[index].k;
 
 					auto invalid = [this](int i) -> bool
 					{
@@ -493,15 +455,57 @@ namespace spatial
 						searchPoints.push_back(stalk_->points_[i]);
 					}
 				}
-
-				// We broke out of the loop because we exceeded the cached searchOrder.
-				// We could be good little gnomes and do a more expensive search here,
-				// or we could, you know, not.
-				// static int times = 0;
-				// std::cerr << "Ohhhhh.... " << times++ << std::endl;
-				// std::cerr << searchIndex << " / " << searchOrderSize << "; " << finalDistance << " / " << stalk_->search_order_[searchIndex].dist << std::endl;
-				last_search_index_ = searchIndex;
+				last_search_index_ = index;
 			}
+
+			// void expand(double maxRadius, std::vector<PointType>& searchPoints)
+			// {
+			// 	std::size_t searchOrderSize = stalk_->search_order_.size();
+			// 	std::size_t searchIndex = last_search_index_;
+			// 	double finalDistance = stalk_->search_order_[searchIndex].dist;
+
+			// 	if (searchIndex >= searchOrderSize || finalDistance > maxRadius) {
+			// 		done_ = true;
+			// 		return;
+			// 	}
+
+			// 	for (; searchIndex < searchOrderSize; ++searchIndex) {
+			// 		last_search_index_ = searchIndex;
+
+			// 		if (stalk_->search_order_[searchIndex].dist > finalDistance) {
+			// 			return;
+			// 		}
+
+			// 		int xToSearch = x_index_ + stalk_->search_order_[searchIndex].i;
+			// 		int yToSearch = y_index_ + stalk_->search_order_[searchIndex].j;
+			// 		int zToSearch = z_index_ + stalk_->search_order_[searchIndex].k;
+
+			// 		auto invalid = [this](int i) -> bool
+			// 		{
+			// 			return i < 0 || (unsigned) i >= stalk_->num_cells_dim_;
+			// 		};
+
+			// 		if (invalid(xToSearch) || invalid(yToSearch) || invalid(zToSearch)) {
+			// 			continue;
+			// 		}
+
+			// 		std::size_t cellIndex = stalk_->getCellFromIndices(xToSearch, yToSearch, zToSearch);
+			// 		std::size_t cellBegin = stalk_->delimiters_[cellIndex];
+			// 		std::size_t cellEnd = stalk_->delimiters_[cellIndex + 1];
+
+			// 		for (std::size_t i = cellBegin; i < cellEnd; ++i) {
+			// 			searchPoints.push_back(stalk_->points_[i]);
+			// 		}
+			// 	}
+
+			// 	// We broke out of the loop because we exceeded the cached searchOrder.
+			// 	// We could be good little gnomes and do a more expensive search here,
+			// 	// or we could, you know, not.
+			// 	// static int times = 0;
+			// 	// std::cerr << "Ohhhhh.... " << times++ << std::endl;
+			// 	// std::cerr << searchIndex << " / " << searchOrderSize << "; " << finalDistance << " / " << stalk_->search_order_[searchIndex].dist << std::endl;
+			// 	last_search_index_ = searchIndex;
+			// }
 		};
 	};
 }

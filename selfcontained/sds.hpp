@@ -180,17 +180,22 @@ namespace hmc {
 
         protected:
             using Iterator = typename std::vector<PointHandle>::const_iterator;
-            const spatial::Celery<SizeType>& cellarray_;
-            const Vector3 position_;
+            const spatial::Celery<SizeType>* cellarray_;
+            Vector3 position_ = {0,0,0};
             static std::vector<PointHandle> neighbors_;
             unsigned shell_ = 0;
             bool done_ = false;
 
-            ExpandingSearch() = delete;
-            ExpandingSearch(const spatial::Celery<SizeType>& cellarray,
-                            Vector3 position)
-                : cellarray_(cellarray), position_(position)
+		public:
+            ExpandingSearch() = default;
+
+			void startSearch(const ShellArray<SizeType>& cellarray,
+							 const Vector3 position)
             {
+				cellarray_ = &cellarray.cellarray_;
+				position_ = position;
+				shell_ = 0;
+				done_ = false;
                 expandSearch(0);
             }
 
@@ -202,7 +207,7 @@ namespace hmc {
             void expandSearch(double maxRadius)
             {
                 neighbors_.clear();
-                done_ = !cellarray_.findNeighborsInShell(
+                done_ = !cellarray_->findNeighborsInShell(
                             position_.x, position_.y, position_.z,
                             shell_, maxRadius, neighbors_
                         );
@@ -217,7 +222,7 @@ namespace hmc {
 
         friend std::ostream& operator<<(std::ostream& out, const ShellArray& c)
         {
-            return out << c.cellarray_;
+            return out << *c.cellarray_;
         }
     };
 

@@ -8,6 +8,14 @@
 #include <set>
 #include <cstdlib>
 
+std::size_t totalCuts = 0,
+	neededCuts = 0,
+	expansions = 0,
+	cellsSearched = 0;
+
+auto dont_use_this_name = std::chrono::high_resolution_clock::now();
+auto expansionTime = dont_use_this_name - dont_use_this_name;
+
 #include "utilities.hpp"
 #include "vectormath.hpp"
 #include "hmc-tessellate.hpp"
@@ -497,6 +505,12 @@ int main(int argc, char* argv[]) {
         runTrial<hmc_tessellate, shrinkwrap>(boxLength, particles, check, ds);
 
         check.check(particles);
+
+		std::cout << "Total number of cuts: " << totalCuts << std::endl;
+		std::cout << "Needed cuts: " << neededCuts << std::endl;
+		std::cout << "Number of expansions: " << expansions << std::endl;
+		std::cout << "Number of cells searched: " << cellsSearched << std::endl;
+		std::cout << "Time spent expanding: " << std::chrono::duration<double, std::milli> {expansionTime}.count() << " ms" << std::endl;
     };
 
     runDoubleTrial(numPoints);

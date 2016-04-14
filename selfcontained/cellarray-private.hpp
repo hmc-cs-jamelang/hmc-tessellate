@@ -250,7 +250,7 @@ namespace spatial
 		delimiters_.push_back(0);
 		std::size_t numPoints = cells_.size();
 
-		std::size_t lastCell = pow(num_cells_dim_, 3);
+		std::size_t lastCell = num_cells_dim_ * num_cells_dim_ * num_cells_dim_;
 		for (std::size_t i = 0; i < lastCell; ++i) {
 			std::size_t offset = 0;
 			std::size_t back = delimiters_.back();
@@ -421,17 +421,17 @@ namespace spatial
 	void Celery<PointType>::createSearchArray()
 	{
 
-		auto distance = [&](int i, int j, int k) -> double {
-			return sqrt(pow(i / cell_size_inv_x_, 2) + pow(j / cell_size_inv_y_, 2) + pow(k / cell_size_inv_z_, 2));
+		auto sq = [&](double yomama) -> double {
+			return yomama * yomama;
 		};
 
-		// auto distance = [&](int i, int j, int k) -> double {
-		// 	return sqrt(pow(i, 2) + pow(j, 2) + pow(k, 2));
-		// };
+		auto distance = [&](int i, int j, int k) -> double {
+			return sq(i / cell_size_inv_x_) + sq(j / cell_size_inv_y_) + sq(k / cell_size_inv_z_);
+		};
 
 		int maxIndex = num_cells_dim_ - 1;
 
-		search_order_.emplace_back(0, 0, 0, 0);
+		search_order_.emplace_back(-1, 0, 0, 0);
 
 		for (int i = 0; i < maxIndex; ++i) {
 			for (int j = 0; j < maxIndex; ++j) {
@@ -508,6 +508,7 @@ namespace spatial
 	bool Celery<PointType>::findNeighborsInShell(double x, double y, double z, int shell, double maxRadius, std::vector<PointType>& pts) const
 	{
 		auto addPoints = [&](unsigned c) -> void {
+			++cellsSearched;
 			for (unsigned pi = delimiters_[c]; pi < delimiters_[c+1]; ++pi) {
 				pts.push_back(points_[pi]);
 			}

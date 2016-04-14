@@ -309,12 +309,12 @@ namespace hmc {
         {
             double dist = 0;
             for (auto& v : vertices_) {
-                double d = distance(particlePosition, v);
+                double d = squaredDistance(particlePosition, v);
                 if (d > dist) {
                     dist = d;
                 }
             }
-            return 2*(1 + 1e-6)*dist;
+            return 4*(1 + 1e-6)*dist;
         }
 
         void buildCube(double xmin, double xMAX,

@@ -209,17 +209,23 @@ namespace hmc {
             //     // std::cerr << "[" << is << "] ";
             //     return dist;
             // };
+			decltype(std::chrono::high_resolution_clock::now()) t1;
 
+			double rad = std::numeric_limits<double>::max();
             for (search.startSearch(spatialStructure_, position);
                  !search.done();
-                 search.expandSearch(poly.maximumNeighborDistance(position)))
+				 t1 = std::chrono::high_resolution_clock::now(),
+					 search.expandSearch(rad = poly.maximumNeighborDistance(position)),
+					 expansionTime += std::chrono::high_resolution_clock::now() - t1)
             {
+				++expansions;
                 for (SizeType index : search) {
-                    if (index != particleIndex) {
-                        poly.cutWithPlane(
+                    if (index != particleIndex && squaredDistance(position, particles_[index].position) <= rad) {
+                        neededCuts += poly.cutWithPlane(
                             index,
                             Plane::between(position, particles_[index].position)
                         );
+						++totalCuts;
                     }
                 }
             }
