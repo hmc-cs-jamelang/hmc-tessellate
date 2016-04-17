@@ -16,6 +16,8 @@ namespace hmc {
     class Diagram;
     class Cell;
 
+    constexpr double NO_RADIUS = -1;
+
     struct Particle {
         int id;
         Vector3 position;
@@ -30,18 +32,13 @@ namespace hmc {
         }
     };
 
-    inline void computeVoronoiCell(const Diagram&, SizeType, Vector3, Polyhedron&, SDS::ExpandingSearch&);
-    inline void computeVoronoiCell(const Diagram&, SizeType, Vector3, Polyhedron&, SDS::ExpandingSearch&, double);
-
-    inline const Particle& getParticle(const Diagram&, SizeType);
-
     struct CellInfo {
         const Diagram* diagram;
         SizeType index;
         Vector3 position;
         double searchRadius;
 
-        CellInfo(const Diagram& diagram, SizeType index, Vector3 position, double searchRadius = 0)
+        CellInfo(const Diagram& diagram, SizeType index, Vector3 position, double searchRadius = NO_RADIUS)
             : diagram(&diagram), index(index), position(position), searchRadius(searchRadius)
         { /* Done */ }
     };
@@ -61,7 +58,7 @@ namespace hmc {
     public:
         Cell() : diagram_(nullptr), polyComputed_(false) {}
 
-        Cell(const Diagram& diagram, SizeType index, Vector3 position, double searchRadius = 0)
+        Cell(const Diagram& diagram, SizeType index, Vector3 position, double searchRadius = NO_RADIUS)
             : diagram_(&diagram), index_(index),
               position_(position), polyComputed_(false), searchRadius_(searchRadius)
         { /* Done */ }
@@ -78,15 +75,12 @@ namespace hmc {
 
         void clear()
         {
-            diagram_ = nullptr;
+            // diagram_ = nullptr;
             poly_.clear();
             polyComputed_ = false;
         }
 
-        const Particle& getParticle() const
-        {
-            return ::hmc::getParticle(*diagram_, index_);
-        }
+        const Particle& getParticle() const;
 
         double computeVolume()
         {
@@ -106,22 +100,17 @@ namespace hmc {
             VERIFY_EXIT(polyComputed_);
 
             if (!polyComputed_) {
-                if (searchRadius_ == 0) {
-                    computeVoronoiCell(*diagram_, index_, position_, poly_, search_);
-                }
-                else {
-                    computeVoronoiCell(*diagram_, index_, position_, poly_, search_, searchRadius_);
-                }
+                computeVoronoiCell();
                 polyComputed_ = true;
             }
         }
+
+    protected:
+        void computeVoronoiCell();
     };
 
     class Diagram {
-        friend void computeVoronoiCell(const Diagram&, SizeType, Vector3, Polyhedron&, SDS::ExpandingSearch&);
-        friend void computeVoronoiCell(const Diagram&, SizeType, Vector3, Polyhedron&, SDS::ExpandingSearch&, double);
-
-        friend const Particle& getParticle(const Diagram&, SizeType);
+        friend class Cell;
 
         // using SDS = TrivialSDS<SizeType>;
         // using SDS = ShellArray<SizeType>;
@@ -164,8 +153,6 @@ namespace hmc {
                     return particles_[index].position;
                 }
             );
-
-            // std::cerr << spatialStructure_ << std::endl;
         }
 
         template <typename FillDiagramWithParticles>
@@ -188,121 +175,57 @@ namespace hmc {
             return CellInfo(*this, index, particles_[index].position, searchRadius);
         }
 
-        void computeVoronoiCell(SizeType particleIndex, Vector3 position, Polyhedron& poly, SDS::ExpandingSearch& search) const
+        void computeVoronoiCell(SizeType particleIndex, Vector3 position, Polyhedron& poly,
+                                SDS::ExpandingSearch& search, double searchRadius = NO_RADIUS) const
         {
             VERIFY(poly.isClear());
             poly = containerShape_;
+            poly.translate(-position);
 
-            // auto furthestNeighborDistance = [&](){
-            //     std::vector<SizeType> ns;
-            //     poly.computeNeighbors(ns);
-            //     double dist = 0;
-            //     int is = -1;
-            //     for (auto i : ns) if (i != -1) {
-            //         double d = distance(particles_[i].position, position);
-            //         // std::cerr << "  :: " << i << " -> " << d << std::endl;
-            //         if (d > dist) {
-            //             dist = d;
-            //             is = i;
-            //         }
-            //     }
-            //     // std::cerr << "[" << is << "] ";
-            //     return dist;
-            // };
-			decltype(std::chrono::high_resolution_clock::now()) t1;
-
-			double rad = std::numeric_limits<double>::max();
-            for (search.startSearch(spatialStructure_, position);
-                 !search.done();
-				 t1 = std::chrono::high_resolution_clock::now(),
-					 search.expandSearch(rad = poly.maximumNeighborDistance(position)),
-					 expansionTime += std::chrono::high_resolution_clock::now() - t1)
-            {
-				++expansions;
-                for (SizeType index : search) {
-                    if (index != particleIndex && squaredDistance(position, particles_[index].position) <= rad) {
-                        neededCuts += poly.cutWithPlane(
-                            index,
-                            Plane::between(position, particles_[index].position)
-                        );
-						++totalCuts;
+            // Use expanding search if no radius is given
+            if (searchRadius == NO_RADIUS) {
+    			searchRadius = std::numeric_limits<double>::max();
+                for (search.startSearch(spatialStructure_, position);
+                        !search.done();
+    				    search.expandSearch(searchRadius = poly.maximumNeighborDistance()))
+                {
+                    for (SizeType index : search) {
+                        Vector3 shiftedPosition = particles_[index].position - position;
+                        if (index != particleIndex
+                            && mag2(shiftedPosition) <= searchRadius)
+                        {
+                            poly.cutWithPlane(
+                                index,
+                                Plane::halfwayFromOriginTo(shiftedPosition)
+                            );
+                        }
                     }
                 }
             }
-            // std::cerr << particleIndex << " done at " << rad << std::endl;
-            // std::cerr << "  " << particleIndex << " furthest neighbor "
-            //     << furthestNeighborDistance() << " ("
-            //     << 1.00001 * furthestNeighborDistance() << ")" << std::endl;
-        }
 
-        void computeVoronoiCell(SizeType particleIndex, Vector3 position,
-                                Polyhedron& poly, SDS::ExpandingSearch& search,
-                                double searchRadius) const
-        {
-            // std::cerr << particleIndex << " search radius is " << searchRadius << std::endl;
-			VERIFY(poly.isClear());
-			poly = containerShape_;
-			
-                // std::cerr << "  " << particleIndex
-                //     // << " (" << spatialStructure_.cellarray_.getCells()[particleIndex]
-                //     // << ") "
-                //     << " ns:";
-			for (SizeType index : spatialStructure_.search(position, searchRadius)) {
-                    // std::cerr << " " << index;
-				if (index != particleIndex) {
-					poly.cutWithPlane(
-						index,
-						Plane::between(position, particles_[index].position)
-                    );
-				}
-			}
-                // std::cerr << std::endl;
-			
-            // auto furthestNeighborDistance = [&](){
-            //     std::vector<SizeType> ns;
-            //     poly.computeNeighbors(ns);
-            //     double dist = 0;
-            //     int is = -1;
-            //     for (auto i : ns) if (i != -1) {
-            //         double d = distance(particles_[i].position, position);
-            //         // std::cerr << "  :: " << i << " -> " << d << std::endl;
-            //         if (d > dist) {
-            //             dist = d;
-            //             is = i;
-            //         }
-            //     }
-            //     // std::cerr << "[" << is << "] ";
-            //     return dist;
-            // };
-
-            // std::cerr << "  " << particleIndex << " furthest neighbor "
-            //     << furthestNeighborDistance() << " ("
-            //     << 1.00001 * furthestNeighborDistance() << ")" << std::endl;
+            // Otherwise (given radius), do a basic search
+            else {
+                for (SizeType index : spatialStructure_.search(position, searchRadius)) {
+                    if (index != particleIndex) {
+                        poly.cutWithPlane(
+                            index,
+                            Plane::halfwayFromOriginTo(particles_[index].position - position)
+                        );
+                    }
+                }
+            }
         }
     };
 
-    inline void computeVoronoiCell(const Diagram& diagram,
-                                   SizeType index,
-                                   Vector3 position,
-                                   Polyhedron& poly,
-                                   SDS::ExpandingSearch& search)
+
+    void Cell::computeVoronoiCell()
     {
-        diagram.computeVoronoiCell(index, position, poly, search);
+        diagram_->computeVoronoiCell(index_, position_, poly_, search_, searchRadius_);
     }
 
-    inline void computeVoronoiCell(const Diagram& diagram,
-                                   SizeType index,
-                                   Vector3 position,
-                                   Polyhedron& poly,
-                                   SDS::ExpandingSearch& search,
-                                   double searchRadius)
+    const Particle& Cell::getParticle() const
     {
-        diagram.computeVoronoiCell(index, position, poly, search, searchRadius);
-    }
-
-    inline const Particle& getParticle(const Diagram& diagram, SizeType index)
-    {
-        return diagram.particles_[index];
+        return diagram_->particles_[index_];
     }
 
 }

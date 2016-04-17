@@ -92,6 +92,12 @@ namespace hmc {
                 return data.object;
             }
 
+            inline const T& object() const
+            {
+                VERIFY(active);
+                return data.object;
+            }
+
             // Get index of next inactive chunk held by this inactive chunk
             inline Index& next_available()
             {
@@ -178,6 +184,7 @@ namespace hmc {
         void setActive(Index i, bool active) {chunk(i).active = active;}
 
         inline T& operator[](Index i) {return chunk(i).object();}
+        inline const T& operator[](Index i) const {return chunk(i).object();}
 
         template<typename... T_Constructor_Args>
         Index create(T_Constructor_Args... args)

@@ -78,6 +78,8 @@ namespace hmc {
         std::vector<VertexIndex> verticesToDestroy_;
         std::vector<EdgeIndex> edgesToDestroy_;
 
+        VertexIndex maxDistanceVertex_ = INVALID_VERTEX;
+        double maximumNeighborDistance_;
 
         // struct VertexDistance {
         //     VertexIndex vi;
@@ -103,7 +105,12 @@ namespace hmc {
         //     }
         // };
 
-        // std::priority_queue<VertexDistance> vertexDistances_;
+        // struct VertexDistanceHeap {
+        //     std::vector<VertexDistance>;
+
+
+
+        // } vertexDistances_;
 
         void clear()
         {
@@ -138,6 +145,13 @@ namespace hmc {
         FaceIndex& face(EdgeIndex ei) {return edges_[ei].face;}
         EdgeIndex& startingEdge(FaceIndex fi) {return faces_[fi].startingEdge;}
 
+        const EdgeIndex& flip(EdgeIndex ei) const {return edges_[ei].flip;}
+        const EdgeIndex& next(EdgeIndex ei) const {return edges_[ei].next;}
+        const VertexIndex& target(EdgeIndex ei) const {return edges_[ei].target;}
+        const VertexIndex& source(EdgeIndex ei) const {return target(flip(ei));}
+        const FaceIndex& face(EdgeIndex ei) const {return edges_[ei].face;}
+        const EdgeIndex& startingEdge(FaceIndex fi) const {return faces_[fi].startingEdge;}
+
         template <typename... Edge_Constructor_Args>
         EdgeIndex createEdge(Edge_Constructor_Args... args)
         {
@@ -164,6 +178,9 @@ namespace hmc {
         void destroy(VertexIndex vi)
         {
             vertices_.destroy(vi);
+            if (vi == maxDistanceVertex_) {
+                maxDistanceVertex_ = INVALID_VERTEX;
+            }
         }
 
         void destroy(FaceIndex fi)
@@ -237,6 +254,13 @@ namespace hmc {
             }
         )
 
+        void translate(const Vector3 shift)
+        {
+            for (auto& v : vertices_) {
+                v += shift;
+            }
+        }
+
         double computeVolume()
         {
             computeFaceData();
@@ -305,16 +329,20 @@ namespace hmc {
             return vol;
         }
 
-        double maximumNeighborDistance(Vector3 particlePosition)
+        double maximumNeighborDistance()
         {
-            double dist = 0;
-            for (auto& v : vertices_) {
-                double d = squaredDistance(particlePosition, v);
-                if (d > dist) {
-                    dist = d;
+            if (maxDistanceVertex_ == INVALID_VERTEX) {
+                maximumNeighborDistance_ = 0;
+                for (auto vi = vertices_.begin(); vi != vertices_.end(); ++vi) {
+                    double d = mag2(*vi);
+                    if (d > maximumNeighborDistance_) {
+                        maximumNeighborDistance_ = d;
+                        maxDistanceVertex_ = vi.index();
+                    }
                 }
+                maximumNeighborDistance_ *= 4*(1 + 1e-6);
             }
-            return 4*(1 + 1e-6)*dist;
+            return maximumNeighborDistance_;
         }
 
         void buildCube(double xmin, double xMAX,
@@ -560,11 +588,12 @@ namespace hmc {
 
         EdgeIndex findOutgoingEdge(const Plane& plane) {
             auto signedDistance = [&](VertexIndex vi) -> double {
-                return plane.signedDistance(vertices_[vi]);
+                // return plane.signedDistance(vertices_[vi]);
+                return plane.offset(vertices_[vi]);
             };
 
             auto location = [&](double distance) -> Plane::Location {
-                return plane.location(distance);
+                return plane.location(distance - plane.planeOffset);
             };
             // We start by finding some OUTSIDE vertex, i.e. one that will
             // be cut off. If we can't find one, then there will be no outgoing
@@ -854,54 +883,58 @@ namespace hmc {
             return true;
         }
 
-        void fullOutput()
+        friend std::ostream& operator<< (std::ostream& out, const Polyhedron& poly)
         {
-            std::cerr << std::endl;
-            std::cerr << "EDGES" << std::endl;
+            const auto& edges_ = poly.edges_;
+            const auto& vertices_ = poly.vertices_;
+            const auto& faces_ = poly.faces_;
+
+            out << "POLYHEDRON" << std::endl;
+            out << "EDGES" << std::endl;
             for (EdgePool::SizeType i = 0; i < edges_.size(); ++i) {
                 EdgeIndex ei {i};
-                std::cerr << "Edge chunk " << i << ": ";
+                out << "Edge chunk " << i << ": ";
                 if (edges_.active(ei)) {
-                    std::cerr << "* Active" << std::endl;
-                    std::cerr << "  Face: " << face(ei)
-                        << (face(ei) != INVALID_FACE && faces_.active(face(ei)) ? " *" : " X") << std::endl;
-                    std::cerr << "  Next: " << next(ei)
-                        << (next(ei) != INVALID_EDGE && edges_.active(next(ei)) ? " *" : " X") << std::endl;
-                    std::cerr << "  Flip: " << flip(ei)
-                        << (flip(ei) != INVALID_EDGE && edges_.active(flip(ei)) ? " *" : " X") << std::endl;
-                    std::cerr << "  Target: " << target(ei)
-                        << (target(ei) != INVALID_VERTEX && vertices_.active(target(ei)) ? " *" : " X") << std::endl;
+                    out << "* Active" << std::endl;
+                    out << "  Face: " << poly.face(ei)
+                        << (poly.face(ei) != INVALID_FACE && faces_.active(poly.face(ei)) ? " *" : " X") << std::endl;
+                    out << "  Next: " << poly.next(ei)
+                        << (poly.next(ei) != INVALID_EDGE && edges_.active(poly.next(ei)) ? " *" : " X") << std::endl;
+                    out << "  Flip: " << poly.flip(ei)
+                        << (poly.flip(ei) != INVALID_EDGE && edges_.active(poly.flip(ei)) ? " *" : " X") << std::endl;
+                    out << "  Target: " << poly.target(ei)
+                        << (poly.target(ei) != INVALID_VERTEX && vertices_.active(poly.target(ei)) ? " *" : " X") << std::endl;
                 }
                 else {
-                    std::cerr << "X Inactive" << std::endl;
+                    out << "X Inactive" << std::endl;
                 }
             }
-            std::cerr << "VERTICES" << std::endl;
+            out << "VERTICES" << std::endl;
             for (VertexPool::SizeType i = 0; i < vertices_.size(); ++i) {
                 VertexIndex vi {i};
-                std::cerr << "Vertex chunk " << i << ": ";
+                out << "Vertex chunk " << i << ": ";
                 if (vertices_.active(vi)) {
-                    std::cerr << "* Active" << std::endl;
+                    out << "* Active" << std::endl;
                 }
                 else {
-                    std::cerr << "X Inactive" << std::endl;
+                    out << "X Inactive" << std::endl;
                 }
             }
-            std::cerr << "FACES" << std::endl;
+            out << "FACES" << std::endl;
             for (FacePool::SizeType i = 0; i < faces_.size(); ++i) {
                 FaceIndex fi {i};
-                std::cerr << "Face " << i << ": ";
+                out << "Face " << i << ": ";
                 if (faces_.active(fi)) {
-                    std::cerr << "* Active" << std::endl;
-                    std::cerr << "  Start: " << startingEdge(fi)
-                        << ((startingEdge(fi) != INVALID_EDGE && edges_.active(startingEdge(fi))) ? " *" : " X") << std::endl;
+                    out << "* Active" << std::endl;
+                    out << "  Start: " << poly.startingEdge(fi)
+                        << ((poly.startingEdge(fi) != INVALID_EDGE && edges_.active(poly.startingEdge(fi))) ? " *" : " X") << std::endl;
                 }
                 else {
-                    std::cerr << "X Inactive" << std::endl;
+                    out << "X Inactive" << std::endl;
                 }
             }
 
-            std::cerr << std::endl;
+            return out;
         }
     };
 

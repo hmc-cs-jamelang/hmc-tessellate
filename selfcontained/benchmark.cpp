@@ -11,7 +11,13 @@
 std::size_t totalCuts = 0,
 	neededCuts = 0,
 	expansions = 0,
-	cellsSearched = 0;
+	cellsSearched = 0,
+    attemptedDestroyedVertices = 0,
+    destroyedVertices = 0,
+    attemptedDestroyedEdges = 0,
+    destroyedEdges = 0,
+    destroyedMSVertices = 0,
+    destroyedMSEdges = 0;
 
 auto dont_use_this_name = std::chrono::high_resolution_clock::now();
 auto expansionTime = dont_use_this_name - dont_use_this_name;
@@ -382,7 +388,7 @@ struct AllData {
 
 
 
-using CheckType = Check<void>;
+using CheckType = Check<AllData>;
 constexpr std::size_t DEFAULT_NUM_POINTS = 100;
 constexpr bool shrinkwrap = false;
 constexpr double shrinkwrapPadding = 1.00001;
@@ -511,6 +517,9 @@ int main(int argc, char* argv[]) {
 		std::cout << "Number of expansions: " << expansions << std::endl;
 		std::cout << "Number of cells searched: " << cellsSearched << std::endl;
 		std::cout << "Time spent expanding: " << std::chrono::duration<double, std::milli> {expansionTime}.count() << " ms" << std::endl;
+
+        std::cout << destroyedMSVertices << ":" << destroyedVertices << "/" << attemptedDestroyedVertices << ";"
+            << destroyedMSEdges << ":" << destroyedEdges << "/" << attemptedDestroyedEdges << std::endl;
     };
 
     runDoubleTrial(numPoints);

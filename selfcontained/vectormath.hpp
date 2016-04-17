@@ -108,6 +108,8 @@ namespace hmc {
         }
     };
 
+    constexpr Vector3 VECTOR_ZERO {0, 0, 0};
+
     // Computes the dot product of two vectors
     constexpr double dot(const Vector3& a, const Vector3& b)
     {
@@ -193,6 +195,11 @@ namespace hmc {
                                               const Vector3& point)
         {
             return Plane(unitNormal, dot(unitNormal, point));
+        }
+
+        static Plane halfwayFromOriginTo(const Vector3& v)
+        {
+            return Plane::normalAndPoint(unit(v), v/2);
         }
 
         // Not constexpr because unit is not constexpr.

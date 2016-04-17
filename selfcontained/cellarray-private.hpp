@@ -6,8 +6,7 @@
 
 #include <limits>
 
-namespace spatial
-{
+namespace hmc { namespace spatial {
 
 	template<typename PointType>
 	template<typename PointIterator>
@@ -40,8 +39,15 @@ namespace spatial
 		delimiters_.clear();
 		search_order_.clear();
 
+		auto size = std::distance(begin, end);
+		points_.reserve(size);
+		cells_.reserve(size);
+
 		computeBoundsFromPoints(begin, end, getPoint);
-		computeCellData(std::distance(begin, end));
+		computeCellData(size);
+
+		delimiters_.reserve(num_cells_dim_ * num_cells_dim_ * num_cells_dim_ + 1);
+
 		insert(begin, end, getPoint);
 		initializeCellArray();
 		createSearchArray();
@@ -57,8 +63,15 @@ namespace spatial
 		delimiters_.clear();
 		search_order_.clear();
 
+		auto size = end - begin;
+		points_.reserve(size);
+		cells_.reserve(size);
+
 		computeBoundsFromPoints(begin, end, getPoint);
-		computeCellData(end - begin);
+		computeCellData(size);
+
+		delimiters_.reserve(num_cells_dim_ * num_cells_dim_ * num_cells_dim_ + 1);
+
 		insert(begin, end, getPoint);
 		initializeCellArray();
 		createSearchArray();
@@ -83,7 +96,7 @@ namespace spatial
 			adjust(p.z, zmin_, zmax_);
 		}
 
-		auto separate = [](double& min, double& max) {
+		auto separate = [](double& /*min*/, double& /*max*/) {
 			// if (min == max) {
 			// 	max += std::numeric_limits<double>::epsilon();
 			// }
@@ -92,37 +105,6 @@ namespace spatial
 		separate(xmin_, xmax_);
 		separate(ymin_, ymax_);
 		separate(zmin_, zmax_);
-
-		// std::vector<double> xvals, yvals, zvals;
-		// for (auto i = begin; i < end; ++i) {
-		// 	auto&& p = getPoint(*i);
-		// 	xvals.push_back(p.x);
-		// 	yvals.push_back(p.y);
-		// 	zvals.push_back(p.z);
-		// }
-
-		// std::sort(xvals.begin(), xvals.end());
-		// std::sort(yvals.begin(), yvals.end());
-		// std::sort(zvals.begin(), zvals.end());
-
-		// xmin_ = xvals.front();
-		// xmax_ = xvals.back();
-		// ymin_ = yvals.front();
-		// ymax_ = yvals.back();
-		// zmin_ = zvals.front();
-		// zmax_ = zvals.back();
-
-		// // Make the bounding box slightly larger than the extreme values of the points
-		// double xscl = 0.01 * (xmax_ - xmin_);
-		// double yscl = 0.01 * (ymax_ - ymin_);
-		// double zscl = 0.01 * (zmax_ - zmin_);
-
-		// xmin_ -= xscl;
-		// xmax_ += xscl;
-		// ymin_ -= yscl;
-		// ymax_ += yscl;
-		// zmin_ -= zscl;
-		// zmax_ += zscl;
 	}
 
 	template<typename PointType>
@@ -144,7 +126,7 @@ namespace spatial
 			adjust(p.z, zmin_, zmax_);
 		}
 
-		auto separate = [](double& min, double& max) {
+		auto separate = [](double& /*min*/, double& /*max*/) {
 			// if (min == max) {
 			// 	max += std::numeric_limits<double>::epsilon();
 			// }
@@ -153,37 +135,6 @@ namespace spatial
 		separate(xmin_, xmax_);
 		separate(ymin_, ymax_);
 		separate(zmin_, zmax_);
-
-		// std::vector<double> xvals, yvals, zvals;
-		// for (auto i = begin; i < end; ++i) {
-		// 	auto&& p = getPoint(i);
-		// 	xvals.push_back(p.x);
-		// 	yvals.push_back(p.y);
-		// 	zvals.push_back(p.z);
-		// }
-
-		// std::sort(xvals.begin(), xvals.end());
-		// std::sort(yvals.begin(), yvals.end());
-		// std::sort(zvals.begin(), zvals.end());
-
-		// xmin_ = xvals.front();
-		// xmax_ = xvals.back();
-		// ymin_ = yvals.front();
-		// ymax_ = yvals.back();
-		// zmin_ = zvals.front();
-		// zmax_ = zvals.back();
-
-		// // Make the bounding box slightly larger than the extreme values of the points
-		// double xscl = 0.01 * (xmax_ - xmin_);
-		// double yscl = 0.01 * (ymax_ - ymin_);
-		// double zscl = 0.01 * (zmax_ - zmin_);
-
-		// xmin_ -= xscl;
-		// xmax_ += xscl;
-		// ymin_ -= yscl;
-		// ymax_ += yscl;
-		// zmin_ -= zscl;
-		// zmax_ += zscl;
 	}
 
 	template<typename PointType>
@@ -423,6 +374,9 @@ namespace spatial
 
 		int maxIndex = num_cells_dim_ - 1;
 
+		auto cb = [](int n) { return n * n * n; };
+		search_order_.reserve(cb(2 * maxIndex + 1));
+
 		search_order_.emplace_back(-1, 0, 0, 0);
 
 		for (int i = 0; i < maxIndex; ++i) {
@@ -507,7 +461,13 @@ namespace spatial
 		};
 
 		auto valid = [&](unsigned index) -> bool {
-			return /*index >= 0 && */index < num_cells_dim_;
+			// By casting to unsigned, negative values
+			// will wrap around to very large ones.
+			// This way, we do not have to check
+			// index >= 0 explicitly; that will be
+			// caught by the index < num_cells_dim_
+			// check.
+			return index < num_cells_dim_;
 		};
 
 		if (shell == 0) {
@@ -547,4 +507,4 @@ namespace spatial
 		return true;
 	}
 
-}
+}}

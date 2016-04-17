@@ -11,8 +11,9 @@
 #include <cstdlib>
 #include <vector>
 
-namespace spatial
-{
+#include "vectormath.hpp"
+
+namespace hmc { namespace spatial {
 	/*
 	 * Celery
 	 *
@@ -418,37 +419,34 @@ namespace spatial
 			{
 				auto& searchOrder = stalk_->search_order_;
 				auto searchOrderSize = searchOrder.size();
-				if (last_search_index_ >= searchOrderSize) {
-					done_ = true;
-					return;
-				}
 
-				if (searchOrder[last_search_index_].dist > maxRadius) {
-					done_ = true;
-					return;
-				}
+				auto invalid = [this](unsigned i) -> bool
+				{
+					return i >= stalk_->num_cells_dim_;
+				};
 
-				constexpr int searchIncrease = 5;
-				const auto maxIndex = std::min(last_search_index_ + searchIncrease, stalk_->search_order_.size());
+				constexpr int searchIncrease = 1;
+				if (searchIncrease == 1) {
+					// std::cerr << "LSI: " << last_search_index_ << ", SOS: " << searchOrderSize << std::endl;
+					int xToSearch;
+					int yToSearch;
+					int zToSearch;
+					do {
+						if (last_search_index_ >= searchOrderSize) {
+							done_ = true;
+							return;
+						}
+						if (searchOrder[last_search_index_].dist > maxRadius) {
+							done_ = true;
+							return;
+						}
 
-				auto index = last_search_index_;
-				for (; index < maxIndex; ++index) {
-					if (searchOrder[last_search_index_].dist > maxRadius) {
-						return;
-					}
+						xToSearch = x_index_ + stalk_->search_order_[last_search_index_].i;
+						yToSearch = y_index_ + stalk_->search_order_[last_search_index_].j;
+						zToSearch = z_index_ + stalk_->search_order_[last_search_index_].k;
 
-					int xToSearch = x_index_ + stalk_->search_order_[index].i;
-					int yToSearch = y_index_ + stalk_->search_order_[index].j;
-					int zToSearch = z_index_ + stalk_->search_order_[index].k;
-
-					auto invalid = [this](int i) -> bool
-					{
-						return i < 0 || (unsigned) i >= stalk_->num_cells_dim_;
-					};
-
-					if (invalid(xToSearch) || invalid(yToSearch) || invalid(zToSearch)) {
-						continue;
-					}
+						++last_search_index_;
+					} while (invalid(xToSearch) || invalid(yToSearch) || invalid(zToSearch));
 
 					std::size_t cellIndex = stalk_->getCellFromIndices(xToSearch, yToSearch, zToSearch);
 					std::size_t cellBegin = stalk_->delimiters_[cellIndex];
@@ -458,7 +456,43 @@ namespace spatial
 						searchPoints.push_back(stalk_->points_[i]);
 					}
 				}
-				last_search_index_ = index;
+				else {
+					if (last_search_index_ >= searchOrderSize) {
+						done_ = true;
+						return;
+					}
+
+					if (searchOrder[last_search_index_].dist > maxRadius) {
+						done_ = true;
+						return;
+					}
+
+					const auto maxIndex = std::min(last_search_index_ + searchIncrease, stalk_->search_order_.size());
+
+					auto index = last_search_index_;
+					for (; index < maxIndex; ++index) {
+						if (searchOrder[last_search_index_].dist > maxRadius) {
+							return;
+						}
+
+						int xToSearch = x_index_ + stalk_->search_order_[index].i;
+						int yToSearch = y_index_ + stalk_->search_order_[index].j;
+						int zToSearch = z_index_ + stalk_->search_order_[index].k;
+
+						if (invalid(xToSearch) || invalid(yToSearch) || invalid(zToSearch)) {
+							continue;
+						}
+
+						std::size_t cellIndex = stalk_->getCellFromIndices(xToSearch, yToSearch, zToSearch);
+						std::size_t cellBegin = stalk_->delimiters_[cellIndex];
+						std::size_t cellEnd = stalk_->delimiters_[cellIndex + 1];
+
+						for (std::size_t i = cellBegin; i < cellEnd; ++i) {
+							searchPoints.push_back(stalk_->points_[i]);
+						}
+					}
+					last_search_index_ = index;
+				}
 			}
 
 			// void expand(double maxRadius, std::vector<PointType>& searchPoints)
@@ -511,6 +545,6 @@ namespace spatial
 			// }
 		};
 	};
-}
+}}
 
 #include "cellarray-private.hpp"
