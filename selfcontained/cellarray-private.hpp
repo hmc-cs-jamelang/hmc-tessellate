@@ -154,8 +154,8 @@ namespace hmc { namespace spatial {
 		cell_size_z_ = (zmax_ - zmin_) / num_cells_dim_;
 
 		cell_size_inv_x_ = num_cells_dim_ / (xmax_ - xmin_);
-		cell_size_inv_y_ = num_cells_dim_ / (ymax_ - zmin_);
-		cell_size_inv_z_ = num_cells_dim_ / (ymax_ - zmin_);
+		cell_size_inv_y_ = num_cells_dim_ / (ymax_ - ymin_);
+		cell_size_inv_z_ = num_cells_dim_ / (zmax_ - zmin_);
 	}
 
 	template<typename PointType>
