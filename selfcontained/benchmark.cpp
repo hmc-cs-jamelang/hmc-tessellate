@@ -138,9 +138,11 @@ void runTrial(const double boxLength,
     outputMallocs();
 
     auto totalTime = std::chrono::high_resolution_clock::now() - startTime;
-    std::cerr << "Completed in "
-              << std::chrono::duration<double, std::milli> {totalTime}.count()
-              << " ms" << std::endl;
+    std::cerr << "##############################" << std::endl
+		      << "Completed in " << std::endl
+              << "        " << std::chrono::duration<double, std::milli> {totalTime}.count()
+              << " ms" << std::endl
+			  << "##############################" << std::endl;
 
 
     using dbl = std::numeric_limits<double>;
@@ -388,7 +390,7 @@ struct AllData {
 
 
 
-using CheckType = Check<AllData>;
+using CheckType = Check<void>;
 constexpr std::size_t DEFAULT_NUM_POINTS = 100;
 constexpr bool shrinkwrap = false;
 constexpr double shrinkwrapPadding = 1.00001;
@@ -512,14 +514,14 @@ int main(int argc, char* argv[]) {
 
         check.check(particles);
 
-		std::cout << "Total number of cuts: " << totalCuts << std::endl;
-		std::cout << "Needed cuts: " << neededCuts << std::endl;
-		std::cout << "Number of expansions: " << expansions << std::endl;
-		std::cout << "Number of cells searched: " << cellsSearched << std::endl;
-		std::cout << "Time spent expanding: " << std::chrono::duration<double, std::milli> {expansionTime}.count() << " ms" << std::endl;
+		// std::cout << "Total number of cuts: " << totalCuts << std::endl;
+		// std::cout << "Needed cuts: " << neededCuts << std::endl;
+		// std::cout << "Number of expansions: " << expansions << std::endl;
+		// std::cout << "Number of cells searched: " << cellsSearched << std::endl;
+		// std::cout << "Time spent expanding: " << std::chrono::duration<double, std::milli> {expansionTime}.count() << " ms" << std::endl;
 
-        std::cout << destroyedMSVertices << ":" << destroyedVertices << "/" << attemptedDestroyedVertices << ";"
-            << destroyedMSEdges << ":" << destroyedEdges << "/" << attemptedDestroyedEdges << std::endl;
+        // std::cout << destroyedMSVertices << ":" << destroyedVertices << "/" << attemptedDestroyedVertices << ";"
+        //     << destroyedMSEdges << ":" << destroyedEdges << "/" << attemptedDestroyedEdges << std::endl;
     };
 
     runDoubleTrial(numPoints);

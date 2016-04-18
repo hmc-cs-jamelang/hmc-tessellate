@@ -141,12 +141,13 @@ namespace hmc { namespace spatial {
 	void Celery<PointType>::computeCellData(std::size_t numPoints)
 	{
 		// Round up the number of cells per dimension
-		std::size_t cellsPerDim = std::size_t( cbrt((double) numPoints) ) + 1;
-		std::size_t cellDensityPerDim = std::size_t( cbrt((double) cell_density_) ) + 1;
+		double cellsPerDim = (double) numPoints;
+		double cellDensityPerDim = (double) cell_density_;
 
 		// Compute the number of cells and inverse cell size in each dimension
 		// Round up by adding 1 after truncation
-		num_cells_dim_ = std::size_t( (double) cellsPerDim / cellDensityPerDim ) + 1;
+		num_cells_dim_ = std::size_t( std::cbrt( cellsPerDim / cellDensityPerDim ) ) + 1;
+		std::cerr << "num_cells_dim_: " << num_cells_dim_ << std::endl;
 
 		cell_size_x_ = (xmax_ - xmin_) / num_cells_dim_;
 		cell_size_y_ = (ymax_ - ymin_) / num_cells_dim_;

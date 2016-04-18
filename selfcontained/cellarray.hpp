@@ -31,7 +31,7 @@ namespace hmc { namespace spatial {
 
 		// The ideal number of particles in a cell. Used to determine the
 		// size of a cell.
-		static const std::size_t cell_density_ = 5;
+		static constexpr double cell_density_ = 5.0/4;
 
 		// The domain of the cell array.
 		double xmin_, xmax_, ymin_, ymax_, zmin_, zmax_;
@@ -545,6 +545,9 @@ namespace hmc { namespace spatial {
 			// }
 		};
 	};
+
+	template<typename PointType>
+	constexpr double Celery<PointType>::cell_density_;
 }}
 
 #include "cellarray-private.hpp"
