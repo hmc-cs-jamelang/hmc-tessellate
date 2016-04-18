@@ -164,6 +164,16 @@ namespace voro {
 			return TargetGroup {groups...};
 		}
 
+		// dani hacky constructor thing
+		TargetGroup targetGroups(int* groups)
+		{
+			TargetGroup() targets;
+			for (int i = 0; i < groups.size(); ++i) {
+				targets.insert(groups[i]);
+			}
+			return targets;
+		}
+
 		template <typename... Groups>
 		SourceGroup sourceGroups(Groups... groups)
 		{
