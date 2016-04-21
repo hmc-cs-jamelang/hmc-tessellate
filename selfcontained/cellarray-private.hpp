@@ -1,7 +1,7 @@
-/*
- * cellarray-private.hpp
+/**
+ * \file cellarray-private.hpp
  *
- * Implementation file for cellarray.hpp
+ * \brief Implementation file for cellarray.hpp
  */
 
 #include <limits>
