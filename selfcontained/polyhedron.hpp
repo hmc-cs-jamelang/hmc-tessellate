@@ -1,3 +1,11 @@
+/**
+ * \file polyhedron.hpp
+ * 
+ * \author 2015-2016 Sandia Clinic Team
+ *
+ * \brief Contains the Polyhedron class which does the actual Voronoi calculations.
+ */
+
 #pragma once
 
 #include <iostream>
@@ -28,12 +36,28 @@ namespace hmc {
     static constexpr VertexIndex INVALID_VERTEX = VertexPool::INVALID_INDEX;
     static constexpr FaceIndex INVALID_FACE     = FacePool::INVALID_INDEX;
 
-    struct HalfEdge {
-        EdgeIndex flip;
-        EdgeIndex next;
-        VertexIndex target;
-        FaceIndex face;
 
+    /**
+     * \struct HalfEdge
+     * \brief
+     *  The implementation of a half-edge structure. 2 half-edges make up an edge in the polyhedron
+     *  each pointing to one of the two vertices that make up that edge.
+     */ 
+    struct HalfEdge {
+        EdgeIndex flip;             ///< The other HalfEdge in the edge
+        EdgeIndex next;             ///< The next HalfEdge in the polyhedron face
+        VertexIndex target;         ///< The vertex this HalfEdge points to
+        FaceIndex face;             ///< The polyhedral face that this HalfEdge is in
+
+
+        /**
+         * \brief Constructor for HalfEdge
+         *
+         * \param f        FaceIndex to access correct face from FacePool.
+         * \param v        VertexIndex to access the target vertex from VertexPool.
+         * \param flip     EdgeIndex to access the HalfEdge flip from EdgePool.
+         * \param next     EdgeIndex to access the next HalfEdge from EdgePool.
+         */
         HalfEdge() = default;
         HalfEdge(FaceIndex f) : flip(), next(), target(), face(f) {}
         HalfEdge(FaceIndex f, VertexIndex v) : flip(), next(), target(v), face(f) {}
@@ -42,10 +66,22 @@ namespace hmc {
         { /* Done */ }
     };
 
+    /**
+     * \struct Face
+     * 
+     * \brief The polyhedral face on the polyhedron
+     */
     struct Face {
-        int id;
-        EdgeIndex startingEdge;
+        int id;                         ///< The index of the neighboring particle that made the face
+        EdgeIndex startingEdge;         ///< The first HalfEdge in the face
 
+
+        /**
+         * \brief Constructor for a Face
+         *
+         * \param id                The index of the neighboring particle that made the face.
+         * \param startingEdge      EdgeIndex to access the first HalfEdge from the EdgePool.
+         */
         Face(int id)
             : id(id),
               VERIFICATION   ( startingEdge(INVALID_EDGE) )
@@ -55,31 +91,46 @@ namespace hmc {
         Face(int id, EdgeIndex startingEdge) : id(id), startingEdge(startingEdge) {}
     };
 
-
+    /**
+     * \class Polyhedron
+     *
+     * \brief The cell from the Voronoi tessellation. Most of the computation work 
+     *        necessary to get the desired information is done here.
+     */
     class Polyhedron {
     public:
-        struct FaceData {
-            FaceIndex face;
-            Vector3 weightedNormal;
 
+        /**
+         * \struct FaceData
+         */
+        struct FaceData {
+            FaceIndex face;           ///< FaceIndex to the desired face in FacePool.
+            Vector3 weightedNormal;   ///< The vector normal to the face.
+
+            /**
+             * \brief Constructor for FaceData
+             *
+             * \param face               FaceIndex to the associated face in FacePool
+             * \param weightedNormal     The normal vector to the face.
+             */
             FaceData(FaceIndex face, Vector3 weightedNormal)
                 : face(face), weightedNormal(weightedNormal)
             { /* Done */ }
         };
 
-        EdgeIndex root_ = INVALID_EDGE;
+        EdgeIndex root_ = INVALID_EDGE; ///< The root edge of the polyhedron. Start as the invalid edge
 
-        EdgePool edges_;
-        VertexPool vertices_;
-        FacePool faces_;
+        EdgePool edges_; ///< The memory pool that stores the edges
+        VertexPool vertices_; ///< The memory pool that stores the vertices
+        FacePool faces_; ///< The memory pool that stores the faces
 
-        std::vector<FaceData> faceData_;
+        std::vector<FaceData> faceData_; ///< A vector storing all of the face data
 
-        std::vector<VertexIndex> verticesToDestroy_;
-        std::vector<EdgeIndex> edgesToDestroy_;
+        std::vector<VertexIndex> verticesToDestroy_; ///< A vector of vertices that need to be deleted
+        std::vector<EdgeIndex> edgesToDestroy_; ///< A vector of edges that need to be deleted
 
-        VertexIndex maxDistanceVertex_ = INVALID_VERTEX;
-        double maximumNeighborDistance_;
+        VertexIndex maxDistanceVertex_ = INVALID_VERTEX; ///< The furthest vertex from the particle
+        double maximumNeighborDistance_; ///< The furthest another particle can be from the current particle and still cut the polyhedron
 
         // struct VertexDistance {
         //     VertexIndex vi;
@@ -112,7 +163,7 @@ namespace hmc {
 
         // } vertexDistances_;
 
-        void clear()
+        void clear() ///< Removes all edges, faces, and vertices from polyhedron
         {
             root_ = INVALID_EDGE;
             edges_.clear();
@@ -121,7 +172,7 @@ namespace hmc {
             faceData_.clear();
         }
 
-        bool isClear()
+        bool isClear() ///< Verifies that the polyhedron has been cleared
         {
             bool isClear = (root_ == INVALID_EDGE);
             if (isClear) {
@@ -133,48 +184,157 @@ namespace hmc {
             return isClear;
         }
 
-        void clearComputation()
+        void clearComputation() ///< Only clear faceData
         {
             faceData_.clear();
         }
 
+        /**
+         * \brief Get the flip HalfEdge of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The EdgeIndex of the flip of the input HalfEdge
+         */
         EdgeIndex& flip(EdgeIndex ei) {return edges_[ei].flip;}
+
+        /**
+         * \brief Get the flip HalfEdge of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The const EdgeIndex of the flip of the input HalfEdge
+         */
+        const EdgeIndex& flip(EdgeIndex ei) const {return edges_[ei].flip;}
+
+
+        /**
+         * \brief Get the next HalfEdge of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The EdgeIndex of the next of the input HalfEdge
+         */
         EdgeIndex& next(EdgeIndex ei) {return edges_[ei].next;}
+
+        /**
+         * \brief Get the next HalfEdge of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The const EdgeIndex of the next of the input HalfEdge
+         */
+        const EdgeIndex& next(EdgeIndex ei) const {return edges_[ei].next;}
+
+        /**
+         * \brief Get the target vertex of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The VertexIndex of the target of the input HalfEdge
+         */
         VertexIndex& target(EdgeIndex ei) {return edges_[ei].target;}
+
+        /**
+         * \brief Get the target vertex of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The const VertexIndex of the target of the input HalfEdge
+         */
+        const VertexIndex& target(EdgeIndex ei) const {return edges_[ei].target;}
+
+        /**
+         * \brief Get the source vertex of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The VertexIndex of the source of the input HalfEdge
+         */
         VertexIndex& source(EdgeIndex ei) {return target(flip(ei));}
+
+        /**
+         * \brief Get the source vertex of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The const VertexIndex of the source of the input HalfEdge
+         */
+        const VertexIndex& source(EdgeIndex ei) const {return target(flip(ei));}
+
+        /**
+         * \brief Get the face of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The FaceIndex of the face of the input HalfEdge
+         */
         FaceIndex& face(EdgeIndex ei) {return edges_[ei].face;}
+
+        /**
+         * \brief Get the face of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The const FaceIndex of the face of the input HalfEdge
+         */
+        const FaceIndex& face(EdgeIndex ei) const {return edges_[ei].face;}
+
+        /**
+         * \brief Get the first HalfEdge of the input face
+         *
+         * \param fi        The FaceIndex of a face
+         * \result          The EdgeIndex of the first HalfEdge in the face
+         */
         EdgeIndex& startingEdge(FaceIndex fi) {return faces_[fi].startingEdge;}
 
-        const EdgeIndex& flip(EdgeIndex ei) const {return edges_[ei].flip;}
-        const EdgeIndex& next(EdgeIndex ei) const {return edges_[ei].next;}
-        const VertexIndex& target(EdgeIndex ei) const {return edges_[ei].target;}
-        const VertexIndex& source(EdgeIndex ei) const {return target(flip(ei));}
-        const FaceIndex& face(EdgeIndex ei) const {return edges_[ei].face;}
+        /**
+         * \brief Get the first HalfEdge of the input face
+         *
+         * \param fi        The FaceIndex of a face
+         * \result          The const EdgeIndex of the first HalfEdge in the face
+         */
         const EdgeIndex& startingEdge(FaceIndex fi) const {return faces_[fi].startingEdge;}
 
+
+        /**
+         * \brief Create edges in edge memory pool
+         *
+         * \param args  Any number of edge constructor calls.
+         */
         template <typename... Edge_Constructor_Args>
         EdgeIndex createEdge(Edge_Constructor_Args... args)
         {
             return edges_.create(args...);
         }
 
+        /**
+         * \brief Create vertices in vertex memory pool
+         *
+         * \param args  Any number of vertex constructor calls.
+         */
         template <typename... Vertex_Constructor_Args>
         VertexIndex createVertex(Vertex_Constructor_Args... args)
         {
             return vertices_.create(args...);
         }
 
+        /**
+         * \brief Create faces in face memory pool
+         *
+         * \param args  Any number of face constructor calls.
+         */
         template <typename... Face_Constructor_Args>
         FaceIndex createFace(Face_Constructor_Args... args)
         {
             return faces_.create(args...);
         }
 
+        /**
+         * \brief Delete edge in edge memory pool
+         *
+         * \param ei  The EdgeIndex to be removed from the edge memory pool.
+         */
         void destroy(EdgeIndex ei)
         {
             edges_.destroy(ei);
         }
 
+        /**
+         * \brief Delete vertex in vertex memory pool
+         *
+         * \param vi  The VertezIndex to be removed from the vertex memory pool.
+         */
         void destroy(VertexIndex vi)
         {
             vertices_.destroy(vi);
@@ -183,77 +343,95 @@ namespace hmc {
             }
         }
 
+        /**
+         * \brief Delete face in face memory pool
+         *
+         * \param fi  The FaceIndex to be removed from the face memory pool.
+         */
         void destroy(FaceIndex fi)
         {
             faces_.destroy(fi);
         }
 
-        VERIFICATION(
-            void verifyIsValidPolyhedron()
-            {
-                VERIFY(root_ != INVALID_EDGE);
-                for (auto eit = edges_.begin(); eit != edges_.end(); ++eit) {
-                    VERIFY(eit->target != INVALID_VERTEX);
-                    VERIFY(flip(eit->flip) == eit.index());
-                    VERIFY(face(eit->next) == eit->face);
-                    VERIFY(face(eit->flip) != eit->face);
-                    VERIFY(flip(eit->next) != INVALID_EDGE);
-                    VERIFY(source(eit->next) == eit->target);
-                }
-                for (auto fit = faces_.begin(); fit != faces_.end(); ++fit) {
-                    VERIFY(face(fit->startingEdge) == fit.index());
-                }
-
-
-                std::unordered_set<EdgeIndex> reachableEdges;
-                std::unordered_set<VertexIndex> reachableVertices;
-                std::unordered_set<FaceIndex> reachableFaces;
-
-                std::function<void(VertexIndex)> markVertex = [&](VertexIndex vi) -> void {
-                    reachableVertices.insert(vi);
-                };
-
-                std::function<void(EdgeIndex)> markEdge = [&](EdgeIndex ei) -> void {
-                    if (reachableEdges.find(ei) != reachableEdges.end()) { return; }
-                    reachableEdges.insert(ei);
-                    VERIFY(edges_.active(ei));
-                    markEdge(flip(ei));
-                    markEdge(next(ei));
-                    markVertex(target(ei));
-                    reachableFaces.insert(face(ei));
-                };
-
-
-                markEdge(root_);
-
-                for (auto ei : reachableEdges) { VERIFY(edges_.active(ei)); }
-                for (auto vi : reachableVertices) { VERIFY(vertices_.active(vi)); }
-                for (auto fi : reachableFaces) { VERIFY(faces_.active(fi)); }
-
-                for (auto e = edges_.begin(); e != edges_.end(); ++e) {
-                    VERIFY(reachableEdges.find(e.index()) != reachableEdges.end());
-                }
-                for (auto v = vertices_.begin(); v != vertices_.end(); ++v) {
-                    VERIFY(reachableVertices.find(v.index()) != reachableVertices.end());
-                }
-                for (auto f = faces_.begin(); f != faces_.end(); ++f) {
-                    VERIFY(reachableFaces.find(f.index()) != reachableFaces.end());
-                }
-
-                // It's easy to get the handedness wrong (-> negative volume).
-                VERIFY(temporarilyComputeVolume() > 0);
-
-                if (!isClear()) {
-                    // Checking the Euler characteristic, which is probably
-                    // unnecessary but might catch SOMETHING odd.
-                    auto E = std::distance(edges_.begin(), edges_.end());
-                    auto V = std::distance(vertices_.begin(), vertices_.end());
-                    auto F = std::distance(faces_.begin(), faces_.end());
-                    VERIFY(V - E/2 + F == 2);
-                }
+        /**
+         * \brief Verification that the polyhedron is a valid, convex polyhedron.
+         *        For debugging purposes only.
+         *
+         * \deprecated Should be wrapped in Verification(). This will allow it to be
+         *        used when Verification is turned on.
+         *
+         */
+        void verifyIsValidPolyhedron()
+        {
+            VERIFY(root_ != INVALID_EDGE);
+            for (auto eit = edges_.begin(); eit != edges_.end(); ++eit) {
+                VERIFY(eit->target != INVALID_VERTEX);
+                VERIFY(flip(eit->flip) == eit.index());
+                VERIFY(face(eit->next) == eit->face);
+                VERIFY(face(eit->flip) != eit->face);
+                VERIFY(flip(eit->next) != INVALID_EDGE);
+                VERIFY(source(eit->next) == eit->target);
             }
-        )
+            for (auto fit = faces_.begin(); fit != faces_.end(); ++fit) {
+                VERIFY(face(fit->startingEdge) == fit.index());
+            }
 
+
+            std::unordered_set<EdgeIndex> reachableEdges;
+            std::unordered_set<VertexIndex> reachableVertices;
+            std::unordered_set<FaceIndex> reachableFaces;
+
+            std::function<void(VertexIndex)> markVertex = [&](VertexIndex vi) -> void {
+                reachableVertices.insert(vi);
+            };
+
+            std::function<void(EdgeIndex)> markEdge = [&](EdgeIndex ei) -> void {
+                if (reachableEdges.find(ei) != reachableEdges.end()) { return; }
+                reachableEdges.insert(ei);
+                VERIFY(edges_.active(ei));
+                markEdge(flip(ei));
+                markEdge(next(ei));
+                markVertex(target(ei));
+                reachableFaces.insert(face(ei));
+            };
+
+
+            markEdge(root_);
+
+            for (auto ei : reachableEdges) { VERIFY(edges_.active(ei)); }
+            for (auto vi : reachableVertices) { VERIFY(vertices_.active(vi)); }
+            for (auto fi : reachableFaces) { VERIFY(faces_.active(fi)); }
+
+            for (auto e = edges_.begin(); e != edges_.end(); ++e) {
+                VERIFY(reachableEdges.find(e.index()) != reachableEdges.end());
+            }
+            for (auto v = vertices_.begin(); v != vertices_.end(); ++v) {
+                VERIFY(reachableVertices.find(v.index()) != reachableVertices.end());
+            }
+            for (auto f = faces_.begin(); f != faces_.end(); ++f) {
+                VERIFY(reachableFaces.find(f.index()) != reachableFaces.end());
+            }
+
+            // It's easy to get the handedness wrong (-> negative volume).
+            VERIFY(temporarilyComputeVolume() > 0);
+
+            if (!isClear()) {
+                // Checking the Euler characteristic, which is probably
+                // unnecessary but might catch SOMETHING odd.
+                auto E = std::distance(edges_.begin(), edges_.end());
+                auto V = std::distance(vertices_.begin(), vertices_.end());
+                auto F = std::distance(faces_.begin(), faces_.end());
+                VERIFY(V - E/2 + F == 2);
+            }
+        }
+
+
+
+        /**
+         * \brief Shift all vertices in the polyhedron by a vector
+         *
+         * \param shift  The vector that the polyhedron is shifted by
+         */
         void translate(const Vector3 shift)
         {
             for (auto& v : vertices_) {
@@ -261,6 +439,11 @@ namespace hmc {
             }
         }
 
+        /**
+         * \brief Computes the volume of the polyheron
+         *
+         * 
+         */
         double computeVolume()
         {
             computeFaceData();
@@ -277,12 +460,22 @@ namespace hmc {
             return volume/6;
         }
 
+        /**
+         * \brief Adds the vertices of the polyhedron to the input collection
+         *
+         * \param[out] result The collection that the vertices are appended to.
+         */
         template <typename Collection>
         void computeVertices(Collection& result)
         {
             result.insert(result.end(), vertices_.begin(), vertices_.end());
         }
 
+        /**
+         * \brief Adds the indices of the neighbors of the polyhedron to the input collection
+         *
+         * \param[out] result The collection that the neighbor particle indices are appended to.
+         */
         template <typename Collection>
         void computeNeighbors(Collection& result)
         {
@@ -295,6 +488,10 @@ namespace hmc {
             );
         }
 
+        /**
+         * \brief Computes the data for each face. Nothing is returned.
+         *
+         */
         void computeFaceData()
         {
             if (faceData_.size() > 0) {return;}
@@ -304,6 +501,12 @@ namespace hmc {
             }
         }
 
+        /**
+         * \brief Calculates the normal face vector
+         *
+         * \param[in] fi The FaceIndex of the face the normal is being calculated for.
+         * \result       The normal vector for the face.
+         */
         Vector3 weightedNormal(FaceIndex fi)
         {
             Vector3 normal = Vector3(0, 0, 0);
@@ -321,6 +524,12 @@ namespace hmc {
             return normal;
         }
 
+        /**
+         * \brief Computes the volume of the polyhedron. If the face data 
+         *        was not already computed, erase the face data.
+         *
+         * \result The volume of the cell.
+         */
         double temporarilyComputeVolume()
         {
             bool alreadyComputed = (faceData_.size() > 0);
@@ -329,6 +538,11 @@ namespace hmc {
             return vol;
         }
 
+        /**
+         * \brief Finds the distance of the furthest neighbor.
+         *
+         * \result The distance of the furthest neighbor.
+         */
         double maximumNeighborDistance()
         {
             if (maxDistanceVertex_ == INVALID_VERTEX) {
@@ -345,6 +559,11 @@ namespace hmc {
             return maximumNeighborDistance_;
         }
 
+        /**
+         * \brief Constructs the initial polyhedron as a cube
+         *
+         * 
+         */
         void buildCube(double xmin, double xMAX,
                        double ymin, double yMAX,
                        double zmin, double zMAX)
