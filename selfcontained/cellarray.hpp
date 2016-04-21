@@ -1,7 +1,9 @@
-/*
- * cellarray.hpp
+/**
+ * \file cellarray.hpp
  *
- * Implementation of a basic 3-D cell array.
+ * \author 2015-2016 Sandia Clinic Team
+ *
+ * \brief Implementation of a basic 3-D cell array.
  */
 
 #pragma once
@@ -13,13 +15,22 @@
 
 #include "vectormath.hpp"
 
-namespace hmc { namespace spatial {
-	/*
-	 * Celery
+namespace hmc {
+namespace spatial {
+	/**
+	 * \class Celery
 	 *
-	 * The cell array is a very efficient spatial data structure for storing evenly
-	 * distributed points. However, it is far less effective when points are
-	 * concentrated in a specific area.
+	 * \brief
+	 *   A custom cell array for storing 3-D points.
+	 *
+	 * \details
+	 *   This cell array is used for storing points in 3-D space to be Voronoi
+	 *   tessellated.
+	 *
+	 * \remarks
+	 *   The cell array is a very efficient spatial data structure for storing evenly
+	 *   distributed points. However, it is far less effective when points are
+	 *   concentrated in a specific area.
 	 */
 	template<typename PointType>
 	class Celery
@@ -66,13 +77,22 @@ namespace hmc { namespace spatial {
 	public:
 
 		// Allow default constructor for use with the initialize function.
+		/// Default constructor
 		Celery() = default;
 
-		/*
-		 * Constructor
+		/**
+		 * \brief
+		 *   Creates a 3-D cell array from a set of points. Assumes the points
+		 *   have x, y, and z coordinate data members.
 		 *
-		 * Creates a 3-D cell array from a set of points. Assumes the points
-		 * have x, y, and z coordinate data members.
+		 * \param  xmin   The lower bounding plane of the region on the x-axis
+		 * \param  xmax   The upper bounding plane of the region on the x-axis
+		 * \param  ymin   The lower bounding plane of the region on the y-axis
+		 * \param  ymax   The upper bounding plane of the region on the y-axis
+		 * \param  zmin   The lower bounding plane of the region on the z-axis
+		 * \param  zmax   The upper bounding plane of the region on the z-axis
+		 * \param  begin  An iterator to the first point to add
+		 * \param  end    An iterator to the end of the list of points
 		 */
 		template<typename PointIterator>
 		Celery(double xmin, double xmax,
@@ -82,19 +102,50 @@ namespace hmc { namespace spatial {
 
 	public:
 
-		/*
-		 * initialize
+		/**
+		 * \brief
+		 *   Creates a 3-D cell array from a set of points, automatically fining
+		 *   the boundaries of the region from the set of points. To be used
+		 *   with the default constructor.
 		 *
-		 * Creates a 3-D cell array from a set of points, automatically fining
-		 * the boundaries of the region from the set of points. To be used
-		 * with the default constructor.
+		 * \param  begin  An iterator to the first point to add
+		 * \param  end    An iterator to the end of the list of points
+		 *
+		 * \remarks
+		 *   Assumes that points have public x, y, and z fields.
 		 */
 		template<typename PointIterator>
 		void initialize(PointIterator begin, PointIterator end);
 
+		/**
+		 * \brief
+		 *   Creates a 3-D cell array from a set of points, automatically fining
+		 *   the boundaries of the region from the set of points. To be used
+		 *   with the default constructor.
+		 *
+		 * \param  begin  An iterator to the first point to add
+		 * \param  end    An iterator to the end of the list of points
+		 * \param  F      A lambda function for getting a point from the dereferenced iterator
+		 *
+		 * \remarks
+		 *   Assumes that points have public x, y, and z fields.
+		 */
 		template<typename PointIterator, typename F>
 		void initialize(PointIterator begin, PointIterator end, F getPoint);
 
+		/**
+		 * \brief
+		 *   Creates a 3-D cell array from a set of points, automatically fining
+		 *   the boundaries of the region from the set of points. To be used
+		 *   with the default constructor.
+		 *
+		 * \param  begin  An index to the first point to add
+		 * \param  end    An index to the end of the list of points
+		 * \param  F      A lambda function for getting a point from the index
+		 *
+		 * \remarks
+		 *   Assumes that points have public x, y, and z fields.
+		 */
 		template<typename F>
 		void initialize(PointType begin, PointType end, F getPoint);
 
@@ -136,93 +187,92 @@ namespace hmc { namespace spatial {
 
 	public:
 
-		// Get the number of cells in each dimension
+		/// Get the number of cells in each dimension
 		std::size_t getNumCellsDim() const
 		{
 			return num_cells_dim_;
 		}
 
-		// Get the cell value that would be assigned to a point
+		/// Get the cell value that would be assigned to a point
 		template <typename XYZPoint>
 		std::size_t getCell(XYZPoint point) const
 		{
 			return getCell(point.x, point.y, point.z);
 		}
 
-		// Get the cell value that would be assigned to a point with coordinates
-		// x, y, z.
+		/// Get the cell value that would be assigned to a point with coordinates x, y, z.
 		std::size_t getCell(double x, double y, double z) const
 		{
 			return getCellFromIndices(getXIndex(x), getYIndex(y), getZIndex(z));
 		}
 
-		// Get the inverse size of a cell in the x dimension
+		/// Get the inverse size of a cell in the x dimension
 		double getCellSizeInvX() const
 		{
 			return cell_size_inv_x_;
 		}
 
-		// Get the inverse size of a cell in the y dimension
+		/// Get the inverse size of a cell in the y dimension
 		double getCellSizeInvY() const
 		{
 			return cell_size_inv_y_;
 		}
 
-		// Get the inverse size of a cell in the z dimension
+		/// Get the inverse size of a cell in the z dimension
 		double getCellSizeInvZ() const
 		{
 			return cell_size_inv_z_;
 		}
 
-		// Return the points_ vector
+		/// Return the points_ vector
 		const std::vector<PointType>& getPoints() const
 		{
 			return points_;
 		}
 
-		// Return the cells_ vector
+		/// Return the cells_ vector
 		const std::vector<std::size_t>& getCells() const
 		{
 			return cells_;
 		}
 
-		// Return the delimiters_ vector
+		/// Return the delimiters_ vector
 		const std::vector<std::size_t>& getDelimiters() const
 		{
 			return delimiters_;
 		}
 
-		// Get lower x boundary
+		/// Get lower x boundary
 		double getXMin() const
 		{
 			return xmin_;
 		}
 
-		// Get upper x boundary
+		/// Get upper x boundary
 		double getXMax() const
 		{
 			return xmax_;
 		}
 
-		// Get lower y boundary
+		/// Get lower y boundary
 		double getYMin() const
 		{
 			return ymin_;
 		}
 
-		// Get upper y boundary
+		/// Get upper y boundary
 		double getYMax() const
 		{
 			return ymax_;
 		}
 
-		// Get lower z boundary
+		/// Get lower z boundary
 		double getZMin() const
 		{
 			return zmin_;
 		}
 
-		// Get upper z boundary
+		/// Get upper z boundary
 		double getZMax() const
 		{
 			return zmax_;
@@ -287,34 +337,67 @@ namespace hmc { namespace spatial {
 
 	public:
 
-		/*
-		 * findNeighborsInCellRadius
+		/**
+		 * \brief
+		 *   Given 3-D coordinates and a radius, finds all cells within that radius of the coordinates.
+		 *   Stores pointers to the points in those cells in a vector.
 		 *
-		 * Given 3-D coordinates and a radius, finds all cells within that radius of the coordinates.
-		 * Stores pointers to the points in those cells in a vector.
+		 * \param  x       The x-coordinate of the cell
+		 * \param  y       The y-coordinate of the cell
+		 * \param  z       The z-coordinate of the cell
+		 * \param  radius  The maximum radius for searching
+		 * \param  pts     A reference to the vector in which to store pointers to found points
 		 */
 		void findNeighborsInCellRadius(double x, double y, double z, double radius, std::vector<PointType*>& pts) const;
 
+		/**
+		 * \brief
+		 *   Given 3-D coordinates and a radius, finds all cells within that radius of the coordinates.
+		 *   Stores the points in those cells in a vector.
+		 *
+		 * \param  x       The x-coordinate of the cell
+		 * \param  y       The y-coordinate of the cell
+		 * \param  z       The z-coordinate of the cell
+		 * \param  radius  The maximum radius for searching
+		 * \param  pts     A reference to the vector in which to store found points
+		 */
 		void findNeighborsInCellRadius(double x, double y, double z, double radius, std::vector<PointType>& pts) const;
 
-
-		/*
-		 * findNeighborsInRealRadius
+		/**
+		 * \brief
+		 *   Given 3-D coordinates and a radius, finds all points within that radius of the coordinates.
+		 *   Requires validation of each point in addition to each cell, meaining that this function is
+		 *   slower than findNeighborsInCellRadius. However, this function does not store any points
+		 *   outside of the specified radius.
 		 *
-		 * Given 3-D coordinates and a radius, finds all points within that radius of the coordinates.
-		 * Requires validation of each point in addition to each cell, meaining that this function is
-		 * slower than findNeighborsInCellRadius. However, this function does not store any points
-		 * outside of the specified radius.
+		 * \param  x       The x-coordinate of the cell
+		 * \param  y       The y-coordinate of the cell
+		 * \param  z       The z-coordinate of the cell
+		 * \param  radius  The maximum radius for searching
+		 * \param  pts     A reference to the vector in which to store pointers to found points
 		 */
 		void findNeighborsInRealRadius(double x, double y, double z, double radius, std::vector<PointType*>& pts) const;
 
+		/**
+		 * \brief
+		 *   Find a shell of cells around a point, and store all of the points in those cells in a vector.
+		 *
+		 * \remarks
+		 *   This function is meant for specific testing purposes and should probably not be used.
+		 *
+		 * \param  x          The x-coordinate of the cell
+		 * \param  y          The y-coordinate of the cell
+		 * \param  z          The z-coordinate of the cell
+		 * \param  shell      The shell layer
+		 * \param  maxRadius  The maximum radius for searching
+		 * \param  pts         A reference to the vector in which to store found points
+		 */
 		bool findNeighborsInShell(double x, double y, double z, int shell, double maxRadius, std::vector<PointType>& pts) const;
 
 
-		/*
-		 * neighborQuery
-		 *
-		 * Necessary for compilation. Does not do anything yet.
+		/**
+		 * \brief
+		 *   Necessary for compilation with some of our old files. Should not be used.
 		 */
 		void neighborQuery(const std::array<double, 3>& point, std::vector<PointType*>& NeighborParticles);
 
@@ -351,12 +434,16 @@ namespace hmc { namespace spatial {
 
 	public:
 
-		/*
-		 * ExpandingSearch
+		/**
+		 * class ExpandingSearch
 		 *
-		 * A class with the capability to automatically search outward from a point within a search
-		 * radius. Cells will never be searched more than once, since this class will only search
-		 * outward from the last searched cell.
+		 * \brief
+		 *   Efficiently searches outward from a point to find neighbors.
+		 *
+		 * \details
+		 *   A class with the capability to automatically search outward from a point within a search
+		 *   radius. Cells will never be searched more than once, since this class will only search
+		 *   outward from the last searched cell.
 		 */
 		class ExpandingSearch
 		{
@@ -372,7 +459,7 @@ namespace hmc { namespace spatial {
 			bool done_;
 
 		public:
-			// Don't use the default constructor
+			/// Default constructor
 			ExpandingSearch() = default;
 
 			/*
@@ -388,6 +475,19 @@ namespace hmc { namespace spatial {
 			// 	z_index_ = stalk_->getZIndex(z);
 			// }
 
+			/**
+			 * \brief
+			 *   Creates an ExpandingSearch for a point in a Celery.
+			 *
+			 * \param  yourCrush  A reference to the Celery that contains the point
+			 * \param  x          The x-coordinate of the point
+			 * \param  y          The y-coordinate of the point
+			 * \param  z          The z-coordinate of the point
+			 *
+			 * \remarks
+			 *   The point does not need to exist in the Celery - hypothetical points
+			 *   can be used.
+			 */
 			void initialize(const Celery& yourCrush, double x, double y, double z)
 			{
 				clear();
@@ -397,24 +497,37 @@ namespace hmc { namespace spatial {
 				z_index_ = stalk_->getZIndex(z);
 			}
 
+			/// Reset the ExpandingSearch to start over.
 			void clear()
 			{
 				last_search_index_ = 0;
 				done_ = false;
 			}
 
+			/**
+			 * \brief
+			 *   Check whether the search for neighbors is complete.
+			 *
+			 * \returns
+			 *   <CODE>true</CODE> if the search is complete, <CODE>false</CODE> otherwise.
+			 */
 			bool done() const
 			{
 				return done_;
 			}
 
-			/*
-			 * expand
+			/**
+			 * \brief
+			 *   Search outward, adding all points from previously unsearched cells within maxRadius of
+			 *   the searching cell. The points are stored in searchPoints.
 			 *
-			 * Search outward, adding all points from previously unsearched cells within maxRadius of
-			 * the searching cell. The points are stored in searchPoints.
+			 * \param  maxRadius     The maximum radius in which to search
+			 * \param  searchPoints  A reference to the vector in which to store found points
+			 *
+			 * \remarks
+			 *   If maxRadius is reached in an expansion step, the search ends and the expanding search
+			 *   is considered complete.
 			 */
-
 			void expand(double maxRadius, std::vector<PointType>& searchPoints)
 			{
 				auto& searchOrder = stalk_->search_order_;
