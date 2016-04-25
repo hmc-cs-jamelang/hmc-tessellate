@@ -23,8 +23,14 @@ namespace hmc {
     using SizeType = std::size_t;
     using SDS = CellArray<SizeType>;
 
+	using TargetGroup = std::unordered_set<int>;
+	using SourceGroup = std::vector<int>;
+
     class Diagram;
     class Cell;
+
+	/// Value used to signify that no group has been specified.
+	constexpr int DEFAULT_GROUP = -1;
 
 	/// Value used to signify that no search radius is known for building a Cell.
     constexpr double NO_RADIUS = -1;
@@ -73,9 +79,17 @@ namespace hmc {
 		/// The search radius for neighbors of the particle in the Cell. If no radius is known, set to NO_RADIUS.
         double searchRadius;
 
+		/// The target group of the Cell.
+		TargetGroup targetGroup;
+
 		/// Constructor
         CellInfo(const Diagram& diagram, SizeType index, Vector3 position, double searchRadius = NO_RADIUS)
             : diagram(&diagram), index(index), position(position), searchRadius(searchRadius)
+        { /* Done */ }
+
+		/// Constructor
+        CellInfo(const Diagram& diagram, SizeType index, Vector3 position, TargetGroup targetGroup, double searchRadius = NO_RADIUS)
+            : diagram(&diagram), index(index), position(position), targetGroup(targetGroup), searchRadius(searchRadius)
         { /* Done */ }
     };
 
@@ -103,6 +117,9 @@ namespace hmc {
 
 		/// The Polyhedron representing the Voronoi cell.
         Polyhedron poly_;
+
+		// The target group of the Cell.
+		TargetGroup target_group_;
 
 		/// A flag that tells whether the Polyhedron has been computed.
         bool polyComputed_;
@@ -133,6 +150,24 @@ namespace hmc {
               position_(position), polyComputed_(false), searchRadius_(searchRadius)
         { /* Done */ }
 
+		/**
+		 * \brief Constructor
+		 *
+		 * \param  diagram       A reference to the Diagram that contains this Cell.
+		 * \param  index         The index of the point in this Cell in the Diagram.
+		 * \param  position      The position of the point in this Cell.
+		 * \param  searchRadius  The search radius for neighbors of the particle in the Cell. Optional.
+		 * \param  targetGroup   The target group of the Cell.
+		 *
+		 * \remarks
+		 *   If no search radius is given, neighbors will be found using an ExpaningSearch.
+		 */
+        Cell(const Diagram& diagram, SizeType index, Vector3 position, TargetGroup targetGroup, double searchRadius = NO_RADIUS)
+            : diagram_(&diagram), index_(index),
+              position_(position), polyComputed_(false), searchRadius_(searchRadius),
+			  target_group_(targetGroup)
+        { /* Done */ }
+
 		/// Assignment operator
         Cell& operator=(const CellInfo& info)
         {
@@ -140,6 +175,7 @@ namespace hmc {
             diagram_ = info.diagram;
             index_ = info.index;
             position_ = info.position;
+			target_group_ = info.targetGroup;
             searchRadius_ = info.searchRadius;
             return *this;
         }
@@ -150,6 +186,7 @@ namespace hmc {
             // diagram_ = nullptr;
             poly_.clear();
             polyComputed_ = false;
+			target_group_.clear();
         }
 
         const Particle& getParticle() const;
@@ -179,7 +216,7 @@ namespace hmc {
             VERIFY_EXIT(polyComputed_);
 
             if (!polyComputed_) {
-                computeVoronoiCell();
+				computeVoronoiCell();
                 polyComputed_ = true;
             }
         }
@@ -210,6 +247,10 @@ namespace hmc {
 
 		/// The vector of Particle objects in the Diagram.
         std::vector<Particle> particles_;
+
+		/// The vector of groups that contain each particle. The group at an index corresponds
+		/// to the particle at that index.
+		std::vector<int> groups_;
 
 		/// The spatial data structure used to determine spatial relationships between points.
         SDS spatialStructure_;
@@ -247,17 +288,19 @@ namespace hmc {
 		 * \brief
 		 *   Add a Particle to the Diagram.
 		 *
-		 * \param  id  An identifier for the Particle
-		 * \param  x   The x-coordinate of the Particle
-		 * \param  y   The y-coordinate of the Particle
-		 * \param  z   The z-coordinate of the Particle
+		 * \param  id     An identifier for the Particle
+		 * \param  x      The x-coordinate of the Particle
+		 * \param  y      The y-coordinate of the Particle
+		 * \param  z      The z-coordinate of the Particle
+		 * \param  group  The group containing the Particle. Optional.
 		 *
 		 * \remarks
 		 *   Should only be used before the initialize function is called.
 		 */
-        void addParticle(int id, double x, double y, double z)
+        void addParticle(int id, double x, double y, double z, int group = DEFAULT_GROUP)
         {
             particles_.emplace_back(id, x, y, z);
+			groups_.push_back(group);
         }
 
 		/**
@@ -321,19 +364,70 @@ namespace hmc {
 
 		/**
 		 * \brief
+		 *   Create a TargetGroup containing the specified groups.
+		 *
+		 * \param  groups  The groups to include in the TargetGroup.
+		 */
+		template <typename... Groups>
+		TargetGroup targetGroups(Groups... groups)
+		{
+			return TargetGroup {groups...};
+		}
+
+		// dani hacky constructor thing
+		TargetGroup targetGroups(std::vector<int> groups)
+		{
+			TargetGroup targets = TargetGroup();
+			for (int i = 0; i < groups.size(); ++i) {
+				targets.insert(groups[i]);
+			}
+			return targets;
+		}
+
+		/**
+		 * \brief
+		 *   Create a SourceGroup containing particles from the specified groups. The SourceGroup
+		 *   can be treated like a vector of indices of Particles in the Diagram.
+		 *
+		 * \param  groups  The groups to be included.
+		 *
+		 * \remark
+		 *   The SourceGroup does not actually contain any group information once created, and
+		 *   is simply included for convenience.
+		 */
+		template <typename... Groups>
+		SourceGroup sourceGroups(Groups... groups)
+		{
+			std::unordered_set<int> sources = std::unordered_set<int> {groups...};
+			SourceGroup src;
+
+			int end = particles_.size();
+			for (int i = 0; i < end; ++i) {
+				if (sources.count(groups_[i])) {
+					src.push_back(i);
+				}
+			}
+
+			return src;
+		}
+
+		/**
+		 * \brief
 		 *   Compute the Voronoi cell for a Particle.
 		 *
 		 * \param  particleIndex  The index of the Particle
 		 * \param  position       The position of the Particle
 		 * \param  poly           A reference to the Polyhedron to be cut to compute the cell
 		 * \param  search         A reference to an ExpandingSearch for the Particle
+		 * \param  targetGroup    If not empty, only cut the particle with the specified groups.
 		 * \param  searchRadius   The search radius to look for neighbors of the particle. Optional.
 		 *
 		 * \remarks
 		 *   Uses the efficient expanding search strategy to find neighbors if searchRadius is not specified.
 		 */
         void computeVoronoiCell(SizeType particleIndex, Vector3 position, Polyhedron& poly,
-                                SDS::ExpandingSearch& search, double searchRadius = NO_RADIUS) const
+                                SDS::ExpandingSearch& search, TargetGroup& targetGroup,
+								double searchRadius = NO_RADIUS) const
         {
             VERIFY(poly.isClear());
             poly = containerShape_;
@@ -346,30 +440,60 @@ namespace hmc {
                         !search.done();
     				    search.expandSearch(searchRadius = poly.maximumNeighborDistance()))
                 {
-                    for (SizeType index : search) {
-                        Vector3 shiftedPosition = particles_[index].position - position;
-                        if (index != particleIndex
-                            && mag2(shiftedPosition) <= searchRadius)
-                        {
-                            poly.cutWithPlane(
-                                index,
-                                Plane::halfwayFromOriginTo(shiftedPosition)
-                            );
-                        }
-                    }
+					if (targetGroup.empty()) {
+						for (SizeType index : search) {
+							Vector3 shiftedPosition = particles_[index].position - position;
+							if (index != particleIndex
+								&& mag2(shiftedPosition) <= searchRadius)
+							{
+								poly.cutWithPlane(
+									index,
+									Plane::halfwayFromOriginTo(shiftedPosition)
+									);
+							}
+						}
+					}
+
+					else {
+						for (SizeType index : search) {
+							Vector3 shiftedPosition = particles_[index].position - position;
+							if (index != particleIndex
+								&& mag2(shiftedPosition) <= searchRadius
+								&& targetGroup.count(groups_[index]) != 0)
+							{
+								poly.cutWithPlane(
+									index,
+									Plane::halfwayFromOriginTo(shiftedPosition)
+									);
+							}
+						}
+					}
                 }
             }
 
             // Otherwise (given radius), do a basic search
             else {
-                for (SizeType index : spatialStructure_.search(position, searchRadius)) {
-                    if (index != particleIndex) {
-                        poly.cutWithPlane(
-                            index,
-                            Plane::halfwayFromOriginTo(particles_[index].position - position)
-                        );
-                    }
-                }
+				if (targetGroup.empty()) {
+					for (SizeType index : spatialStructure_.search(position, searchRadius)) {
+						if (index != particleIndex) {
+							poly.cutWithPlane(
+								index,
+								Plane::halfwayFromOriginTo(particles_[index].position - position)
+								);
+						}
+					}
+				}
+
+				else {
+					for (SizeType index : spatialStructure_.search(position, searchRadius)) {
+						if (index != particleIndex && targetGroup.count(groups_[index]) != 0) {
+							poly.cutWithPlane(
+								index,
+								Plane::halfwayFromOriginTo(particles_[index].position - position)
+								);
+						}
+					}					
+				}
             }
         }
     };
@@ -378,7 +502,7 @@ namespace hmc {
 	/// A wrapper function for calling Diagram::ComputeVoronoiCell.
     void Cell::computeVoronoiCell()
     {
-        diagram_->computeVoronoiCell(index_, position_, poly_, search_, searchRadius_);
+        diagram_->computeVoronoiCell(index_, position_, poly_, search_, target_group_, searchRadius_);
     }
 
 	/// A wrapper function for finding the Particle at an index of a Diagram.
