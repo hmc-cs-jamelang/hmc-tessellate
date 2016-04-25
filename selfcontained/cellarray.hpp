@@ -69,14 +69,11 @@ namespace spatial {
 		std::vector<DistanceIndex> search_order_;
 
 	private:
-
 		// Compute the attributes of the cell array for a specific number of
 		// cells. The cells are assumed to be evenly distributed.
 		void computeCellData(std::size_t numPoints);
 
 	public:
-
-		// Allow default constructor for use with the initialize function.
 		/// Default constructor
 		Celery() = default;
 
@@ -85,14 +82,14 @@ namespace spatial {
 		 *   Creates a 3-D cell array from a set of points. Assumes the points
 		 *   have x, y, and z coordinate data members.
 		 *
-		 * \param  xmin   The lower bounding plane of the region on the x-axis
-		 * \param  xmax   The upper bounding plane of the region on the x-axis
-		 * \param  ymin   The lower bounding plane of the region on the y-axis
-		 * \param  ymax   The upper bounding plane of the region on the y-axis
-		 * \param  zmin   The lower bounding plane of the region on the z-axis
-		 * \param  zmax   The upper bounding plane of the region on the z-axis
-		 * \param  begin  An iterator to the first point to add
-		 * \param  end    An iterator to the end of the list of points
+		 * \param[in]  xmin   The lower bounding plane of the region on the x-axis
+		 * \param[in]  xmax   The upper bounding plane of the region on the x-axis
+		 * \param[in]  ymin   The lower bounding plane of the region on the y-axis
+		 * \param[in]  ymax   The upper bounding plane of the region on the y-axis
+		 * \param[in]  zmin   The lower bounding plane of the region on the z-axis
+		 * \param[in]  zmax   The upper bounding plane of the region on the z-axis
+		 * \param[in]  begin  An iterator to the first point to add
+		 * \param[in]  end    An iterator to the end of the list of points
 		 */
 		template<typename PointIterator>
 		Celery(double xmin, double xmax,
@@ -108,8 +105,8 @@ namespace spatial {
 		 *   the boundaries of the region from the set of points. To be used
 		 *   with the default constructor.
 		 *
-		 * \param  begin  An iterator to the first point to add
-		 * \param  end    An iterator to the end of the list of points
+		 * \param[in]  begin  An iterator to the first point to add
+		 * \param[in]  end    An iterator to the end of the list of points
 		 *
 		 * \remarks
 		 *   Assumes that points have public x, y, and z fields.
@@ -139,9 +136,9 @@ namespace spatial {
 		 *   the boundaries of the region from the set of points. To be used
 		 *   with the default constructor.
 		 *
-		 * \param  begin  An index to the first point to add
-		 * \param  end    An index to the end of the list of points
-		 * \param  F      A lambda function for getting a point from the index
+		 * \param[in]  begin  An index to the first point to add
+		 * \param[in]  end    An index to the end of the list of points
+		 * \param[in]  F      A lambda function for getting a point from the index
 		 *
 		 * \remarks
 		 *   Assumes that points have public x, y, and z fields.
@@ -150,7 +147,6 @@ namespace spatial {
 		void initialize(PointType begin, PointType end, F getPoint);
 
 	private:
-
 		/*
 		 * computeBoundsFromPoints
 		 *
@@ -186,93 +182,195 @@ namespace spatial {
 		void initializeCellArray();
 
 	public:
-
-		/// Get the number of cells in each dimension
+		/**
+		 * \brief
+		 *   Get the number of cells in each dimension.
+		 *
+		 * \return
+		 *   The number of cells in each dimension.
+		 */
 		std::size_t getNumCellsDim() const
 		{
 			return num_cells_dim_;
 		}
 
-		/// Get the cell value that would be assigned to a point
+		/**
+		 * \brief
+		 *   Get the cell value that would be assigned to a point.
+		 *
+		 * \return
+		 *   The cell value for the hypothetical cell.
+		 */
 		template <typename XYZPoint>
 		std::size_t getCell(XYZPoint point) const
 		{
 			return getCell(point.x, point.y, point.z);
 		}
 
-		/// Get the cell value that would be assigned to a point with coordinates x, y, z.
+		/**
+		 * \brief
+		 *   Get the cell value that would be assigned to a point with
+		 *   coordinates x, y, z.
+		 *
+		 * \return
+		 *   The cell value for the hypothetical cell.
+		 */
 		std::size_t getCell(double x, double y, double z) const
 		{
 			return getCellFromIndices(getXIndex(x), getYIndex(y), getZIndex(z));
 		}
 
-		/// Get the inverse size of a cell in the x dimension
+		/**
+		 * \brief
+		 *   Get the inverse size of a cell in the x dimension.
+		 *
+		 * \return
+		 *   The inverse size of a cell in the x dimension.
+		 */
 		double getCellSizeInvX() const
 		{
 			return cell_size_inv_x_;
 		}
 
-		/// Get the inverse size of a cell in the y dimension
+		/**
+		 * \brief
+		 *   Get the inverse size of a cell in the y dimension.
+		 *
+		 * \return
+		 *   The inverse size of a cell in the y dimension.
+		 */
 		double getCellSizeInvY() const
 		{
 			return cell_size_inv_y_;
 		}
 
-		/// Get the inverse size of a cell in the z dimension
+		/**
+		 * \brief
+		 *   Get the inverse size of a cell in the z dimension.
+		 *
+		 * \return
+		 *   The inverse size of a cell in the z dimension.
+		 */
 		double getCellSizeInvZ() const
 		{
 			return cell_size_inv_z_;
 		}
 
-		/// Return the points_ vector
+		/**
+		 * \brief
+		 *   Get the vector of points in the cell array.
+		 *
+		 * \return
+		 *   A reference to the vector of points.
+		 */
 		const std::vector<PointType>& getPoints() const
 		{
 			return points_;
 		}
 
-		/// Return the cells_ vector
+		/**
+		 * \brief
+		 *   Get the vector of cell values in the cell array.
+		 *
+		 * \return
+		 *   A reference to the vector of cells.
+		 *
+		 * \remark
+		 *   The cell value at an index is the cell for the point
+		 *   with that index in the vector of points.
+		 */
 		const std::vector<std::size_t>& getCells() const
 		{
 			return cells_;
 		}
 
-		/// Return the delimiters_ vector
+		/**
+		 * \brief
+		 *   Get the vector of delimiters for the cell array cells.
+		 *
+		 * \return
+		 *   A reference to the vector of delimiters.
+		 *
+		 * \remark
+		 *   The delimiter at index i gives the index of the first point
+		 *   in cell i. Therefore, the delimiter at index i+1 gives the
+		 *   index of the first point that is no longer in cell i. The
+		 *   size of the delimiters vector is one larger than the number
+		 *   of points, and gives an index "one-past-the-end" of the
+		 *   points vector.
+		 */
 		const std::vector<std::size_t>& getDelimiters() const
 		{
 			return delimiters_;
 		}
 
-		/// Get lower x boundary
+		/**
+		 * \brief
+		 *   Get the lower x boundary of the cell array region.
+		 *
+		 * \return
+		 *   The lower x boundary.
+		 */
 		double getXMin() const
 		{
 			return xmin_;
 		}
 
-		/// Get upper x boundary
+		/**
+		 * \brief
+		 *   Get the upper x boundary of the cell array region.
+		 *
+		 * \return
+		 *   The upper x boundary.
+		 */
 		double getXMax() const
 		{
 			return xmax_;
 		}
 
-		/// Get lower y boundary
+		/**
+		 * \brief
+		 *   Get the lower y boundary of the cell array region.
+		 *
+		 * \return
+		 *   The lower y boundary.
+		 */
 		double getYMin() const
 		{
 			return ymin_;
 		}
 
-		/// Get upper y boundary
+		/**
+		 * \brief
+		 *   Get the upper y boundary of the cell array region.
+		 *
+		 * \return
+		 *   The upper y boundary.
+		 */
 		double getYMax() const
 		{
 			return ymax_;
 		}
 
-		/// Get lower z boundary
+		/**
+		 * \brief
+		 *   Get the lower z boundary of the cell array region.
+		 *
+		 * \return
+		 *   The lower z boundary.
+		 */
 		double getZMin() const
 		{
 			return zmin_;
 		}
 
-		/// Get upper z boundary
+		/**
+		 * \brief
+		 *   Get the upper z boundary of the cell array region.
+		 *
+		 * \return
+		 *   The upper z boundary.
+		 */
 		double getZMax() const
 		{
 			return zmax_;
@@ -342,11 +440,11 @@ namespace spatial {
 		 *   Given 3-D coordinates and a radius, finds all cells within that radius of the coordinates.
 		 *   Stores pointers to the points in those cells in a vector.
 		 *
-		 * \param  x       The x-coordinate of the cell
-		 * \param  y       The y-coordinate of the cell
-		 * \param  z       The z-coordinate of the cell
-		 * \param  radius  The maximum radius for searching
-		 * \param  pts     A reference to the vector in which to store pointers to found points
+		 * \param[in]   x       The x-coordinate of the cell
+		 * \param[in]   y       The y-coordinate of the cell
+		 * \param[in]   z       The z-coordinate of the cell
+		 * \param[in]   radius  The maximum radius for searching
+		 * \param[out]  pts     A reference to the vector in which to store pointers to found points
 		 */
 		void findNeighborsInCellRadius(double x, double y, double z, double radius, std::vector<PointType*>& pts) const;
 
@@ -355,11 +453,11 @@ namespace spatial {
 		 *   Given 3-D coordinates and a radius, finds all cells within that radius of the coordinates.
 		 *   Stores the points in those cells in a vector.
 		 *
-		 * \param  x       The x-coordinate of the cell
-		 * \param  y       The y-coordinate of the cell
-		 * \param  z       The z-coordinate of the cell
-		 * \param  radius  The maximum radius for searching
-		 * \param  pts     A reference to the vector in which to store found points
+		 * \param[in]   x       The x-coordinate of the cell
+		 * \param[in]   y       The y-coordinate of the cell
+		 * \param[in]   z       The z-coordinate of the cell
+		 * \param[in]   radius  The maximum radius for searching
+		 * \param[out]  pts     A reference to the vector in which to store found points
 		 */
 		void findNeighborsInCellRadius(double x, double y, double z, double radius, std::vector<PointType>& pts) const;
 
@@ -370,11 +468,11 @@ namespace spatial {
 		 *   slower than findNeighborsInCellRadius. However, this function does not store any points
 		 *   outside of the specified radius.
 		 *
-		 * \param  x       The x-coordinate of the cell
-		 * \param  y       The y-coordinate of the cell
-		 * \param  z       The z-coordinate of the cell
-		 * \param  radius  The maximum radius for searching
-		 * \param  pts     A reference to the vector in which to store pointers to found points
+		 * \param[in]   x       The x-coordinate of the cell
+		 * \param[in]   y       The y-coordinate of the cell
+		 * \param[in]   z       The z-coordinate of the cell
+		 * \param[in]   radius  The maximum radius for searching
+		 * \param[out]  pts     A reference to the vector in which to store pointers to found points
 		 */
 		void findNeighborsInRealRadius(double x, double y, double z, double radius, std::vector<PointType*>& pts) const;
 
@@ -385,12 +483,12 @@ namespace spatial {
 		 * \remarks
 		 *   This function is meant for specific testing purposes and should probably not be used.
 		 *
-		 * \param  x          The x-coordinate of the cell
-		 * \param  y          The y-coordinate of the cell
-		 * \param  z          The z-coordinate of the cell
-		 * \param  shell      The shell layer
-		 * \param  maxRadius  The maximum radius for searching
-		 * \param  pts         A reference to the vector in which to store found points
+		 * \param[in]   x          The x-coordinate of the cell
+		 * \param[in]   y          The y-coordinate of the cell
+		 * \param[in]   z          The z-coordinate of the cell
+		 * \param[in]   shell      The shell layer
+		 * \param[in]   maxRadius  The maximum radius for searching
+		 * \param[out]  pts        A reference to the vector in which to store found points
 		 */
 		bool findNeighborsInShell(double x, double y, double z, int shell, double maxRadius, std::vector<PointType>& pts) const;
 
@@ -456,6 +554,7 @@ namespace spatial {
 			// Store the x, y, and z cell indices of the cell to search from
 			int x_index_, y_index_, z_index_;
 
+			// Store whether the ExpandingSearch is complete
 			bool done_;
 
 		public:
@@ -497,7 +596,10 @@ namespace spatial {
 				z_index_ = stalk_->getZIndex(z);
 			}
 
-			/// Reset the ExpandingSearch to start over.
+			/**
+			 * \brief
+			 *   Reset the ExpandingSearch to start over.
+			 */
 			void clear()
 			{
 				last_search_index_ = 0;
@@ -508,7 +610,7 @@ namespace spatial {
 			 * \brief
 			 *   Check whether the search for neighbors is complete.
 			 *
-			 * \returns
+			 * \return
 			 *   <CODE>true</CODE> if the search is complete, <CODE>false</CODE> otherwise.
 			 */
 			bool done() const
@@ -521,8 +623,8 @@ namespace spatial {
 			 *   Search outward, adding all points from previously unsearched cells within maxRadius of
 			 *   the searching cell. The points are stored in searchPoints.
 			 *
-			 * \param  maxRadius     The maximum radius in which to search
-			 * \param  searchPoints  A reference to the vector in which to store found points
+			 * \param[in]   maxRadius     The maximum radius in which to search
+			 * \param[out]  searchPoints  A reference to the vector in which to store found points
 			 *
 			 * \remarks
 			 *   If maxRadius is reached in an expansion step, the search ends and the expanding search
