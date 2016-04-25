@@ -54,10 +54,10 @@ namespace hmc {
         /**
          * \brief Constructor for HalfEdge
          *
-         * \param f        FaceIndex to access correct face from FacePool.
-         * \param v        VertexIndex to access the target vertex from VertexPool.
-         * \param flip     EdgeIndex to access the HalfEdge flip from EdgePool.
-         * \param next     EdgeIndex to access the next HalfEdge from EdgePool.
+         * \param[in] f        FaceIndex to access correct face from FacePool.
+         * \param[in] v        VertexIndex to access the target vertex from VertexPool.
+         * \param[in] flip     EdgeIndex to access the HalfEdge flip from EdgePool.
+         * \param[in] next     EdgeIndex to access the next HalfEdge from EdgePool.
          */
         HalfEdge() = default;
         HalfEdge(FaceIndex f) : flip(), next(), target(), face(f) {}
@@ -80,8 +80,8 @@ namespace hmc {
         /**
          * \brief Constructor for a Face
          *
-         * \param id                The index of the neighboring particle that made the face.
-         * \param startingEdge      EdgeIndex to access the first HalfEdge from the EdgePool.
+         * \param[in] id                The index of the neighboring particle that made the face.
+         * \param[in] startingEdge      EdgeIndex to access the first HalfEdge from the EdgePool.
          */
         Face(int id)
             : id(id),
@@ -112,8 +112,8 @@ namespace hmc {
             /**
              * \brief Constructor for FaceData
              *
-             * \param face               FaceIndex to the associated face in FacePool
-             * \param weightedNormal     The normal vector to the face.
+             * \param[in] face               FaceIndex to the associated face in FacePool
+             * \param[in] weightedNormal     The normal vector to the face.
              */
             FaceData(FaceIndex face, Vector3 weightedNormal)
                 : face(face), weightedNormal(weightedNormal)
@@ -194,7 +194,7 @@ namespace hmc {
         /**
          * \brief Get the flip HalfEdge of the input HalfEdge
          *
-         * \param ei        The EdgeIndex of a HalfEdge
+         * \param[in] ei        The EdgeIndex of a HalfEdge
          * \result          The EdgeIndex of the flip of the input HalfEdge
          */
         EdgeIndex& flip(EdgeIndex ei) {return edges_[ei].flip;}
@@ -202,7 +202,7 @@ namespace hmc {
         /**
          * \brief Get the flip HalfEdge of the input HalfEdge
          *
-         * \param ei        The EdgeIndex of a HalfEdge
+         * \param[in] ei        The EdgeIndex of a HalfEdge
          * \result          The const EdgeIndex of the flip of the input HalfEdge
          */
         const EdgeIndex& flip(EdgeIndex ei) const {return edges_[ei].flip;}
@@ -211,7 +211,7 @@ namespace hmc {
         /**
          * \brief Get the next HalfEdge of the input HalfEdge
          *
-         * \param ei        The EdgeIndex of a HalfEdge
+         * \param[in] ei        The EdgeIndex of a HalfEdge
          * \result          The EdgeIndex of the next of the input HalfEdge
          */
         EdgeIndex& next(EdgeIndex ei) {return edges_[ei].next;}
@@ -219,7 +219,7 @@ namespace hmc {
         /**
          * \brief Get the next HalfEdge of the input HalfEdge
          *
-         * \param ei        The EdgeIndex of a HalfEdge
+         * \param[in] ei        The EdgeIndex of a HalfEdge
          * \result          The const EdgeIndex of the next of the input HalfEdge
          */
         const EdgeIndex& next(EdgeIndex ei) const {return edges_[ei].next;}
@@ -227,7 +227,7 @@ namespace hmc {
         /**
          * \brief Get the target vertex of the input HalfEdge
          *
-         * \param ei        The EdgeIndex of a HalfEdge
+         * \param[in] ei        The EdgeIndex of a HalfEdge
          * \result          The VertexIndex of the target of the input HalfEdge
          */
         VertexIndex& target(EdgeIndex ei) {return edges_[ei].target;}
@@ -235,7 +235,7 @@ namespace hmc {
         /**
          * \brief Get the target vertex of the input HalfEdge
          *
-         * \param ei        The EdgeIndex of a HalfEdge
+         * \param[in] ei        The EdgeIndex of a HalfEdge
          * \result          The const VertexIndex of the target of the input HalfEdge
          */
         const VertexIndex& target(EdgeIndex ei) const {return edges_[ei].target;}
@@ -243,7 +243,7 @@ namespace hmc {
         /**
          * \brief Get the source vertex of the input HalfEdge
          *
-         * \param ei        The EdgeIndex of a HalfEdge
+         * \param[in] ei        The EdgeIndex of a HalfEdge
          * \result          The VertexIndex of the source of the input HalfEdge
          */
         VertexIndex& source(EdgeIndex ei) {return target(flip(ei));}
@@ -251,7 +251,7 @@ namespace hmc {
         /**
          * \brief Get the source vertex of the input HalfEdge
          *
-         * \param ei        The EdgeIndex of a HalfEdge
+         * \param[in] ei        The EdgeIndex of a HalfEdge
          * \result          The const VertexIndex of the source of the input HalfEdge
          */
         const VertexIndex& source(EdgeIndex ei) const {return target(flip(ei));}
@@ -259,7 +259,7 @@ namespace hmc {
         /**
          * \brief Get the face of the input HalfEdge
          *
-         * \param ei        The EdgeIndex of a HalfEdge
+         * \param[in] ei        The EdgeIndex of a HalfEdge
          * \result          The FaceIndex of the face of the input HalfEdge
          */
         FaceIndex& face(EdgeIndex ei) {return edges_[ei].face;}
@@ -267,7 +267,7 @@ namespace hmc {
         /**
          * \brief Get the face of the input HalfEdge
          *
-         * \param ei        The EdgeIndex of a HalfEdge
+         * \param[in] ei        The EdgeIndex of a HalfEdge
          * \result          The const FaceIndex of the face of the input HalfEdge
          */
         const FaceIndex& face(EdgeIndex ei) const {return edges_[ei].face;}
@@ -275,7 +275,7 @@ namespace hmc {
         /**
          * \brief Get the first HalfEdge of the input face
          *
-         * \param fi        The FaceIndex of a face
+         * \param[in] fi        The FaceIndex of a face
          * \result          The EdgeIndex of the first HalfEdge in the face
          */
         EdgeIndex& startingEdge(FaceIndex fi) {return faces_[fi].startingEdge;}
@@ -283,7 +283,7 @@ namespace hmc {
         /**
          * \brief Get the first HalfEdge of the input face
          *
-         * \param fi        The FaceIndex of a face
+         * \param[in] fi        The FaceIndex of a face
          * \result          The const EdgeIndex of the first HalfEdge in the face
          */
         const EdgeIndex& startingEdge(FaceIndex fi) const {return faces_[fi].startingEdge;}
@@ -292,7 +292,8 @@ namespace hmc {
         /**
          * \brief Create edges in edge memory pool
          *
-         * \param args  Any number of edge constructor calls.
+         * \param[in] args  Any number of edge constructor calls.
+         * \return        The EdgeIndex of the newly created edge.
          */
         template <typename... Edge_Constructor_Args>
         EdgeIndex createEdge(Edge_Constructor_Args... args)
@@ -303,7 +304,8 @@ namespace hmc {
         /**
          * \brief Create vertices in vertex memory pool
          *
-         * \param args  Any number of vertex constructor calls.
+         * \param[in] args  Any number of vertex constructor calls.
+         * \return        The VertexIndex of the newly created vertex.
          */
         template <typename... Vertex_Constructor_Args>
         VertexIndex createVertex(Vertex_Constructor_Args... args)
@@ -314,7 +316,8 @@ namespace hmc {
         /**
          * \brief Create faces in face memory pool
          *
-         * \param args  Any number of face constructor calls.
+         * \param[in] args  Any number of face constructor calls.
+         * \return        The FaceIndex of the newly created face.
          */
         template <typename... Face_Constructor_Args>
         FaceIndex createFace(Face_Constructor_Args... args)
@@ -325,7 +328,7 @@ namespace hmc {
         /**
          * \brief Delete edge in edge memory pool
          *
-         * \param ei  The EdgeIndex to be removed from the edge memory pool.
+         * \param[in] ei  The EdgeIndex to be removed from the edge memory pool.
          */
         void destroy(EdgeIndex ei)
         {
@@ -335,7 +338,7 @@ namespace hmc {
         /**
          * \brief Delete vertex in vertex memory pool
          *
-         * \param vi  The VertezIndex to be removed from the vertex memory pool.
+         * \param[in] vi  The VertezIndex to be removed from the vertex memory pool.
          */
         void destroy(VertexIndex vi)
         {
@@ -348,7 +351,7 @@ namespace hmc {
         /**
          * \brief Delete face in face memory pool
          *
-         * \param fi  The FaceIndex to be removed from the face memory pool.
+         * \param[in] fi  The FaceIndex to be removed from the face memory pool.
          */
         void destroy(FaceIndex fi)
         {
@@ -430,9 +433,9 @@ namespace hmc {
 
 
         /**
-         * \brief Shift all vertices in the polyhedron by a vector
+         * \brief Shift all vertices in the polyhedron by a vector.
          *
-         * \param shift  The vector that the polyhedron is shifted by
+         * \param[in] shift  The vector that the polyhedron is shifted by.
          */
         void translate(const Vector3 shift)
         {
@@ -442,9 +445,9 @@ namespace hmc {
         }
 
         /**
-         * \brief Computes the volume of the polyheron
+         * \brief Computes the volume of the polyheron.
          *
-         * 
+         * \return The volume of the polyhedron.
          */
         double computeVolume()
         {
@@ -569,12 +572,12 @@ namespace hmc {
         /**
          * \brief Constructs the initial polyhedron as a cube
          *
-         * \param xmin          The minimum x-coordinate of the uncut cell
-         * \param xMAX          The maximum x-coordinate of the uncut cell
-         * \param ymin          The minimum y-coordinate of the uncut cell
-         * \param yMAX          The maximum y-coordinate of the uncut cell
-         * \param zmin          The minimum z-coordinate of the uncut cell
-         * \param zMAX          The maximum z-coordinate of the uncut cell
+         * \param[in] xmin          The minimum x-coordinate of the uncut cell
+         * \param[in] xMAX          The maximum x-coordinate of the uncut cell
+         * \param[in] ymin          The minimum y-coordinate of the uncut cell
+         * \param[in] yMAX          The maximum y-coordinate of the uncut cell
+         * \param[in] zmin          The minimum z-coordinate of the uncut cell
+         * \param[in] zMAX          The maximum z-coordinate of the uncut cell
          */
         void buildCube(double xmin, double xMAX,
                        double ymin, double yMAX,
@@ -943,10 +946,11 @@ namespace hmc {
         }
 
         /**
-         * \brief Cuts the polyhedron's face with the given plane
+         * \brief Cuts the polyhedron's face with the given plane.
          *
-         * \param faceid    The index of the face to be cut
-         * \param plane     The plane object of the cutting plane
+         * \param[in] faceid    The index of the face to be cut.
+         * \param[in] plane     The plane object of the cutting plane.
+         * \return True if the plane cut the face.
          */
         bool cutWithPlane(const int faceid, const Plane plane)
         {
@@ -1111,7 +1115,7 @@ namespace hmc {
         /**
          * \brief Delete portion of the polyhedron connected to input edge.
          *
-         * \param ei    The index of the input edge.
+         * \param[in] ei    The index of the input edge.
          *
          * \remark Should be used in the plane cutting algorithm to clean up portions cut off by a 
          *         polyhedron. If used on an edge in the main part of the polyhedron, the entire
@@ -1138,8 +1142,8 @@ namespace hmc {
         /**
          * \brief Print function for the polyhedron
          * 
-         * \param out      The ostream object
-         * \param poly     The polyhedron to be printed
+         * \param[in] out      The ostream object
+         * \param[in] poly     The polyhedron to be printed
          *
          * \remark Printed in the following format. Items in quotes are variable output 
          *         (*i = an index, "a/b" = a or b)
