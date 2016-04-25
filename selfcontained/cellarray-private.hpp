@@ -147,7 +147,6 @@ namespace hmc { namespace spatial {
 		// Compute the number of cells and inverse cell size in each dimension
 		// Round up by adding 1 after truncation
 		num_cells_dim_ = std::size_t( std::cbrt( cellsPerDim / cellDensityPerDim ) ) + 1;
-		std::cerr << "num_cells_dim_: " << num_cells_dim_ << std::endl;
 
 		cell_size_x_ = (xmax_ - xmin_) / num_cells_dim_;
 		cell_size_y_ = (ymax_ - ymin_) / num_cells_dim_;
@@ -455,7 +454,6 @@ namespace hmc { namespace spatial {
 	bool Celery<PointType>::findNeighborsInShell(double x, double y, double z, int shell, double maxRadius, std::vector<PointType>& pts) const
 	{
 		auto addPoints = [&](unsigned c) -> void {
-			++cellsSearched;
 			for (unsigned pi = delimiters_[c]; pi < delimiters_[c+1]; ++pi) {
 				pts.push_back(points_[pi]);
 			}

@@ -470,7 +470,12 @@ namespace hmc {
         template <typename Collection>
         void computeVertices(Collection& result)
         {
-            result.insert(result.end(), vertices_.begin(), vertices_.end());
+            auto output = std::back_inserter(result);
+			for (auto v : vertices_) {
+				*output++ = v.x;
+				*output++ = v.y;
+				*output++ = v.z;
+			}
         }
 
         /**

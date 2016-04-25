@@ -291,7 +291,7 @@ namespace hmc {
             // Prefix decrement
             maybe_const_iterator& operator--(){
                 while (index_.value-- > 0) {
-                    if (pool_.active(index_)) {
+                    if (pool_->active(index_)) {
                         return *this;
                     }
                 }
