@@ -1,27 +1,29 @@
 /**
  * \file polyhedron.hpp
- * 
+ *
  * \author 2015-2016 Sandia Clinic Team
  *
  * \brief Contains the Polyhedron class which does the actual Voronoi calculations.
- *        
+ *
  */
 
 #pragma once
 
 #include <iostream>
 #include <vector>
-// #include <queue>
 #include <functional>
 #include <unordered_set>
 #include <iterator>
 #include <algorithm>
+#include <cmath>
 
 #include "vectormath.hpp"
 #include "structpool.hpp"
 #include "verification.hpp"
 
 namespace hmc {
+    constexpr double TOLERANCE = 1e-14;
+
     struct HalfEdge;
     struct Face;
 
@@ -43,7 +45,7 @@ namespace hmc {
      * \brief
      *  The implementation of a half-edge structure. 2 half-edges make up an edge in the polyhedron
      *  each pointing to one of the two vertices that make up that edge.
-     */ 
+     */
     struct HalfEdge {
         EdgeIndex flip;             ///< The other HalfEdge in the edge
         EdgeIndex next;             ///< The next HalfEdge in the polyhedron face
@@ -69,7 +71,7 @@ namespace hmc {
 
     /**
      * \struct Face
-     * 
+     *
      * \brief The polyhedral face on the polyhedron
      */
     struct Face {
@@ -95,7 +97,7 @@ namespace hmc {
     /**
      * \class Polyhedron
      *
-     * \brief The cell from the Voronoi tessellation. Most of the computation work 
+     * \brief The cell from the Voronoi tessellation. Most of the computation work
      *        necessary to get the desired information is done here.
      * \remark This should not be used directly. Instead, interface through the Cell class.
      */
@@ -134,36 +136,6 @@ namespace hmc {
         VertexIndex maxDistanceVertex_ = INVALID_VERTEX; ///< The furthest vertex from the particle
         double maximumNeighborDistance_; ///< The furthest another particle can be from the current particle and still cut the polyhedron
 
-        // struct VertexDistance {
-        //     VertexIndex vi;
-        //     double dist;
-
-        //     VertexDistance(VertexIndex vi, double dist)
-        //         : vi(vi), dist(dist)
-        //     { /* Done */ }
-
-        //     friend bool operator<(const VertexDistance& a, const VertexDistance& b)
-        //     {
-        //         return a.dist < b.dist;
-        //     }
-
-        //     friend bool operator==(const VertexDistance& a, const VertexDistance& b)
-        //     {
-        //         return a.vi == b.vi;
-        //     }
-
-        //     friend bool operator!=(const VertexDistance& a, const VertexDistance& b)
-        //     {
-        //         return a.vi != b.vi;
-        //     }
-        // };
-
-        // struct VertexDistanceHeap {
-        //     std::vector<VertexDistance>;
-
-
-
-        // } vertexDistances_;
 
         void clear() ///< Removes all edges, faces, and vertices from polyhedron
         {
@@ -223,6 +195,39 @@ namespace hmc {
          * \result          The const EdgeIndex of the next of the input HalfEdge
          */
         const EdgeIndex& next(EdgeIndex ei) const {return edges_[ei].next;}
+
+        /**
+         * \brief Get the next HalfEdge of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The const EdgeIndex of the next of the input HalfEdge
+         */
+        EdgeIndex& nextWithSameTarget(EdgeIndex ei) {return flip(next(ei));}
+
+        /**
+         * \brief Get the next HalfEdge of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The const EdgeIndex of the next of the input HalfEdge
+         */
+        const EdgeIndex& nextWithSameTarget(EdgeIndex ei) const {return flip(next(ei));}
+
+        /**
+         * \brief Get the next HalfEdge of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The const EdgeIndex of the next of the input HalfEdge
+         */
+        EdgeIndex& nextWithSameSource(EdgeIndex ei) {return next(flip(ei));}
+
+        /**
+         * \brief Get the next HalfEdge of the input HalfEdge
+         *
+         * \param ei        The EdgeIndex of a HalfEdge
+         * \result          The const EdgeIndex of the next of the input HalfEdge
+         */
+        const EdgeIndex& nextWithSameSource(EdgeIndex ei) const {return next(flip(ei));}
+
 
         /**
          * \brief Get the target vertex of the input HalfEdge
@@ -310,6 +315,10 @@ namespace hmc {
         template <typename... Vertex_Constructor_Args>
         VertexIndex createVertex(Vertex_Constructor_Args... args)
         {
+            VERIFICATION(
+                Vector3 v {args...};
+                VERIFY(std::isfinite(v.x) && std::isfinite(v.y) && std::isfinite(v.z));
+            )
             return vertices_.create(args...);
         }
 
@@ -535,7 +544,7 @@ namespace hmc {
         }
 
         /**
-         * \brief Computes the volume of the polyhedron. If the face data 
+         * \brief Computes the volume of the polyhedron. If the face data
          *        was not already computed, erase the face data.
          *
          * \result The volume of the cell.
@@ -591,7 +600,7 @@ namespace hmc {
             VERIFY(ymin < yMAX);
             VERIFY(zmin < zMAX);
 
-            VERIFY_EXIT(approxEq(temporarilyComputeVolume(), (xMAX-xmin)*(yMAX-ymin)*(zMAX-zmin)));
+            VERIFY_EXIT(approxRelEq(temporarilyComputeVolume(), (xMAX-xmin)*(yMAX-ymin)*(zMAX-zmin), TOLERANCE));
             VERIFICATION_EXIT(verifyIsValidPolyhedron();)
 
             // In general, the faces will be referred to using single characters,
@@ -822,7 +831,7 @@ namespace hmc {
 
         /**
          * \brief Find an edge going through the cutting plane
-         * 
+         *
          * \remark Not robust for floating point errors.
          */
         EdgeIndex findOutgoingEdge(const Plane& plane) {
@@ -832,7 +841,7 @@ namespace hmc {
             };
 
             auto location = [&](double distance) -> Plane::Location {
-                return plane.location(distance - plane.planeOffset);
+                return plane.location(distance - plane.planeOffset, TOLERANCE);
             };
             // We start by finding some OUTSIDE vertex, i.e. one that will
             // be cut off. If we can't find one, then there will be no outgoing
@@ -940,7 +949,42 @@ namespace hmc {
                 // either we're cutting by something very close -
                 // as in, within machine epsilon close -
                 // or our polyhedron is not convex.
-                VERIFY(edgeToNeighbor != edgeToPrevious);
+
+                // So, really we have encountered an error state here.
+                // We can still attempt to at least do SOMETHING, however.
+                if (edgeToNeighbor == edgeToPrevious) {
+                    auto locationV = [&](VertexIndex vi) -> Plane::Location {
+                        return location(signedDistance(vi));
+                    };
+
+                    auto isOutgoingEdge = [&](EdgeIndex ei) -> bool {
+                        return locationV(target(ei)) != Plane::INSIDE
+                            && locationV(source(ei)) == Plane::INSIDE;
+                    };
+
+                    for (auto eit = edges_.begin(); eit != edges_.end(); ++eit) {
+                        if (isOutgoingEdge(eit.index())) {
+                            return eit.index();
+                        }
+                    }
+                }
+
+                // There is no outgoing edge. However, there ARE
+                // outside vertices if it got to this point,
+                // so this means there aren't any inside vertices.
+
+                VERIFICATION(
+                    auto someVertexIsInside = [&]() -> bool {
+                        for (auto v : vertices_) {
+                            if (plane.location(v, TOLERANCE)) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    };
+
+                    VERIFY(someVertexIsInside());
+                )
             }
             return flip(edgeToCurrent);
         }
@@ -958,7 +1002,7 @@ namespace hmc {
             VERIFY(faceData_.size() == 0);
 
             auto location = [&](VertexIndex vi) -> Plane::Location {
-                return plane.location(vertices_[vi]);
+                return plane.location(vertices_[vi], TOLERANCE);
             };
 
             auto createIntersection = [&](VertexIndex a, VertexIndex b) -> VertexIndex
@@ -1039,7 +1083,7 @@ namespace hmc {
             } while (outgoingEdge != firstOutgoingEdge);
 
             for (; target(outgoingEdge) == INVALID_VERTEX;
-                   outgoingEdge = flip(next(outgoingEdge)))
+                   outgoingEdge = nextWithSameTarget(outgoingEdge))
             {
                 target(outgoingEdge) = previousIntersection;
             }
@@ -1117,7 +1161,7 @@ namespace hmc {
          *
          * \param[in] ei    The index of the input edge.
          *
-         * \remark Should be used in the plane cutting algorithm to clean up portions cut off by a 
+         * \remark Should be used in the plane cutting algorithm to clean up portions cut off by a
          *         polyhedron. If used on an edge in the main part of the polyhedron, the entire
          *         polyhedron will be destroyed.
          *
@@ -1141,13 +1185,13 @@ namespace hmc {
 
         /**
          * \brief Print function for the polyhedron
-         * 
+         *
          * \param[in] out      The ostream object
          * \param[in] poly     The polyhedron to be printed
          *
-         * \remark Printed in the following format. Items in quotes are variable output 
+         * \remark Printed in the following format. Items in quotes are variable output
          *         (*i = an index, "a/b" = a or b)
-         * 
+         *
          * \code{.unparsed}
          * POLYHEDRON
          * EDGES

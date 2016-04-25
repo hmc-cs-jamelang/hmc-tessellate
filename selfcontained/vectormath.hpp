@@ -6,14 +6,16 @@
 namespace hmc {
     static constexpr double VECTORMATH_TOLERANCE = 1e-12;
 
-    constexpr bool approxEq(const double a, const double b)
-    {
-        return std::abs(a - b) <= VECTORMATH_TOLERANCE;
-    }
-
-    constexpr bool approxEq(const double a, const double b, const double tolerance)
+    constexpr bool approxEq(double a, double b, double tolerance = VECTORMATH_TOLERANCE)
     {
         return std::abs(a - b) <= tolerance;
+    }
+
+    constexpr bool approxRelEq(double a, double b, double tolerance = VECTORMATH_TOLERANCE)
+    {
+        return (a == 0 || b == 0)
+                    ? (a == b)
+                    : approxEq(a / b, 1, tolerance);
     }
 
     struct Vector3 {
@@ -218,21 +220,23 @@ namespace hmc {
             return offset(p) - planeOffset;
         }
 
-        constexpr Vector3 intersection(const Vector3& a, const Vector3& b) const
+        Vector3 intersection(const Vector3& a, const Vector3& b) const
         {
-            return a + (b - a) * (planeOffset - dot(a, unitNormal)) / dot(b - a, unitNormal);
+            double aOffset = offset(a);
+            double bOffset = offset(b);
+            return a + (b - a) * (planeOffset - aOffset) / (bOffset - aOffset);
         }
 
-        constexpr Location location(const Vector3& p) const
+        constexpr Location location(const Vector3& p, double tolerance = VECTORMATH_TOLERANCE) const
         {
-            return location(signedDistance(p));
+            return location(signedDistance(p), tolerance);
         }
 
-        constexpr Location location(const double signedDistance) const
+        constexpr Location location(const double signedDistance, double tolerance = VECTORMATH_TOLERANCE) const
         {
-            return signedDistance >  VECTORMATH_TOLERANCE ? OUTSIDE
-                :  signedDistance < -VECTORMATH_TOLERANCE ? INSIDE
-                :                                           INCIDENT;
+            return signedDistance >  tolerance ? OUTSIDE
+                :  signedDistance < -tolerance ? INSIDE
+                :                                INCIDENT;
         }
     };
 }

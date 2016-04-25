@@ -1,4 +1,6 @@
 #include <iostream>
+#include <sstream>
+#include <fstream>
 #include <iomanip>
 #include <cmath>
 #include <vector>
@@ -411,20 +413,9 @@ struct AllData {
 
 
 using CheckType = Check<void>;
-constexpr std::size_t DEFAULT_NUM_POINTS = 100;
+constexpr int DEFAULT_NUM_POINTS = 100;
 constexpr bool shrinkwrap = false;
-constexpr double shrinkwrapPadding = 1.00001;
-
-
-
-
-
-
-
-
-
-
-
+constexpr double shrinkwrapPadding = 1 + 1e-5;
 
 
 
@@ -473,11 +464,11 @@ constexpr double shrinkwrapPadding = 1.00001;
 
 
 int main(int argc, char* argv[]) {
-    std::size_t numPoints = DEFAULT_NUM_POINTS;
+    int np = DEFAULT_NUM_POINTS;
 
     if (argc > 1) {
         std::size_t n = atoi(argv[1]);
-        if (n != 0) { numPoints = n; }
+        if (n != 0) { np = n; }
     }
 
     if (argc > 2) {
@@ -492,20 +483,42 @@ int main(int argc, char* argv[]) {
     ParticleList particles;
     double boxLength = 1;
 
-    auto runDoubleTrial = [&](std::size_t numPoints) -> void {
-        std::cerr << "Generating " << numPoints << " particles." << std::endl
-                  << "Random state: \"" << hmc::utilities::get_random_state()
-                  << "\"" << std::endl;
-        particles.clear();
-        const double bl2 = boxLength/2;
-        for (std::size_t i = 0; i < numPoints; ++i) {
-            particles.emplace_back(i,
-                hmc::utilities::uniform(-bl2, bl2),
-                hmc::utilities::uniform(-bl2, bl2),
-                hmc::utilities::uniform(-bl2, bl2)
-            );
+    if (np == -1) {
+        boxLength = 2*57.8;
+    }
+
+    auto runDoubleTrial = [&](int np) -> void {
+        if (np == -1) {
+            int id;
+            double x, y, z;
+
+            std::cerr << "Reading points from 'particles'" << std::endl;
+            std::ifstream inputFile;
+            inputFile.open("particles");
+
+            while (inputFile >> id >> x >> y >> z) {
+                particles.emplace_back(id, x, y, z);
+            }
+
+            inputFile.close();
         }
 
+        else {
+            std::cerr << "Generating " << np << " particles." << std::endl
+                      << "Random state: \"" << hmc::utilities::get_random_state()
+                      << "\"" << std::endl;
+            particles.clear();
+            const double bl2 = boxLength/2;
+            for (int i = 0; i < np; ++i) {
+                particles.emplace_back(i,
+                    hmc::utilities::uniform(-bl2, bl2),
+                    hmc::utilities::uniform(-bl2, bl2),
+                    hmc::utilities::uniform(-bl2, bl2)
+                );
+            }
+        }
+
+        std::size_t numPoints = particles.size();
         std::vector<double> ds;
         Check<Neighbors> ns {numPoints};
 
@@ -533,16 +546,7 @@ int main(int argc, char* argv[]) {
         runTrial<hmc_tessellate, shrinkwrap>(boxLength, particles, check, ds);
 
         check.check(particles);
-
-		// std::cout << "Total number of cuts: " << totalCuts << std::endl;
-		// std::cout << "Needed cuts: " << neededCuts << std::endl;
-		// std::cout << "Number of expansions: " << expansions << std::endl;
-		// std::cout << "Number of cells searched: " << cellsSearched << std::endl;
-		// std::cout << "Time spent expanding: " << std::chrono::duration<double, std::milli> {expansionTime}.count() << " ms" << std::endl;
-
-        // std::cout << destroyedMSVertices << ":" << destroyedVertices << "/" << attemptedDestroyedVertices << ";"
-        //     << destroyedMSEdges << ":" << destroyedEdges << "/" << attemptedDestroyedEdges << std::endl;
     };
 
-    runDoubleTrial(numPoints);
+    runDoubleTrial(np);
 }

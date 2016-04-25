@@ -22,6 +22,8 @@
 namespace hmc {
     using SizeType = std::size_t;
     using SDS = CellArray<SizeType>;
+    // using SDS = TrivialSDS<SizeType>;
+    // using SDS = ShellArray<SizeType>;
 
 	using TargetGroup = std::unordered_set<int>;
 	using SourceGroup = std::vector<int>;
