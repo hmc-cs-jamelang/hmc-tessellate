@@ -1,8 +1,15 @@
 /**
- \mainpage hmc-tesselate
+ \mainpage 
  
  \tableofcontents
- 
+
+ Given a set of particles, a Voronoi tessellation divides a space into Voronoi cells. Each Voronoi
+ cell contains exactly one particle and all of the space closer to that particle than any other.
+ `hmc-tessellate` aims to compute 3D Voronoi tessellations.
+
+ \image html ./voronoithing.png "Example of a 2D Voronoi tessellation." width="5cm"
+ \image latex ./voronoithing.png "Example of a 2D Voronoi tessellation." width="5cm"
+
  \section init Initializing a Diagram
 
  To create a Voronoi diagram, first you fill it with particles
@@ -23,8 +30,8 @@
  and you are free to just make all the ids 0 or -1 if you'd like.
 
  Groups are also arbitrary integers, but they must be distinct
- from each other, and a group cannot be 0.
- 0 is reserved to mean "no group."
+ from each other, and a group cannot be -1.
+ -1 is reserved to mean "no group."
  
  
  \subsection initex   Examples
