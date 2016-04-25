@@ -37,6 +37,10 @@ mallocs: benchmark.cpp malloc_count.o $(HMC_DEP)
 celerytest: celerytest.cpp cellarray.hpp cellarray-private.hpp
 	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS)
 
+diagramtest: diagram-test.cpp $(HMC_DEP)
+	$(CC) $< -o $@ -O3 -std=c++11 $(CC_INCLUDE) $(LD_FLAGS)
+	./diagramtest
+
 test: benchmark
 	./benchmark $(n) $(s)
 
