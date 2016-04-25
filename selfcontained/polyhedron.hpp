@@ -4,6 +4,7 @@
  * \author 2015-2016 Sandia Clinic Team
  *
  * \brief Contains the Polyhedron class which does the actual Voronoi calculations.
+ *        
  */
 
 #pragma once
@@ -96,6 +97,7 @@ namespace hmc {
      *
      * \brief The cell from the Voronoi tessellation. Most of the computation work 
      *        necessary to get the desired information is done here.
+     * \remark This should not be used directly. Instead, interface through the Cell class.
      */
     class Polyhedron {
     public:
@@ -562,7 +564,12 @@ namespace hmc {
         /**
          * \brief Constructs the initial polyhedron as a cube
          *
-         * 
+         * \param xmin          The minimum x-coordinate of the uncut cell
+         * \param xMAX          The maximum x-coordinate of the uncut cell
+         * \param ymin          The minimum y-coordinate of the uncut cell
+         * \param yMAX          The maximum y-coordinate of the uncut cell
+         * \param zmin          The minimum z-coordinate of the uncut cell
+         * \param zMAX          The maximum z-coordinate of the uncut cell
          */
         void buildCube(double xmin, double xMAX,
                        double ymin, double yMAX,
@@ -805,6 +812,11 @@ namespace hmc {
             root_ = EdgeIndex {FU};
         }
 
+        /**
+         * \brief Find an edge going through the cutting plane
+         * 
+         * \remark Not robust for floating point errors.
+         */
         EdgeIndex findOutgoingEdge(const Plane& plane) {
             auto signedDistance = [&](VertexIndex vi) -> double {
                 // return plane.signedDistance(vertices_[vi]);
@@ -925,6 +937,12 @@ namespace hmc {
             return flip(edgeToCurrent);
         }
 
+        /**
+         * \brief Cuts the polyhedron's face with the given plane
+         *
+         * \param faceid    The index of the face to be cut
+         * \param plane     The plane object of the cutting plane
+         */
         bool cutWithPlane(const int faceid, const Plane plane)
         {
             VERIFICATION_INVARIANT(verifyIsValidPolyhedron();)
@@ -1012,7 +1030,7 @@ namespace hmc {
             } while (outgoingEdge != firstOutgoingEdge);
 
             for (; target(outgoingEdge) == INVALID_VERTEX;
-                   outgoingEdge = next(flip(outgoingEdge)))
+                   outgoingEdge = flip(next(outgoingEdge)))
             {
                 target(outgoingEdge) = previousIntersection;
             }
@@ -1085,6 +1103,16 @@ namespace hmc {
             return true;
         }
 
+        /**
+         * \brief Delete portion of the polyhedron connected to input edge.
+         *
+         * \param ei    The index of the input edge.
+         *
+         * \remark Should be used in the plane cutting algorithm to clean up portions cut off by a 
+         *         polyhedron. If used on an edge in the main part of the polyhedron, the entire
+         *         polyhedron will be destroyed.
+         *
+         */
         bool markSweep(EdgeIndex ei)
         {
             if (!edges_.active(ei)) { return false; }
@@ -1102,6 +1130,39 @@ namespace hmc {
             return true;
         }
 
+        /**
+         * \brief Print function for the polyhedron
+         * 
+         * \param out      The ostream object
+         * \param poly     The polyhedron to be printed
+         *
+         * \remark Printed in the following format. Items in quotes are variable output 
+         *         (*i = an index, "a/b" = a or b)
+         * 
+         * \code{.unparsed}
+         * POLYHEDRON
+         * EDGES
+         * Edge chunk "ei": "* Active/X Inactive"
+         *   Face: "fi" " * / X"
+         *   Next: "ni" " * / X"
+         *   Flip: "fi" " * / X"
+         *   Target: "ti" " * / X"
+         * .
+         * .
+         * .
+         * VERTICES
+         * Vertex chunk "vi": "* Active/X Inactive"
+         * .
+         * .
+         * .
+         * FACES
+         * Face "fi": "* Active/X Inactive"
+         *   Start: "fei" "* /X"
+         * .
+         * .
+         * .
+         * \endcode
+         */
         friend std::ostream& operator<< (std::ostream& out, const Polyhedron& poly)
         {
             const auto& edges_ = poly.edges_;
