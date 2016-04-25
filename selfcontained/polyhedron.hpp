@@ -421,8 +421,32 @@ namespace hmc {
                 VERIFY(reachableFaces.find(f.index()) != reachableFaces.end());
             }
 
-            // It's easy to get the handedness wrong (-> negative volume).
-            VERIFY(temporarilyComputeVolume() > 0);
+            temporarilyCompute([&](){
+                // It's easy to get the handedness wrong (-> negative volume).
+                VERIFY(computeVolume() > 0);
+
+                computeFaceData();
+
+                // Check that the polyhedron is convex by ensuring
+                // that, from the point of view of every face,
+                // all vertices are below it.
+                for (FaceData fd : faceData_) {
+                    double max = std::numeric_limits<double>::min();
+                    EdgeIndex start = startingEdge(fd.face);
+                    EdgeIndex ei = start;
+                    do {
+                        double offset = dot(fd.weightedNormal, vertices_[target(ei)]);
+                        if (offset > max) {
+                            max = offset;
+                        }
+                        ei = next(ei);
+                    } while (ei != start);
+
+                    for (auto v : vertices_) {
+                        VERIFY(dot(fd.weightedNormal, v) <= max);
+                    }
+                }
+            });
 
             if (!isClear()) {
                 // Checking the Euler characteristic, which is probably
@@ -432,6 +456,7 @@ namespace hmc {
                 auto F = std::distance(faces_.begin(), faces_.end());
                 VERIFY(V - E/2 + F == 2);
             }
+
         }
 
 
@@ -544,12 +569,12 @@ namespace hmc {
          *
          * \result The volume of the cell.
          */
-        double temporarilyComputeVolume()
+        template <typename F>
+        void temporarilyCompute(F computation)
         {
             bool alreadyComputed = (faceData_.size() > 0);
-            double vol = computeVolume();
-            if (!alreadyComputed) {faceData_.clear();}
-            return vol;
+            computation();
+            if (!alreadyComputed) {clearComputation();}
         }
 
         /**
@@ -590,8 +615,12 @@ namespace hmc {
             VERIFY(ymin < yMAX);
             VERIFY(zmin < zMAX);
 
-            VERIFY_EXIT(approxRelEq(temporarilyComputeVolume(), (xMAX-xmin)*(yMAX-ymin)*(zMAX-zmin), TOLERANCE));
-            VERIFICATION_EXIT(verifyIsValidPolyhedron();)
+            VERIFICATION_EXIT(
+                double volume;
+                temporarilyCompute([&](){ volume = computeVolume(); });
+                VERIFY(approxRelEq(volume, (xMAX-xmin)*(yMAX-ymin)*(zMAX-zmin), TOLERANCE));
+                verifyIsValidPolyhedron();
+            )
 
             // In general, the faces will be referred to using single characters,
             // which are:
@@ -1203,6 +1232,19 @@ namespace hmc {
             }
 
             return out;
+        }
+
+        void outputGnuplot(std::ostream& out, Vector3 shift = VECTOR_ZERO) const
+        {
+            for (auto eit = edges_.begin(); eit != edges_.end(); ++eit) {
+                if (eit.index().value > eit->flip.value) {
+                    Vector3 v = vertices_[eit->target] + shift;
+                    out << v.x << " " << v.y << " " << v.z << std::endl;
+                    v = vertices_[source(eit.index())] + shift;
+                    out << v.x << " " << v.y << " " << v.z << std::endl;
+                    out << std::endl << std::endl;
+                }
+            }
         }
     };
 

@@ -353,10 +353,19 @@ namespace hmc {
                         if (index != particleIndex
                             && mag2(shiftedPosition) <= searchRadius)
                         {
-                            poly.cutWithPlane(
+                            if (particleIndex == 18 && index == 32) {
+                                double dummy = 16;
+                            }
+                            bool cut = poly.cutWithPlane(
                                 index,
                                 Plane::halfwayFromOriginTo(shiftedPosition)
                             );
+                            if (cut) {
+                                std::cerr << "Cut " << particleIndex << " with " << index << std::endl;
+                            }
+                            if (particleIndex == 18 && index == 32) {
+                                poly.outputGnuplot(std::cerr);
+                            }
                         }
                     }
                 }
