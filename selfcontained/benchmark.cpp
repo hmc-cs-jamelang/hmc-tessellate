@@ -93,6 +93,25 @@ void runTrial(const double boxLength,
     auto startTime = std::chrono::high_resolution_clock::now();
 
     if (package == voro_pp) {
+#define USE_PRE_CONTAINER
+#ifdef USE_PRE_CONTAINER
+        voro::pre_container preContainer(-bl2, bl2, -bl2, bl2, -bl2, bl2,
+                                         false, false, false);
+
+        for (auto& p : particles) {
+            preContainer.put(p.id, p.position.x, p.position.y, p.position.z);
+        }
+        // grr, signed...
+        std::array<int, 3> numberOfBoxes;
+        // ugly
+        preContainer.guess_optimal(numberOfBoxes[0], numberOfBoxes[1],
+                                   numberOfBoxes[2]);
+
+        voro::container con(-bl2, bl2, -bl2, bl2, -bl2, bl2,
+                            numberOfBoxes[0], numberOfBoxes[1], numberOfBoxes[2],
+                            false, false, false, 8);
+        preContainer.setup(con);
+#else
         const int n_x=6, n_y=6, n_z=6;
         voro::container con {-bl2, bl2, -bl2, bl2, -bl2, bl2,
                             n_x, n_y, n_z, false, false, false, 8};
@@ -100,6 +119,7 @@ void runTrial(const double boxLength,
         for (auto& p : particles) {
             con.put(p.id, p.position.x, p.position.y, p.position.z);
         }
+#endif
 
         voro::voronoicell_neighbor c;
         voro::c_loop_all vl(con);
