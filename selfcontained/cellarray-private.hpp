@@ -82,7 +82,7 @@ namespace hmc { namespace spatial {
 	void Celery<PointType>::computeBoundsFromPoints(PointIterator begin, PointIterator end, F getPoint)
 	{
 		xmin_ = ymin_ = zmin_ = std::numeric_limits<double>::max();
-		xmax_ = ymax_ = zmax_ = std::numeric_limits<double>::min();
+		xmax_ = ymax_ = zmax_ = std::numeric_limits<double>::lowest();
 
 		auto adjust = [](double coord, double& min, double& max) {
 			if (coord < min) { min = coord; }

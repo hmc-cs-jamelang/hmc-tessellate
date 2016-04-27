@@ -55,7 +55,21 @@ auto expansionTime = dont_use_this_name - dont_use_this_name;
 //     {}
 // };
 
-using Particle = hmc::Particle;
+struct Particle {
+    int id;
+    hmc::Vector3 position;
+
+    Particle(int id, double x, double y, double z)
+        : id(id), position(x, y, z)
+    { /* Done */ }
+
+    friend std::ostream& operator<<(std::ostream& out, const Particle& p)
+    {
+        return out << "Particle {id = " << p.id
+                    << ", position = " << p.position
+                    << "}";
+    }
+};
 
 using ParticleList = std::vector<Particle>;
 
@@ -138,7 +152,7 @@ void runTrial(const double boxLength,
         hmc::Diagram diagram = hmc::Diagram::cube(-bl2, bl2, -bl2, bl2, -bl2, bl2);
         diagram.initialize([&](){
             for (auto& p : particles) {
-                diagram.addParticle(p.id, p.position.x, p.position.y, p.position.z);
+                diagram.addParticle(p.position.x, p.position.y, p.position.z);
             }
         });
 
@@ -216,7 +230,7 @@ struct Check {
     }
 
     void operator() (hmc::Cell& c) {
-        hmc[c.getParticle().id] = Data {c};
+        hmc[c.getOriginalIndex()] = Data {c};
     }
 
     void check(const ParticleList& particles) {

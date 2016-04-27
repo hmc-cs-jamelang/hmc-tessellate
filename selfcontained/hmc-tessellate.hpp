@@ -40,30 +40,30 @@ namespace hmc {
 	/// Value used to signify that a particle does not exist in a Diagram.
 	constexpr size_t NO_INDEX = std::numeric_limits<size_t>::max();
 
-	/**
-	 * \struct Particle
-	 *
-	 * \brief
-	 *   A struct representing a single 3-D particle.
-	 */
-    struct Particle {
-		/// An identifier for the particle.
-        int id;
+	// /**
+	//  * \struct Particle
+	//  *
+	//  * \brief
+	//  *   A struct representing a single 3-D particle.
+	//  */
+ //    struct Particle {
+	// 	/// An identifier for the particle.
+ //        SizeType id;
 
-		/// A 3-D vector representing the position of the particle.
-        Vector3 position;
+	// 	/// A 3-D vector representing the position of the particle.
+ //        Vector3 position;
 
-		/// Constructor
-        Particle(int id, double x, double y, double z)
-            : id(id), position(x, y, z)
-        { /* Done */ }
+	// 	/// Constructor
+ //        Particle(SizeType id, double x, double y, double z)
+ //            : id(id), position(x, y, z)
+ //        { /* Done */ }
 
-		/// Print information about the particle.
-        friend std::ostream& operator<<(std::ostream& out, const Particle& p)
-        {
-            return out << "{id = " << p.id << ", pos = " << p.position << "}";
-        }
-    };
+	// 	/// Print information about the particle.
+ //        friend std::ostream& operator<<(std::ostream& out, const Particle& p)
+ //        {
+ //            return out << "{id = " << p.id << ", pos = " << p.position << "}";
+ //        }
+ //    };
 
 	/**
 	 * \struct CellInfo
@@ -94,7 +94,7 @@ namespace hmc {
 
 		/// Constructor
         CellInfo(const Diagram& diagram, SizeType index, Vector3 position, TargetGroup targetGroup, double searchRadius = NO_RADIUS)
-            : diagram(&diagram), index(index), position(position), targetGroup(targetGroup), searchRadius(searchRadius)
+            : diagram(&diagram), index(index), position(position), searchRadius(searchRadius), targetGroup(targetGroup)
         { /* Done */ }
     };
 
@@ -123,14 +123,14 @@ namespace hmc {
 		/// The Polyhedron representing the Voronoi cell.
         Polyhedron poly_;
 
-		// The target group of the Cell.
-		TargetGroup target_group_;
-
-		/// A flag that tells whether the Polyhedron has been computed.
+        /// A flag that tells whether the Polyhedron has been computed.
         bool polyComputed_;
 
-		/// The search radius for neighbors of the particle in the Cell. If no radius is known, set to NO_RADIUS.
+        /// The search radius for neighbors of the particle in the Cell. If no radius is known, set to NO_RADIUS.
         double searchRadius_;
+
+		/// The target group of the Cell.
+		TargetGroup target_group_;
 
 		/// The ExpandingSearch object used to search for neighbors of the point in this Cell.
         SDS::ExpandingSearch search_;
@@ -186,7 +186,7 @@ namespace hmc {
 		{
 			*this = info;
 		}
-		
+
 		/// Assignment operator
         Cell& operator=(const CellInfo info)
         {
@@ -208,7 +208,8 @@ namespace hmc {
 			target_group_.clear();
         }
 
-        const Particle& getParticle() const;
+        const Vector3& getPosition() const;
+        SizeType getOriginalIndex() const;
 
 		/**
 		 * \brief
@@ -288,8 +289,17 @@ namespace hmc {
 		/// The Polyhedron that represents the container of the points.
         Polyhedron containerShape_;
 
+        /// A bounding box enclosing all the points
+        BoundingBox boundingBox_;
+
 		/// The vector of Particle objects in the Diagram.
-        std::vector<Particle> particles_;
+        std::vector<Vector3> particles_;
+
+        /// A vector mapping internal indices to original indices
+        std::vector<SizeType> originalIndices_;
+
+        /// A vector mapping original indices to internal indices
+        std::vector<SizeType> internalIndices_;
 
 		/// The vector of groups that contain each particle. The group at an index corresponds
 		/// to the particle at that index.
@@ -359,10 +369,16 @@ namespace hmc {
 		 * \remarks
 		 *   Should only be used before the initialize function is called.
 		 */
-        void addParticle(int id, double x, double y, double z, int group = DEFAULT_GROUP)
+        void addParticle(double x, double y, double z, int group = DEFAULT_GROUP)
         {
-            particles_.emplace_back(id, x, y, z);
-			groups_.push_back(group);
+            addParticle(Vector3 {x, y, z}, group);
+        }
+
+        void addParticle(Vector3 position, int group = DEFAULT_GROUP)
+        {
+            particles_.push_back(position);
+            boundingBox_.adjustToContain(position);
+            groups_.push_back(group);
         }
 
 		/**
@@ -374,11 +390,103 @@ namespace hmc {
 		 */
         void initialize()
         {
+            sortParticlesByMortonIndex();
+
             spatialStructure_.initialize(0, particles_.size(),
                 [this](SizeType index) -> Vector3 {
-                    return particles_[index].position;
+                    return particles_[index];
                 }
             );
+        }
+
+        void sortParticlesByMortonIndex()
+        {
+            const BoundingBox& bb = boundingBox_;
+
+            constexpr unsigned int numLevels = 10;
+            constexpr double numCellsPerSide = 1 << numLevels;
+
+            const Vector3 sideLengths = (bb.high - bb.low) / numCellsPerSide;
+
+            using Index3 = Vector3_of<SizeType>;
+            auto cellIndices = [&](SizeType i) -> Index3 {
+                auto offset = particles_[i] - bb.low;
+                return Index3(
+                    offset.x / sideLengths.x,
+                    offset.y / sideLengths.y,
+                    offset.z / sideLengths.z
+                );
+            };
+
+            auto mortonIndex = [&](SizeType i) -> SizeType {
+                Index3 indices = cellIndices(i);
+
+                SizeType morton = 0;
+                unsigned int bit = 0;
+
+                for (unsigned int level = 0; level < numLevels; ++level) {
+                    morton |= ((indices.x >> level) & 1u) << bit++;
+                    morton |= ((indices.y >> level) & 1u) << bit++;
+                    morton |= ((indices.z >> level) & 1u) << bit++;
+                }
+                return morton;
+            };
+
+
+            // -----------------------------------------------------
+
+            const SizeType n = particles_.size();
+
+            std::vector<SizeType>& permutation = internalIndices_;
+            std::vector<SizeType>& morton = originalIndices_;
+
+            permutation.resize(n);
+            morton.resize(n);
+
+            for (SizeType i = 0; i < n; ++i) {
+                permutation[i] = i;
+                morton[i] = mortonIndex(i);
+            }
+
+            std::sort(permutation.begin(), permutation.end(),
+                [&morton](SizeType i, SizeType j) -> bool {
+                    return morton[i] < morton[j];
+                });
+
+            constexpr SizeType COMPLETED = std::numeric_limits<SizeType>::max();
+            for (SizeType cycleStart = 0; cycleStart < n; ++cycleStart) {
+                if (permutation[cycleStart] == COMPLETED) {
+                    continue;
+                }
+
+                auto startParticle = particles_[cycleStart];
+                auto startGroup = groups_[cycleStart];
+
+                SizeType current = cycleStart;
+                SizeType next = originalIndices_[current] = permutation[current];
+
+                while (next != cycleStart) {
+                    originalIndices_[current] = permutation[current];
+                    permutation[current] = COMPLETED;
+
+                    particles_[current] = particles_[next];
+                    groups_[current] = groups_[next];
+
+                    current = next;
+                    next = permutation[next];
+                }
+
+
+                originalIndices_[current] = permutation[current];
+                permutation[current] = COMPLETED;
+
+                particles_[current] = startParticle;
+                groups_[current] = startGroup;
+            }
+
+            for (SizeType i = 0; i < n; ++i) {
+                internalIndices_[originalIndices_[i]] = i;
+            }
         }
 
 		/**
@@ -410,7 +518,7 @@ namespace hmc {
         CellInfo getCell(SizeType index) const
         {
             VERIFY(index < particles_.size());
-            return CellInfo(*this, index, particles_[index].position);
+            return CellInfo(*this, index, particles_[index]);
         }
 
 		/**
@@ -426,7 +534,7 @@ namespace hmc {
         CellInfo getCell(SizeType index, TargetGroup targetGroup) const
         {
             VERIFY(index < particles_.size());
-            return CellInfo(*this, index, particles_[index].position, targetGroup);
+            return CellInfo(*this, index, particles_[index], targetGroup);
         }
 
 		/**
@@ -443,7 +551,7 @@ namespace hmc {
         {
             VERIFY(index < particles_.size());
             VERIFY(searchRadius > 0);
-            return CellInfo(*this, index, particles_[index].position, searchRadius);
+            return CellInfo(*this, index, particles_[index], searchRadius);
         }
 
 		/**
@@ -461,7 +569,7 @@ namespace hmc {
         {
             VERIFY(index < particles_.size());
             VERIFY(searchRadius > 0);
-            return CellInfo(*this, index, particles_[index].position, targetGroup, searchRadius);
+            return CellInfo(*this, index, particles_[index], targetGroup, searchRadius);
         }
 
 		/**
@@ -569,7 +677,7 @@ namespace hmc {
 		TargetGroup targetGroups(std::vector<int> groups)
 		{
 			TargetGroup targets = TargetGroup();
-			for (int i = 0; i < groups.size(); ++i) {
+			for (unsigned int i = 0; i < groups.size(); ++i) {
 				targets.insert(groups[i]);
 			}
 			return targets;
@@ -636,12 +744,12 @@ namespace hmc {
                 {
 					if (targetGroup.empty()) {
 						for (SizeType index : search) {
-							Vector3 shiftedPosition = particles_[index].position - position;
+							Vector3 shiftedPosition = particles_[index] - position;
 							if (index != particleIndex
 								&& mag2(shiftedPosition) <= searchRadius)
 							{
 								poly.cutWithPlane(
-									index,
+									originalIndices_[index],
 									Plane::halfwayFromOriginTo(shiftedPosition)
 									);
 							}
@@ -650,13 +758,13 @@ namespace hmc {
 
 					else {
 						for (SizeType index : search) {
-							Vector3 shiftedPosition = particles_[index].position - position;
+							Vector3 shiftedPosition = particles_[index] - position;
 							if (index != particleIndex
 								&& mag2(shiftedPosition) <= searchRadius
 								&& targetGroup.count(groups_[index]) != 0)
 							{
 								poly.cutWithPlane(
-									index,
+									originalIndices_[index],
 									Plane::halfwayFromOriginTo(shiftedPosition)
 									);
 							}
@@ -671,8 +779,8 @@ namespace hmc {
 					for (SizeType index : spatialStructure_.search(position, searchRadius)) {
 						if (index != particleIndex) {
 							poly.cutWithPlane(
-								index,
-								Plane::halfwayFromOriginTo(particles_[index].position - position)
+								originalIndices_[index],
+								Plane::halfwayFromOriginTo(particles_[index] - position)
 								);
 						}
 					}
@@ -682,11 +790,11 @@ namespace hmc {
 					for (SizeType index : spatialStructure_.search(position, searchRadius)) {
 						if (index != particleIndex && targetGroup.count(groups_[index]) != 0) {
 							poly.cutWithPlane(
-								index,
-								Plane::halfwayFromOriginTo(particles_[index].position - position)
+								originalIndices_[index],
+								Plane::halfwayFromOriginTo(particles_[index] - position)
 								);
 						}
-					}					
+					}
 				}
             }
         }
@@ -706,9 +814,14 @@ namespace hmc {
 	 * \return
 	 *   The desired Particle.
 	 */
-    const Particle& Cell::getParticle() const
+    const Vector3& Cell::getPosition() const
     {
         return diagram_->particles_[index_];
+    }
+
+    SizeType Cell::getOriginalIndex() const
+    {
+        return diagram_->originalIndices_[index_];
     }
 
 }
