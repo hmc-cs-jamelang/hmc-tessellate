@@ -70,10 +70,10 @@ namespace hmc {
         }
     };
 
-    template <typename PointHandle>
+    template <typename PointHandle, typename SizeType_T = std::size_t>
     class CellArray {
     public:
-        using SizeType = std::size_t;
+        using SizeType = SizeType_T;
         spatial::Celery<SizeType> cellarray_;
 
     public:
@@ -103,7 +103,7 @@ namespace hmc {
             using Iterator = typename std::vector<PointHandle>::const_iterator;
 
             // const spatial::Celery<SizeType>& cellarray_;
-            spatial::Celery<SizeType>::ExpandingSearch search_;
+            typename spatial::Celery<SizeType>::ExpandingSearch search_;
             // const Vector3 position_;
             std::vector<PointHandle> neighbors_;
             // unsigned shell_ = 0;
@@ -125,7 +125,7 @@ namespace hmc {
 
             bool done() const { return search_.done(); }
 
-            void startSearch(const CellArray<SizeType>& cellarray, Vector3 position)
+            void startSearch(const CellArray& cellarray, Vector3 position)
             {
                 search_.initialize(cellarray.cellarray_, position.x, position.y, position.z);
                 search_.expand(std::numeric_limits<double>::max(), neighbors_);

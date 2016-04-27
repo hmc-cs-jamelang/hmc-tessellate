@@ -20,8 +20,8 @@
 #include "sds.hpp"
 
 namespace hmc {
-    using SizeType = std::size_t;
-    using SDS = CellArray<SizeType>;
+    using SizeType = unsigned int;
+    using SDS = CellArray<SizeType, SizeType>;
     // using SDS = TrivialSDS<SizeType>;
     // using SDS = ShellArray<SizeType>;
 
@@ -38,7 +38,7 @@ namespace hmc {
     constexpr double NO_RADIUS = -1;
 
 	/// Value used to signify that a particle does not exist in a Diagram.
-	constexpr size_t NO_INDEX = std::numeric_limits<size_t>::max();
+	constexpr SizeType NO_INDEX = std::numeric_limits<SizeType>::max();
 
 	// /**
 	//  * \struct Particle
