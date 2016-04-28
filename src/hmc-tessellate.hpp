@@ -183,8 +183,43 @@ namespace hmc {
 			target_group_.clear();
         }
 
-        const Vector3& getPosition() const;
-        SizeType getOriginalIndex() const;
+        /**
+         * \brief
+         *   Get the position of the particle this
+         *   Voronoi cell is constructed around.
+         *
+         * \return
+         *   The position, as a Vector3.
+         */
+        inline const Vector3& getPosition() const;
+
+        /**
+         * \brief
+         *   Gets the original index of the particle
+         *   this cell is based on. The original index
+         *   is the index position the particle was originally
+         *   added to the diagram in.
+         *   If the cell is not based on a particle in
+         *   the Diagram, returns NO_INDEX instead
+         *
+         * \return
+         *   The original index, or NO_INDEX.
+         */
+        inline SizeType getOriginalIndex() const;
+
+        /**
+         * \brief
+         *   Gets the internal index of the particle
+         *   this cell is based on. The internal index
+         *   is actual index position the particle
+         *   within the Diagram.
+         *   If the cell is not based on a particle in
+         *   the Diagram, returns NO_INDEX instead
+         *
+         * \return
+         *   The internal index, or NO_INDEX.
+         */
+        inline SizeType getInternalIndex() const;
 
 		/**
 		 * \brief
@@ -241,7 +276,7 @@ namespace hmc {
         }
 
     protected:
-        void computeVoronoiCell();
+        inline void computeVoronoiCell();
     };
 
 	/**
@@ -811,7 +846,16 @@ namespace hmc {
 
     SizeType Cell::getOriginalIndex() const
     {
-        return diagram_->originalIndices_[index_];
+        return (index_ == NO_INDEX)
+                ? NO_INDEX
+                : diagram_->originalIndices_[index_];
+    }
+
+    SizeType Cell::getInternalIndex() const
+    {
+        // index_ might be NO_INDEX, but in that
+        // event we do in fact want to return NO_INDEX
+        return index_;
     }
 
 }

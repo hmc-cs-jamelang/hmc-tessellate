@@ -6,12 +6,12 @@
 namespace hmc {
     static constexpr double VECTORMATH_TOLERANCE = 1e-12;
 
-    constexpr bool approxEq(double a, double b, double tolerance = VECTORMATH_TOLERANCE)
+    inline constexpr bool approxEq(double a, double b, double tolerance = VECTORMATH_TOLERANCE)
     {
         return std::abs(a - b) <= tolerance;
     }
 
-    constexpr bool approxRelEq(double a, double b, double tolerance = VECTORMATH_TOLERANCE)
+    inline constexpr bool approxRelEq(double a, double b, double tolerance = VECTORMATH_TOLERANCE)
     {
         return (a == 0 || b == 0)
                     ? (a == b)
@@ -26,11 +26,11 @@ namespace hmc {
 
         Vector3_of() = default;
 
-        constexpr Vector3_of(double x, double y, double z)
+        inline constexpr Vector3_of(double x, double y, double z)
             : x(x), y(y), z(z)
         { /* Done */ }
 
-        friend std::ostream& operator<<(std::ostream& out, const Vector3_of& v)
+        inline friend std::ostream& operator<<(std::ostream& out, const Vector3_of& v)
         {
             return out << "(" << v.x << ", " << v.y << ", " << v.z << ")";
         }
@@ -73,27 +73,28 @@ namespace hmc {
         }
 
 
-        friend constexpr Vector3_of operator+(const Vector3_of& a, const Vector3_of& b)
+        inline friend constexpr Vector3_of operator+(const Vector3_of& a, const Vector3_of& b)
         {
             return Vector3_of(a.x + b.x, a.y + b.y, a.z + b.z);
         }
 
-        friend constexpr Vector3_of operator-(const Vector3_of& a, const Vector3_of& b)
+        inline friend constexpr Vector3_of operator-(const Vector3_of& a, const Vector3_of& b)
         {
             return Vector3_of(a.x - b.x, a.y - b.y, a.z - b.z);
         }
 
 
-        friend constexpr Vector3_of operator*(const Vector3_of& v, const double a)
-        {
-            return Vector3_of(v.x * a, v.y * a, v.z * a);
-        }
-        friend constexpr Vector3_of operator*(const double a, const Vector3_of& v)
+        inline friend constexpr Vector3_of operator*(const Vector3_of& v, const double a)
         {
             return Vector3_of(v.x * a, v.y * a, v.z * a);
         }
 
-        friend constexpr Vector3_of operator/(const Vector3_of& v, const double a)
+        inline friend constexpr Vector3_of operator*(const double a, const Vector3_of& v)
+        {
+            return Vector3_of(v.x * a, v.y * a, v.z * a);
+        }
+
+        inline friend constexpr Vector3_of operator/(const Vector3_of& v, const double a)
         {
             // TODO: Consider computing 1/a, and then multiplying.
             // I believe this would gain speed at the cost of accuracy.
@@ -110,13 +111,13 @@ namespace hmc {
         }
 
         // Computes the dot product of two vectors
-        friend constexpr double dot(const Vector3_of& a, const Vector3_of& b)
+        inline friend constexpr double dot(const Vector3_of& a, const Vector3_of& b)
         {
             return a.x * b.x   +   a.y * b.y   +   a.z * b.z;
         }
 
         // Computes the squared magnitude (squared length) of a vector
-        friend constexpr double mag2(const Vector3_of& v)
+        inline friend constexpr double mag2(const Vector3_of& v)
         {
             return dot(v, v);
         }
@@ -126,13 +127,13 @@ namespace hmc {
         // TODO: A constexpr sqrt would allow this and the
         //       functions below to be constexpr.
         //       See also some functions in Plane.
-        friend double mag(const Vector3_of& v)
+        inline friend double mag(const Vector3_of& v)
         {
             return std::sqrt(mag2(v));
         }
 
         // Computes a unit vector in the direction of v
-        friend Vector3_of unit(const Vector3_of& v)
+        inline friend Vector3_of unit(const Vector3_of& v)
         {
             // TODO: Consider using a fast inverse sqrt and then
             // multiplying. This would gain speed at the cost of
@@ -142,7 +143,7 @@ namespace hmc {
         }
 
         // Computes the cross product
-        friend constexpr Vector3_of cross(const Vector3_of& a, const Vector3_of& b)
+        inline friend constexpr Vector3_of cross(const Vector3_of& a, const Vector3_of& b)
         {
             return Vector3_of(
                 a.y * b.z   -   a.z * b.y,
@@ -152,25 +153,25 @@ namespace hmc {
         }
 
         // Computes a unit vector in the direction of the cross product
-        friend Vector3_of unitCross(const Vector3_of& a, const Vector3_of& b)
+        inline friend Vector3_of unitCross(const Vector3_of& a, const Vector3_of& b)
         {
             return unit(cross(a, b));
         }
 
         // Computes the squared distance between two vectors
-        friend constexpr double squaredDistance(const Vector3_of& a, const Vector3_of& b)
+        inline friend constexpr double squaredDistance(const Vector3_of& a, const Vector3_of& b)
         {
             return mag2(a - b);
         }
 
         // Computes the distance between two vectors
-        friend double distance(const Vector3_of& a, const Vector3_of& b)
+        inline friend double distance(const Vector3_of& a, const Vector3_of& b)
         {
             return mag(a - b);
         }
 
         // Computes the midpoint (halfway point) between two vectors
-        friend constexpr Vector3_of midpoint(const Vector3_of& a, const Vector3_of& b)
+        inline friend constexpr Vector3_of midpoint(const Vector3_of& a, const Vector3_of& b)
         {
             return (a + b) * 0.5;
         }
@@ -286,6 +287,13 @@ namespace hmc {
             high.x += padding;
             high.y += padding;
             high.z += padding;
+        }
+
+        inline friend std::ostream&
+        operator<<(std::ostream& out, const BoundingBox& bb)
+        {
+            return out << "Bounding box "
+                        << bb.low << " by " << bb.high;
         }
     };
 }

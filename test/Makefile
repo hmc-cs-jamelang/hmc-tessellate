@@ -2,12 +2,13 @@ CC_INCLUDE =
 LD_FLAGS =
 FLAGS =
 CC_FLAGS += -O3 -Wall -Wextra -std=c++11 $(FLAGS)
-# VORO_INCLUDE = -Wno-unused-parameter -I../../../source/voro++-0.4.6/include/voro++ -L../../../source/voro++-0.4.6/lib -lvoro++
-VORO_INCLUDE = -Wno-unused-parameter -I../../voro++-0.4.6/build/include/voro++ -L../../voro++-0.4.6/build/lib -lvoro++
-COUNT_MALLOCS = -DCOUNT_MALLOCS malloc_count.o -ldl
+# VORO_INCLUDE = -I../../../source/voro++-0.4.6/include/voro++ -L../../../source/voro++-0.4.6/lib -lvoro++ -Wno-unused-parameter
+VORO_INCLUDE = -I../../voro++-0.4.6/build/include/voro++ -L../../voro++-0.4.6/build/lib -lvoro++ -Wno-unused-parameter
+MALLOC_COUNT_DIRECTORY = ../../malloc_count-0.7
+COUNT_MALLOCS = -I$(MALLOC_COUNT_DIRECTORY) -DCOUNT_MALLOCS malloc_count.o -ldl
 #CC = clang++-3.5
 CC = g++
-HMC_DEP = sds.hpp hmc-tessellate.hpp polyhedron.hpp structpool.hpp verification.hpp wrapper.hpp vectormath.hpp cellarray.hpp cellarray-private.hpp
+HMC_DEP = ../src/sds.hpp ../src/hmc-tessellate.hpp ../src/polyhedron.hpp ../src/structpool.hpp ../src/verification.hpp ../src/wrapper.hpp ../src/vectormath.hpp ../src/cellarray.hpp ../src/cellarray-private.hpp
 
 TARGETS = benchmark mallocs
 SUBTARGETS = celerytest
@@ -27,7 +28,7 @@ s =
 all: $(TARGETS)
 
 malloc_count.o:
-	$(CC) malloc_count-0.7/malloc_count.c -o malloc_count.o -c
+	$(CC) $(MALLOC_COUNT_DIRECTORY)/malloc_count.c -o malloc_count.o -c
 
 benchmark: benchmark.cpp $(HMC_DEP)
 	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS) $(VORO_INCLUDE)

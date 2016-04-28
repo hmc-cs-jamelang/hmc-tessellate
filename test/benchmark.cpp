@@ -24,14 +24,14 @@ std::size_t totalCuts = 0,
 auto dont_use_this_name = std::chrono::high_resolution_clock::now();
 auto expansionTime = dont_use_this_name - dont_use_this_name;
 
-#include "utilities.hpp"
-#include "vectormath.hpp"
-#include "hmc-tessellate.hpp"
+#include "../src/utilities.hpp"
+#include "../src/vectormath.hpp"
+#include "../src/hmc-tessellate.hpp"
 
 #include <voro++.hh>
 
 #if defined(COUNT_MALLOCS)
-    #include "malloc_count-0.7/malloc_count.h"
+    #include <malloc_count.h>
 
     void outputMallocs(char const* preamble = "")
     {
