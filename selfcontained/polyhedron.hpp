@@ -22,7 +22,7 @@
 #include "verification.hpp"
 
 namespace hmc {
-    constexpr double TOLERANCE = 1e-14;
+    constexpr double TOLERANCE = 1e-12;
 
     struct HalfEdge;
     struct Face;
@@ -578,6 +578,13 @@ namespace hmc {
             return maximumNeighborDistance_;
         }
 
+        void buildCube(BoundingBox bounds)
+        {
+            buildCube(bounds.low.x, bounds.high.x,
+                      bounds.low.y, bounds.high.y,
+                      bounds.low.z, bounds.high.z);
+        }
+
         /**
          * \brief Constructs the initial polyhedron as a cube
          *
@@ -602,6 +609,8 @@ namespace hmc {
 
             VERIFY_EXIT(approxRelEq(temporarilyComputeVolume(), (xMAX-xmin)*(yMAX-ymin)*(zMAX-zmin), TOLERANCE));
             VERIFICATION_EXIT(verifyIsValidPolyhedron();)
+
+            clear();
 
             // In general, the faces will be referred to using single characters,
             // which are:
