@@ -283,10 +283,10 @@ namespace hmc {
 		/// The spatial data structure used to determine spatial relationships between points.
         SDS spatialStructure_;
 
+    public:
 		/// Default constructor
         Diagram() = default;
 
-    public:
 		/**
 		 * \brief Constructor
 		 *
@@ -365,6 +365,9 @@ namespace hmc {
 		 */
         void initialize()
         {
+            // Potentially unnecessary.
+            boundingBox_.pad();
+
             sortParticlesByMortonIndex();
 
             if (containerShape_.isClear()) {
@@ -372,8 +375,6 @@ namespace hmc {
             }
 
             spatialStructure_.initialize(0, particles_.size(),
-                boundingBox_.low.x,  boundingBox_.low.y,  boundingBox_.low.z,
-                boundingBox_.high.x, boundingBox_.high.y, boundingBox_.high.z,
                 [this](SizeType index) -> Vector3 {
                     return particles_[index];
                 }

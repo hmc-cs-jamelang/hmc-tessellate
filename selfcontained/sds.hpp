@@ -83,15 +83,9 @@ namespace hmc {
         }
 
         template <typename F>
-        void initialize(PointHandle begin, PointHandle end,
-                        double xmin, double xmax,
-                        double ymin, double ymax,
-                        double zmin, double zmax,
-                        F getPointFromHandle)
+        void initialize(PointHandle begin, PointHandle end, F getPointFromHandle)
         {
-            cellarray_.initialize(begin, end,
-                xmin, xmax, ymin, ymax, zmin, zmax,
-                getPointFromHandle);
+            cellarray_.initialize(begin, end, getPointFromHandle);
         }
 
         const std::vector<PointHandle>& search(Vector3 position, double searchRadius) const

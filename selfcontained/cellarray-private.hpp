@@ -55,11 +55,7 @@ namespace hmc { namespace spatial {
 
 	template<typename PointType>
 	template<typename F>
-	void Celery<PointType>::initialize(PointType begin, PointType end,
-									   double xmin, double xmax,
-									   double ymin, double ymax,
-									   double zmin, double zmax,
-									   F getPoint)
+	void Celery<PointType>::initialize(PointType begin, PointType end, F getPoint)
 	{
 		// Clear any existing point information
 		points_.clear();
@@ -71,13 +67,7 @@ namespace hmc { namespace spatial {
 		points_.reserve(size);
 		cells_.reserve(size);
 
-		xmin_ = xmin;
-		xmax_ = xmax;
-		ymin_ = ymin;
-		ymax_ = ymax;
-		zmin_ = zmin;
-		zmax_ = zmax;
-		// computeBoundsFromPoints(begin, end, getPoint);
+		computeBoundsFromPoints(begin, end, getPoint);
 		computeCellData(size);
 
 		delimiters_.reserve(num_cells_dim_ * num_cells_dim_ * num_cells_dim_ + 1);

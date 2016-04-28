@@ -22,7 +22,7 @@
 #include "verification.hpp"
 
 namespace hmc {
-    constexpr double TOLERANCE = 1e-14;
+    constexpr double TOLERANCE = 1e-12;
 
     struct HalfEdge;
     struct Face;
