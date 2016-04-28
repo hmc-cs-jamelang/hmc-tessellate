@@ -1,6 +1,5 @@
 # Specific files
-/test
-/Makefile
+
 
 # Compiled Object files
 *.slo
