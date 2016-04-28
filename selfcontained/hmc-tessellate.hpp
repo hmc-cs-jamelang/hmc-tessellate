@@ -367,7 +367,13 @@ namespace hmc {
         {
             sortParticlesByMortonIndex();
 
+            if (containerShape_.isClear()) {
+                containerShape_.buildCube(boundingBox_);
+            }
+
             spatialStructure_.initialize(0, particles_.size(),
+                boundingBox_.low.x,  boundingBox_.low.y,  boundingBox_.low.z,
+                boundingBox_.high.x, boundingBox_.high.y, boundingBox_.high.z,
                 [this](SizeType index) -> Vector3 {
                     return particles_[index];
                 }

@@ -144,7 +144,9 @@ namespace spatial {
 		 *   Assumes that points have public x, y, and z fields.
 		 */
 		template<typename F>
-		void initialize(PointType begin, PointType end, F getPoint);
+		void initialize(PointType begin, PointType end,
+						double, double, double, double, double, double,
+						F getPoint);
 
 	private:
 		/*
