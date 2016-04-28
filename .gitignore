@@ -1,7 +1,5 @@
 # Specific files
-/test
-/Makefile
-/structpooltest
+
 
 # Compiled Object files
 *.slo
