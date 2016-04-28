@@ -40,31 +40,6 @@ namespace hmc {
 	/// Value used to signify that a particle does not exist in a Diagram.
 	constexpr SizeType NO_INDEX = std::numeric_limits<SizeType>::max();
 
-	// /**
-	//  * \struct Particle
-	//  *
-	//  * \brief
-	//  *   A struct representing a single 3-D particle.
-	//  */
- //    struct Particle {
-	// 	/// An identifier for the particle.
- //        SizeType id;
-
-	// 	/// A 3-D vector representing the position of the particle.
- //        Vector3 position;
-
-	// 	/// Constructor
- //        Particle(SizeType id, double x, double y, double z)
- //            : id(id), position(x, y, z)
- //        { /* Done */ }
-
-	// 	/// Print information about the particle.
- //        friend std::ostream& operator<<(std::ostream& out, const Particle& p)
- //        {
- //            return out << "{id = " << p.id << ", pos = " << p.position << "}";
- //        }
- //    };
-
 	/**
 	 * \struct CellInfo
 	 *
@@ -104,7 +79,7 @@ namespace hmc {
 	 * \brief
 	 *   A Voronoi cell. Used to retrieve various parameters.
 	 *
-	 * /remarks
+	 * \remarks
 	 *   Each cell is only computed once, and the information is cached if it is needed later.
 	 */
     class Cell {
@@ -399,6 +374,14 @@ namespace hmc {
             );
         }
 
+		/**
+		 * \brief
+		 *   Sort particles in Morton order.
+		 *
+		 * \details
+		 *   Morton order (or Z-order) is a method of sorting multidimensional data according
+		 *   to a single dimension which preserves locality of data points.
+		 */
         void sortParticlesByMortonIndex()
         {
             const BoundingBox& bb = boundingBox_;
