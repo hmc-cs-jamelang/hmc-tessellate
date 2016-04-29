@@ -4,7 +4,7 @@ Given a set of particles, a Voronoi tessellation divides a space into Voronoi ce
 cell contains exactly one particle and all of the space closer to that particle than any other.
 `hmc-tessellate` aims to compute 3D Voronoi tessellations.
 
-![alt text](https://github.com/hmc-cs-jamelang/hmc-tessellate/images/voronoithing.png)
+![alt text](https://github.com/hmc-cs-jamelang/hmc-tessellate/blob/master/images/voronoithing.png)
 
 ## Initializing a Diagram
 
