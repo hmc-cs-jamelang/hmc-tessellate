@@ -370,7 +370,6 @@ namespace hmc {
 		 * \brief
 		 *   Add a Particle to the Diagram.
 		 *
-		 * \param[in]  id     An identifier for the Particle
 		 * \param[in]  x      The x-coordinate of the Particle
 		 * \param[in]  y      The y-coordinate of the Particle
 		 * \param[in]  z      The z-coordinate of the Particle
@@ -384,6 +383,16 @@ namespace hmc {
             addParticle(Vector3 {x, y, z}, group);
         }
 
+		/**
+		 * \brief
+		 *   Add a Particle to the Diagram.
+		 *
+		 * \param[in]  position  A Vector3 containing the {x,y,z} coordinates of the particle.
+		 * \param[in]  group     The group containing the Particle. Optional.
+		 *
+		 * \remarks
+		 *   Should only be used before the initialize function is called.
+		 */
         void addParticle(Vector3 position, int group = DEFAULT_GROUP)
         {
             particles_.push_back(position);

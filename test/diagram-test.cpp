@@ -6,6 +6,7 @@
  * Does NOT test for correct results, simply that the interface works.
  */
 
+#include <algorithm>
 #include <cstdlib>
 #include <vector>
 #include "../src/hmc-tessellate.hpp"
@@ -516,22 +517,28 @@ bool sourcegroup_test()
 		all.push_back(i);
 	}
 
-	cout << "Red particles: ";
-	ITERATE_AND_PRINT(redVect);
+	auto fillGroupVector = [&](std::vector<int>& container, SourceGroup group) {
+		for (auto& i : group) {
+			container.push_back(((Cell) d.getCell(i)).getOriginalIndex());
+		}
+		std::sort(container.begin(), container.end());
+	};
 
-	cout << "Found particles: ";
-	ITERATE_AND_PRINT(d.sourceGroups(red));
+	vector<int> redGroup, blueGroup, allGroup;
+	fillGroupVector(redGroup, d.sourceGroups(red));
+	fillGroupVector(blueGroup, d.sourceGroups(blue));
+	fillGroupVector(allGroup, d.sourceGroups(red, blue));
 
 	cout << "Checking correctness of red source group: ";
-	FAIL_IF_DIFFERENT(d.sourceGroups(red),redVect);
+	FAIL_IF_DIFFERENT(redGroup,redVect);
 	cout << "COMPLETE" << endl;
 
 	cout << "Checking correctness of blue source group: ";
-	FAIL_IF_DIFFERENT(d.sourceGroups(blue),blueVect);
+	FAIL_IF_DIFFERENT(blueGroup,blueVect);
 	cout << "COMPLETE" << endl;
 
 	cout << "Checking correctness of red and blue source group: ";
-	FAIL_IF_DIFFERENT(d.sourceGroups(red, blue),all);
+	FAIL_IF_DIFFERENT(allGroup,all);
 	cout << "COMPLETE" << endl;
 
 	return true;
