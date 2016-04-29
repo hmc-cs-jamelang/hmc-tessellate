@@ -13,6 +13,7 @@
 #include <iostream>
 #include <vector>
 #include <limits>
+#include <assert.h>
 
 #include "vectormath.hpp"
 #include "polyhedron.hpp"
@@ -81,6 +82,7 @@ namespace hmc {
         CellInfo& withTargetGroup(const TargetGroup& targetGroup)
         {
             this->targetGroup = &targetGroup;
+            return *this;
         }
     };
 
@@ -306,6 +308,9 @@ namespace hmc {
         // using SDS = ShellArray<SizeType>;
 
     protected:
+        /// Whether or not the diagram has been readied for Voronoi computations
+        bool initialized_ = false;
+
 		/// The Polyhedron that represents the container of the points.
         Polyhedron containerShape_;
 
@@ -376,6 +381,18 @@ namespace hmc {
             return particles_.size();
         }
 
+        void clear()
+        {
+            initialized_ = false;
+            boundingBox_.reset();
+
+            particles_.clear();
+            groups_.clear();
+            originalIndices_.clear();
+            internalIndices_.clear();
+            spatialStructure_.clear();
+        }
+
 		/**
 		 * \brief
 		 *   Add a Particle to the Diagram.
@@ -419,8 +436,15 @@ namespace hmc {
 		 */
         void initialize()
         {
-            // Potentially unnecessary.
-            // boundingBox_.pad();
+            // We are not certain whether or not padding
+            // is a good or a bad idea.
+            // It does not appear to be necessary, so,
+            // we are saying that one should supply
+            // their own bounding box if padding is desired.
+            // However, here's the relevant call:
+            //boundingBox_.pad(1e-6);
+
+            assert(!initialized_ && "Diagram does not support multiple initializations");
 
             sortParticlesByMortonIndex();
 
@@ -433,6 +457,8 @@ namespace hmc {
                     return particles_[index];
                 }
             );
+
+            initialized_ = true;
         }
 
 		/**
@@ -561,6 +587,8 @@ namespace hmc {
 		 */
         CellInfo getCell(SizeType index) const
         {
+            assert(initialized_ &&
+                "Remember to call diagram.initialize() before doing Voronoi computations");
             VERIFY(index < particles_.size());
             auto x = CellInfo(*this, index, particles_[index]);
             return x;
@@ -578,6 +606,8 @@ namespace hmc {
 		 */
         CellInfo getCell(SizeType index, const TargetGroup& targetGroup) const
         {
+            assert(initialized_ &&
+                "Remember to call diagram.initialize() before doing Voronoi computations");
             VERIFY(index < particles_.size());
             return CellInfo(*this, index, particles_[index], targetGroup);
         }
@@ -594,6 +624,8 @@ namespace hmc {
 		 */
         CellInfo getCell(SizeType index, double searchRadius) const
         {
+            assert(initialized_ &&
+                "Remember to call diagram.initialize() before doing Voronoi computations");
             VERIFY(index < particles_.size());
             VERIFY(searchRadius > 0);
             return CellInfo(*this, index, particles_[index], searchRadius);
@@ -612,6 +644,8 @@ namespace hmc {
 		 */
         CellInfo getCell(SizeType index, const TargetGroup& targetGroup, double searchRadius) const
         {
+            assert(initialized_ &&
+                "Remember to call diagram.initialize() before doing Voronoi computations");
             VERIFY(index < particles_.size());
             VERIFY(searchRadius > 0);
             return CellInfo(*this, index, particles_[index], targetGroup, searchRadius);
@@ -633,6 +667,8 @@ namespace hmc {
 		 */
         CellInfo getCell(double x, double y, double z) const
         {
+            assert(initialized_ &&
+                "Remember to call diagram.initialize() before doing Voronoi computations");
             VERIFY(index < particles_.size());
             return CellInfo(*this, NO_INDEX, {x, y, z});
         }
@@ -654,6 +690,8 @@ namespace hmc {
 		 */
         CellInfo getCell(double x, double y, double z, const TargetGroup& targetGroup) const
         {
+            assert(initialized_ &&
+                "Remember to call diagram.initialize() before doing Voronoi computations");
             VERIFY(index < particles_.size());
             return CellInfo(*this, NO_INDEX, {x, y, z}, targetGroup);
         }
@@ -675,6 +713,8 @@ namespace hmc {
 		 */
         CellInfo getCell(double x, double y, double z, double searchRadius) const
         {
+            assert(initialized_ &&
+                "Remember to call diagram.initialize() before doing Voronoi computations");
             VERIFY(index < particles_.size());
             VERIFY(searchRadius > 0);
             return CellInfo(*this, NO_INDEX, {x, y, z}, searchRadius);
@@ -698,6 +738,8 @@ namespace hmc {
 		 */
         CellInfo getCell(double x, double y, double z, const TargetGroup& targetGroup, double searchRadius) const
         {
+            assert(initialized_ &&
+                "Remember to call diagram.initialize() before doing Voronoi computations");
             VERIFY(index < particles_.size());
             VERIFY(searchRadius > 0);
             return CellInfo(*this, NO_INDEX, {x, y, z}, targetGroup, searchRadius);
