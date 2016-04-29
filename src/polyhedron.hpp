@@ -375,19 +375,19 @@ namespace hmc {
          *        used when Verification is turned on.
          *
          */
-        void verifyIsValidPolyhedron()
+        bool isValid()
         {
-            VERIFY(root_ != INVALID_EDGE);
+            if (!(root_ != INVALID_EDGE)) {return false;}
             for (auto eit = edges_.begin(); eit != edges_.end(); ++eit) {
-                VERIFY(eit->target != INVALID_VERTEX);
-                VERIFY(flip(eit->flip) == eit.index());
-                VERIFY(face(eit->next) == eit->face);
-                VERIFY(face(eit->flip) != eit->face);
-                VERIFY(flip(eit->next) != INVALID_EDGE);
-                VERIFY(source(eit->next) == eit->target);
+                if (!(eit->target != INVALID_VERTEX)) {return false;}
+                if (!(flip(eit->flip) == eit.index())) {return false;}
+                if (!(face(eit->next) == eit->face)) {return false;}
+                if (!(face(eit->flip) != eit->face)) {return false;}
+                if (!(flip(eit->next) != INVALID_EDGE)) {return false;}
+                if (!(source(eit->next) == eit->target)) {return false;}
             }
             for (auto fit = faces_.begin(); fit != faces_.end(); ++fit) {
-                VERIFY(face(fit->startingEdge) == fit.index());
+                if (!(face(fit->startingEdge) == fit.index())) {return false;}
             }
 
 
@@ -395,39 +395,42 @@ namespace hmc {
             std::unordered_set<VertexIndex> reachableVertices;
             std::unordered_set<FaceIndex> reachableFaces;
 
-            std::function<void(VertexIndex)> markVertex = [&](VertexIndex vi) -> void {
+            std::function<bool(VertexIndex)> markVertex = [&](VertexIndex vi) -> bool {
+                if (!(vertices_.active(vi))) {return false;}
                 reachableVertices.insert(vi);
+                return true;
             };
 
-            std::function<void(EdgeIndex)> markEdge = [&](EdgeIndex ei) -> void {
-                if (reachableEdges.find(ei) != reachableEdges.end()) { return; }
+            std::function<bool(EdgeIndex)> markEdge = [&](EdgeIndex ei) -> bool {
+                if (reachableEdges.find(ei) != reachableEdges.end()) { return true; }
                 reachableEdges.insert(ei);
-                VERIFY(edges_.active(ei));
-                markEdge(flip(ei));
-                markEdge(next(ei));
-                markVertex(target(ei));
+                if (!edges_.active(ei)) {return false;}
+                if (!markEdge(flip(ei))) {return false;}
+                if (!markEdge(next(ei))) {return false;}
+                if (!markVertex(target(ei))) {return false;}
                 reachableFaces.insert(face(ei));
+                return true;
             };
 
 
-            markEdge(root_);
+            if (!markEdge(root_)) {return false;}
 
-            for (auto ei : reachableEdges) { VERIFY(edges_.active(ei)); }
-            for (auto vi : reachableVertices) { VERIFY(vertices_.active(vi)); }
-            for (auto fi : reachableFaces) { VERIFY(faces_.active(fi)); }
+            for (auto ei : reachableEdges) { if (!(edges_.active(ei))) {return false;} }
+            for (auto vi : reachableVertices) { if (!(vertices_.active(vi))) {return false;} }
+            for (auto fi : reachableFaces) { if (!(faces_.active(fi))) {return false;} }
 
             for (auto e = edges_.begin(); e != edges_.end(); ++e) {
-                VERIFY(reachableEdges.find(e.index()) != reachableEdges.end());
+                if (!(reachableEdges.find(e.index()) != reachableEdges.end())) {return false;}
             }
             for (auto v = vertices_.begin(); v != vertices_.end(); ++v) {
-                VERIFY(reachableVertices.find(v.index()) != reachableVertices.end());
+                if (!(reachableVertices.find(v.index()) != reachableVertices.end())) {return false;}
             }
             for (auto f = faces_.begin(); f != faces_.end(); ++f) {
-                VERIFY(reachableFaces.find(f.index()) != reachableFaces.end());
+                if (!(reachableFaces.find(f.index()) != reachableFaces.end())) {return false;}
             }
 
             // It's easy to get the handedness wrong (-> negative volume).
-            VERIFY(temporarilyComputeVolume() > 0);
+            if (!(temporarilyComputeVolume() > 0)) {return false;}
 
             if (!isClear()) {
                 // Checking the Euler characteristic, which is probably
@@ -435,8 +438,10 @@ namespace hmc {
                 auto E = std::distance(edges_.begin(), edges_.end());
                 auto V = std::distance(vertices_.begin(), vertices_.end());
                 auto F = std::distance(faces_.begin(), faces_.end());
-                VERIFY(V - E/2 + F == 2);
+                if (!(V - E/2 + F == 2)) {return false;}
             }
+
+            return true;
         }
 
 
@@ -608,7 +613,7 @@ namespace hmc {
             VERIFY(zmin < zMAX);
 
             VERIFY_EXIT(approxRelEq(temporarilyComputeVolume(), (xMAX-xmin)*(yMAX-ymin)*(zMAX-zmin), TOLERANCE));
-            VERIFICATION_EXIT(verifyIsValidPolyhedron();)
+            VERIFY_EXIT(isValid());
 
             clear();
 
@@ -1007,7 +1012,7 @@ namespace hmc {
          */
         bool cutWithPlane(const int faceid, const Plane plane)
         {
-            VERIFICATION_INVARIANT(verifyIsValidPolyhedron();)
+            VERIFY_INVARIANT(isValid());
             VERIFY(faceData_.size() == 0);
 
             auto location = [&](VertexIndex vi) -> Plane::Location {

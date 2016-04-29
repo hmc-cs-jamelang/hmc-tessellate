@@ -42,12 +42,12 @@ namespace hmc {
 	constexpr SizeType NO_INDEX = std::numeric_limits<SizeType>::max();
 
 	/**
-	 * \struct CellInfo
+	 * \struct CellConstructor
 	 *
 	 * \brief
 	 *   Contains all the information for constructing a Cell in a Diagram.
 	 */
-    struct CellInfo {
+    struct CellConstructor {
 		/// A pointer to the Diagram that contains the Cell.
         const Diagram* diagram;
 
@@ -64,22 +64,22 @@ namespace hmc {
 		const TargetGroup* targetGroup;
 
 		/// Constructor
-        CellInfo(const Diagram& diagram, SizeType index, Vector3 position, double searchRadius = NO_RADIUS)
+        CellConstructor(const Diagram& diagram, SizeType index, Vector3 position, double searchRadius = NO_RADIUS)
             : diagram(&diagram), index(index), position(position), searchRadius(searchRadius), targetGroup(nullptr)
         { /* Done */ }
 
 		/// Constructor
-        CellInfo(const Diagram& diagram, SizeType index, Vector3 position, const TargetGroup& targetGroup, double searchRadius = NO_RADIUS)
+        CellConstructor(const Diagram& diagram, SizeType index, Vector3 position, const TargetGroup& targetGroup, double searchRadius = NO_RADIUS)
             : diagram(&diagram), index(index), position(position), searchRadius(searchRadius), targetGroup(&targetGroup)
         { /* Done */ }
 
-        CellInfo& withSearchRadius(double searchRadius)
+        CellConstructor& withSearchRadius(double searchRadius)
         {
             this->searchRadius = searchRadius;
             return *this;
         }
 
-        CellInfo& withTargetGroup(const TargetGroup& targetGroup)
+        CellConstructor& withTargetGroup(const TargetGroup& targetGroup)
         {
             this->targetGroup = &targetGroup;
             return *this;
@@ -164,19 +164,19 @@ namespace hmc {
 		/**
 		 * \brief Constructor
 		 *
-		 * \param[in]  info  A CellInfo object
+		 * \param[in]  info  A CellConstructor object
 		 *
 		 * \remark
-		 *   Creates the Cell specified by the CellInfo.
+		 *   Creates the Cell specified by the CellConstructor.
 		 */
-		Cell(const CellInfo info)
+		Cell(const CellConstructor info)
 			: Cell()
 		{
 			*this = info;
 		}
 
 		/// Assignment operator
-        Cell& operator=(const CellInfo info)
+        Cell& operator=(const CellConstructor info)
         {
             clear();
             diagram_ = info.diagram;
@@ -578,104 +578,103 @@ namespace hmc {
 
 		/**
 		 * \brief
-		 *   Get the CellInfo for a Particle.
+		 *   Get the CellConstructor for a Particle.
 		 *
 		 * \param[in]  index  The index of the Particle
 		 *
 		 * \return
-		 *   The CellInfo for the particle.
+		 *   The CellConstructor for the particle.
 		 */
-        CellInfo getCell(SizeType index) const
+        CellConstructor getCell(SizeType index) const
         {
             assert(initialized_ &&
                 "Remember to call diagram.initialize() before doing Voronoi computations");
             VERIFY(index < particles_.size());
-            auto x = CellInfo(*this, index, particles_[index]);
+            auto x = CellConstructor(*this, index, particles_[index]);
             return x;
         }
 
 		/**
 		 * \brief
-		 *   Get the CellInfo for a Particle.
+		 *   Get the CellConstructor for a Particle.
 		 *
 		 * \param[in]  index        The index of the Particle
 		 * \param[in]  targetGroup  The TargetGroup for cutting the Cell
 		 *
 		 * \return
-		 *   The CellInfo for the particle.
+		 *   The CellConstructor for the particle.
 		 */
-        CellInfo getCell(SizeType index, const TargetGroup& targetGroup) const
+        CellConstructor getCell(SizeType index, const TargetGroup& targetGroup) const
         {
             assert(initialized_ &&
                 "Remember to call diagram.initialize() before doing Voronoi computations");
             VERIFY(index < particles_.size());
-            return CellInfo(*this, index, particles_[index], targetGroup);
+            return CellConstructor(*this, index, particles_[index], targetGroup);
         }
 
 		/**
 		 * \brief
-		 *   Get the CellInfo for a Particle using a specfic search radius.
+		 *   Get the CellConstructor for a Particle using a specfic search radius.
 		 *
 		 * \param[in]  index         The index of the Particle
 		 * \param[in]  searchRadius  The search radius to use for finding neighbors of the Particle
 		 *
 		 * \return
-		 *   The CellInfo for the particle.
+		 *   The CellConstructor for the particle.
 		 */
-        CellInfo getCell(SizeType index, double searchRadius) const
+        CellConstructor getCell(SizeType index, double searchRadius) const
         {
             assert(initialized_ &&
                 "Remember to call diagram.initialize() before doing Voronoi computations");
             VERIFY(index < particles_.size());
             VERIFY(searchRadius > 0);
-            return CellInfo(*this, index, particles_[index], searchRadius);
+            return CellConstructor(*this, index, particles_[index], searchRadius);
         }
 
 		/**
 		 * \brief
-		 *   Get the CellInfo for a Particle using a specfic search radius.
+		 *   Get the CellConstructor for a Particle using a specfic search radius.
 		 *
 		 * \param[in]  index         The index of the Particle
 		 * \param[in]  targetGroup   The TargetGroup for cutting the Cell
 		 * \param[in]  searchRadius  The search radius to use for finding neighbors of the Particle
 		 *
 		 * \return
-		 *   The CellInfo for the particle.
+		 *   The CellConstructor for the particle.
 		 */
-        CellInfo getCell(SizeType index, const TargetGroup& targetGroup, double searchRadius) const
+        CellConstructor getCell(SizeType index, const TargetGroup& targetGroup, double searchRadius) const
         {
             assert(initialized_ &&
                 "Remember to call diagram.initialize() before doing Voronoi computations");
             VERIFY(index < particles_.size());
             VERIFY(searchRadius > 0);
-            return CellInfo(*this, index, particles_[index], targetGroup, searchRadius);
+            return CellConstructor(*this, index, particles_[index], targetGroup, searchRadius);
         }
 
 		/**
 		 * \brief
-		 *   Get the CellInfo for a hypothetical particle.
+		 *   Get the CellConstructor for a hypothetical particle.
 		 *
 		 * \param[in]  x  The x-coordinate of the particle
 		 * \param[in]  y  The y-coordinate of the particle
 		 * \param[in]  z  The z-coordinate of the particle
 		 *
 		 * \return
-		 *   The CellInfo for the particle.
+		 *   The CellConstructor for the particle.
 		 *
 		 * \remark
 		 *   Used to find a cell for a particle that is not actually in the Diagram.
 		 */
-        CellInfo getCell(double x, double y, double z) const
+        CellConstructor getCell(double x, double y, double z) const
         {
             assert(initialized_ &&
                 "Remember to call diagram.initialize() before doing Voronoi computations");
-            VERIFY(index < particles_.size());
-            return CellInfo(*this, NO_INDEX, {x, y, z});
+            return CellConstructor(*this, NO_INDEX, {x, y, z});
         }
 
 		/**
 		 * \brief
-		 *   Get the CellInfo for a Particle.
+		 *   Get the CellConstructor for a Particle.
 		 *
 		 * \param[in]  x            The x-coordinate of the particle
 		 * \param[in]  y            The y-coordinate of the particle
@@ -683,22 +682,21 @@ namespace hmc {
 		 * \param[in]  targetGroup  The TargetGroup for cutting the Cell
 		 *
 		 * \return
-		 *   The CellInfo for the particle.
+		 *   The CellConstructor for the particle.
 		 *
 		 * \remark
 		 *   Used to find a cell for a particle that is not actually in the Diagram.
 		 */
-        CellInfo getCell(double x, double y, double z, const TargetGroup& targetGroup) const
+        CellConstructor getCell(double x, double y, double z, const TargetGroup& targetGroup) const
         {
             assert(initialized_ &&
                 "Remember to call diagram.initialize() before doing Voronoi computations");
-            VERIFY(index < particles_.size());
-            return CellInfo(*this, NO_INDEX, {x, y, z}, targetGroup);
+            return CellConstructor(*this, NO_INDEX, {x, y, z}, targetGroup);
         }
 
 		/**
 		 * \brief
-		 *   Get the CellInfo for a Particle using a specfic search radius.
+		 *   Get the CellConstructor for a Particle using a specfic search radius.
 		 *
 		 * \param[in]  x             The x-coordinate of the particle
 		 * \param[in]  y             The y-coordinate of the particle
@@ -706,23 +704,22 @@ namespace hmc {
 		 * \param[in]  searchRadius  The search radius to use for finding neighbors of the Particle
 		 *
 		 * \return
-		 *   The CellInfo for the particle.
+		 *   The CellConstructor for the particle.
 		 *
 		 * \remark
 		 *   Used to find a cell for a particle that is not actually in the Diagram.
 		 */
-        CellInfo getCell(double x, double y, double z, double searchRadius) const
+        CellConstructor getCell(double x, double y, double z, double searchRadius) const
         {
             assert(initialized_ &&
                 "Remember to call diagram.initialize() before doing Voronoi computations");
-            VERIFY(index < particles_.size());
             VERIFY(searchRadius > 0);
-            return CellInfo(*this, NO_INDEX, {x, y, z}, searchRadius);
+            return CellConstructor(*this, NO_INDEX, {x, y, z}, searchRadius);
         }
 
 		/**
 		 * \brief
-		 *   Get the CellInfo for a Particle using a specfic search radius.
+		 *   Get the CellConstructor for a Particle using a specfic search radius.
 		 *
 		 * \param[in]  x             The x-coordinate of the particle
 		 * \param[in]  y             The y-coordinate of the particle
@@ -731,18 +728,17 @@ namespace hmc {
 		 * \param[in]  searchRadius  The search radius to use for finding neighbors of the Particle
 		 *
 		 * \return
-		 *   The CellInfo for the particle.
+		 *   The CellConstructor for the particle.
 		 *
 		 * \remark
 		 *   Used to find a cell for a particle that is not actually in the Diagram.
 		 */
-        CellInfo getCell(double x, double y, double z, const TargetGroup& targetGroup, double searchRadius) const
+        CellConstructor getCell(double x, double y, double z, const TargetGroup& targetGroup, double searchRadius) const
         {
             assert(initialized_ &&
                 "Remember to call diagram.initialize() before doing Voronoi computations");
-            VERIFY(index < particles_.size());
             VERIFY(searchRadius > 0);
-            return CellInfo(*this, NO_INDEX, {x, y, z}, targetGroup, searchRadius);
+            return CellConstructor(*this, NO_INDEX, {x, y, z}, targetGroup, searchRadius);
         }
 
 		/**
