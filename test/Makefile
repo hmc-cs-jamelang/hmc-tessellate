@@ -6,6 +6,8 @@ CC_FLAGS += -O3 -Wall -Wextra -std=c++11 $(FLAGS)
 VORO_INCLUDE = -I../../voro++-0.4.6/build/include/voro++ -L../../voro++-0.4.6/build/lib -lvoro++ -Wno-unused-parameter
 MALLOC_COUNT_DIRECTORY = ../../malloc_count-0.7
 COUNT_MALLOCS = -I$(MALLOC_COUNT_DIRECTORY) -DCOUNT_MALLOCS malloc_count.o -ldl
+HMC_DEP = ../src/sds.hpp ../src/hmc-tessellate.hpp ../src/polyhedron.hpp ../src/structpool.hpp ../src/verification.hpp ../src/wrapper.hpp ../src/vectormath.hpp ../src/cellarray.hpp ../src/cellarray-private.hpp
+
 #CC = clang++-3.5
 CC = g++
 
@@ -21,28 +23,26 @@ n = 0
 # Similarly, the random seed used in "make test"
 s =
 
-.PHONY: all clean again test hmc
+.PHONY: all clean again test
 
 all: $(TARGETS)
-
-hmc: ../src/sds.hpp ../src/hmc-tessellate.hpp ../src/polyhedron.hpp ../src/structpool.hpp ../src/verification.hpp ../src/wrapper.hpp ../src/vectormath.hpp ../src/cellarray.hpp ../src/cellarray-private.hpp
 
 malloc_count.o:
 	$(CC) $(MALLOC_COUNT_DIRECTORY)/malloc_count.c -o malloc_count.o -c
 
-benchmark: benchmark.cpp hmc
+benchmark: benchmark.cpp $(HMC_DEP)
 	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS) $(VORO_INCLUDE)
 
-mallocs: benchmark.cpp malloc_count.o hmc
+mallocs: benchmark.cpp malloc_count.o $(HMC_DEP)
 	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS) $(VORO_INCLUDE) $(COUNT_MALLOCS)
 
 celerytest: celerytest.cpp ../src/cellarray.hpp ../src/cellarray-private.hpp
 	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS)
 
-diagramtest: diagram-test.cpp hmc
+diagramtest: diagram-test.cpp $(HMC_DEP)
 	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS)
 
-simpletest: simpletest.cpp hmc
+simpletest: simpletest.cpp $(HMC_DEP)
 	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS)
 
 test: benchmark

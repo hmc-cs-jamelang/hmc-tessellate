@@ -60,16 +60,16 @@ namespace hmc {
         double searchRadius;
 
 		/// The target group of the Cell.
-		TargetGroup targetGroup;
+		const TargetGroup* targetGroup;
 
 		/// Constructor
         CellInfo(const Diagram& diagram, SizeType index, Vector3 position, double searchRadius = NO_RADIUS)
-            : diagram(&diagram), index(index), position(position), searchRadius(searchRadius)
+            : diagram(&diagram), index(index), position(position), searchRadius(searchRadius), targetGroup(nullptr)
         { /* Done */ }
 
 		/// Constructor
-        CellInfo(const Diagram& diagram, SizeType index, Vector3 position, TargetGroup targetGroup, double searchRadius = NO_RADIUS)
-            : diagram(&diagram), index(index), position(position), searchRadius(searchRadius), targetGroup(targetGroup)
+        CellInfo(const Diagram& diagram, SizeType index, Vector3 position, const TargetGroup& targetGroup, double searchRadius = NO_RADIUS)
+            : diagram(&diagram), index(index), position(position), searchRadius(searchRadius), targetGroup(&targetGroup)
         { /* Done */ }
     };
 
@@ -105,14 +105,14 @@ namespace hmc {
         double searchRadius_;
 
 		/// The target group of the Cell.
-		TargetGroup target_group_;
+		const TargetGroup* targetGroup_;
 
 		/// The ExpandingSearch object used to search for neighbors of the point in this Cell.
         SDS::ExpandingSearch search_;
 
     public:
 		/// Default constructor
-        Cell() : diagram_(nullptr), polyComputed_(false) {}
+        Cell() : diagram_(nullptr), polyComputed_(false), targetGroup_(nullptr) {}
 
 		/**
 		 * \brief Constructor
@@ -127,7 +127,7 @@ namespace hmc {
 		 */
         Cell(const Diagram& diagram, SizeType index, Vector3 position, double searchRadius = NO_RADIUS)
             : diagram_(&diagram), index_(index),
-              position_(position), polyComputed_(false), searchRadius_(searchRadius)
+              position_(position), polyComputed_(false), searchRadius_(searchRadius), targetGroup_(nullptr)
         { /* Done */ }
 
 		/**
@@ -142,10 +142,10 @@ namespace hmc {
 		 * \remarks
 		 *   If no search radius is given, neighbors will be found using an ExpaningSearch.
 		 */
-        Cell(const Diagram& diagram, SizeType index, Vector3 position, TargetGroup targetGroup, double searchRadius = NO_RADIUS)
+        Cell(const Diagram& diagram, SizeType index, Vector3 position, const TargetGroup& targetGroup, double searchRadius = NO_RADIUS)
             : diagram_(&diagram), index_(index),
               position_(position), polyComputed_(false), searchRadius_(searchRadius),
-			  target_group_(targetGroup)
+			  targetGroup_(&targetGroup)
         { /* Done */ }
 
 		/**
@@ -169,7 +169,7 @@ namespace hmc {
             diagram_ = info.diagram;
             index_ = info.index;
             position_ = info.position;
-			target_group_ = info.targetGroup;
+			targetGroup_ = info.targetGroup;
             searchRadius_ = info.searchRadius;
             return *this;
         }
@@ -180,7 +180,6 @@ namespace hmc {
             // diagram_ = nullptr;
             poly_.clear();
             polyComputed_ = false;
-			target_group_.clear();
         }
 
         /**
@@ -552,7 +551,8 @@ namespace hmc {
         CellInfo getCell(SizeType index) const
         {
             VERIFY(index < particles_.size());
-            return CellInfo(*this, index, particles_[index]);
+            auto x = CellInfo(*this, index, particles_[index]);
+            return x;
         }
 
 		/**
@@ -565,7 +565,7 @@ namespace hmc {
 		 * \return
 		 *   The CellInfo for the particle.
 		 */
-        CellInfo getCell(SizeType index, TargetGroup targetGroup) const
+        CellInfo getCell(SizeType index, const TargetGroup& targetGroup) const
         {
             VERIFY(index < particles_.size());
             return CellInfo(*this, index, particles_[index], targetGroup);
@@ -599,7 +599,7 @@ namespace hmc {
 		 * \return
 		 *   The CellInfo for the particle.
 		 */
-        CellInfo getCell(SizeType index, TargetGroup targetGroup, double searchRadius) const
+        CellInfo getCell(SizeType index, const TargetGroup& targetGroup, double searchRadius) const
         {
             VERIFY(index < particles_.size());
             VERIFY(searchRadius > 0);
@@ -641,7 +641,7 @@ namespace hmc {
 		 * \remark
 		 *   Used to find a cell for a particle that is not actually in the Diagram.
 		 */
-        CellInfo getCell(double x, double y, double z, TargetGroup targetGroup) const
+        CellInfo getCell(double x, double y, double z, const TargetGroup& targetGroup) const
         {
             VERIFY(index < particles_.size());
             return CellInfo(*this, NO_INDEX, {x, y, z}, targetGroup);
@@ -685,7 +685,7 @@ namespace hmc {
 		 * \remark
 		 *   Used to find a cell for a particle that is not actually in the Diagram.
 		 */
-        CellInfo getCell(double x, double y, double z, TargetGroup targetGroup, double searchRadius) const
+        CellInfo getCell(double x, double y, double z, const TargetGroup& targetGroup, double searchRadius) const
         {
             VERIFY(index < particles_.size());
             VERIFY(searchRadius > 0);
@@ -762,7 +762,7 @@ namespace hmc {
 		 *   Uses the efficient expanding search strategy to find neighbors if searchRadius is not specified.
 		 */
         void computeVoronoiCell(SizeType particleIndex, Vector3 position, Polyhedron& poly,
-                                SDS::ExpandingSearch& search, TargetGroup& targetGroup,
+                                SDS::ExpandingSearch& search, const TargetGroup* targetGroup= nullptr,
 								double searchRadius = NO_RADIUS) const
         {
             VERIFY(poly.isClear());
@@ -776,7 +776,7 @@ namespace hmc {
                         !search.done();
     				    search.expandSearch(searchRadius = poly.maximumNeighborDistance()))
                 {
-					if (targetGroup.empty()) {
+					if (targetGroup == nullptr) {
 						for (SizeType index : search) {
 							Vector3 shiftedPosition = particles_[index] - position;
 							if (index != particleIndex
@@ -795,7 +795,7 @@ namespace hmc {
 							Vector3 shiftedPosition = particles_[index] - position;
 							if (index != particleIndex
 								&& mag2(shiftedPosition) <= searchRadius
-								&& targetGroup.count(groups_[index]) != 0)
+								&& targetGroup->count(groups_[index]) != 0)
 							{
 								poly.cutWithPlane(
 									originalIndices_[index],
@@ -809,7 +809,7 @@ namespace hmc {
 
             // Otherwise (given radius), do a basic search
             else {
-				if (targetGroup.empty()) {
+				if (targetGroup == nullptr) {
 					for (SizeType index : spatialStructure_.search(position, searchRadius)) {
 						if (index != particleIndex) {
 							poly.cutWithPlane(
@@ -822,7 +822,7 @@ namespace hmc {
 
 				else {
 					for (SizeType index : spatialStructure_.search(position, searchRadius)) {
-						if (index != particleIndex && targetGroup.count(groups_[index]) != 0) {
+						if (index != particleIndex && targetGroup->count(groups_[index]) != 0) {
 							poly.cutWithPlane(
 								originalIndices_[index],
 								Plane::halfwayFromOriginTo(particles_[index] - position)
@@ -838,7 +838,7 @@ namespace hmc {
 	/// A wrapper function for calling Diagram::ComputeVoronoiCell.
     void Cell::computeVoronoiCell()
     {
-        diagram_->computeVoronoiCell(index_, position_, poly_, search_, target_group_, searchRadius_);
+        diagram_->computeVoronoiCell(index_, position_, poly_, search_, targetGroup_, searchRadius_);
     }
 
 	/**
