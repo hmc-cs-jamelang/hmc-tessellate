@@ -71,6 +71,17 @@ namespace hmc {
         CellInfo(const Diagram& diagram, SizeType index, Vector3 position, const TargetGroup& targetGroup, double searchRadius = NO_RADIUS)
             : diagram(&diagram), index(index), position(position), searchRadius(searchRadius), targetGroup(&targetGroup)
         { /* Done */ }
+
+        CellInfo& withSearchRadius(double searchRadius)
+        {
+            this->searchRadius = searchRadius;
+            return *this;
+        }
+
+        CellInfo& withTargetGroup(const TargetGroup& targetGroup)
+        {
+            this->targetGroup = &targetGroup;
+        }
     };
 
 	/**
@@ -409,7 +420,7 @@ namespace hmc {
         void initialize()
         {
             // Potentially unnecessary.
-            boundingBox_.pad();
+            // boundingBox_.pad();
 
             sortParticlesByMortonIndex();
 
