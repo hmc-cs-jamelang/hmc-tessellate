@@ -3,6 +3,8 @@
 /test/mallocs
 /test/celerytest
 /test/structpooltest
+/test/diagramtest
+/test/simpletest
 
 # Compiled Object files
 *.slo

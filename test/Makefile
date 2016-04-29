@@ -8,10 +8,8 @@ MALLOC_COUNT_DIRECTORY = ../../malloc_count-0.7
 COUNT_MALLOCS = -I$(MALLOC_COUNT_DIRECTORY) -DCOUNT_MALLOCS malloc_count.o -ldl
 #CC = clang++-3.5
 CC = g++
-HMC_DEP = ../src/sds.hpp ../src/hmc-tessellate.hpp ../src/polyhedron.hpp ../src/structpool.hpp ../src/verification.hpp ../src/wrapper.hpp ../src/vectormath.hpp ../src/cellarray.hpp ../src/cellarray-private.hpp
 
-TARGETS = benchmark mallocs
-SUBTARGETS = celerytest
+TARGETS = benchmark mallocs celerytest diagramtest simpletest
 
 # Number of points used in "make test"
 # If left alone, defaults to the default in
@@ -23,30 +21,34 @@ n = 0
 # Similarly, the random seed used in "make test"
 s =
 
-.PHONY: all clean again test
+.PHONY: all clean again test hmc
 
 all: $(TARGETS)
+
+hmc: ../src/sds.hpp ../src/hmc-tessellate.hpp ../src/polyhedron.hpp ../src/structpool.hpp ../src/verification.hpp ../src/wrapper.hpp ../src/vectormath.hpp ../src/cellarray.hpp ../src/cellarray-private.hpp
 
 malloc_count.o:
 	$(CC) $(MALLOC_COUNT_DIRECTORY)/malloc_count.c -o malloc_count.o -c
 
-benchmark: benchmark.cpp $(HMC_DEP)
+benchmark: benchmark.cpp hmc
 	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS) $(VORO_INCLUDE)
 
-mallocs: benchmark.cpp malloc_count.o $(HMC_DEP)
+mallocs: benchmark.cpp malloc_count.o hmc
 	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS) $(VORO_INCLUDE) $(COUNT_MALLOCS)
 
-celerytest: celerytest.cpp cellarray.hpp cellarray-private.hpp
+celerytest: celerytest.cpp ../src/cellarray.hpp ../src/cellarray-private.hpp
 	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS)
 
-diagramtest: diagram-test.cpp $(HMC_DEP)
-	$(CC) $< -o $@ -O3 -std=c++11 $(CC_INCLUDE) $(LD_FLAGS)
-	./diagramtest
+diagramtest: diagram-test.cpp hmc
+	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS)
+
+simpletest: simpletest.cpp hmc
+	$(CC) $< -o $@ $(CC_FLAGS) $(CC_INCLUDE) $(LD_FLAGS)
 
 test: benchmark
 	./benchmark $(n) $(s)
 
 clean:
-	rm -f $(TARGETS) $(SUBTARGETS)
+	rm -f $(TARGETS)
 
 again: clean $(TARGETS)

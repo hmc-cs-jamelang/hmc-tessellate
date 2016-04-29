@@ -1,18 +1,20 @@
 #include <iostream>
 
-#include "utilities.hpp"
-#include "hmc-tessellate.hpp"
+#include "../src/utilities.hpp"
+#include "../src/hmc-tessellate.hpp"
 
 
 using namespace hmc;
+using namespace hmc::utilities;
 
 int main()
 {
-    Polyhedron p; p.fullOutput();
+    Polyhedron p;
+    std::cerr << p << std::endl;
     Diagram d = Diagram::cube(0,1,0,1,0,1);
     d.initialize([&d](){
         for (unsigned i = 0; i < 25; ++i) {
-            d.addParticle(i, uniform(0,1), uniform(0,1), uniform(0,1));
+            d.addParticle(uniform(0,1), uniform(0,1), uniform(0,1));
         }
     });
 
