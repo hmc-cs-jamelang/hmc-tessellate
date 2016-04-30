@@ -22,7 +22,7 @@
 #include "verification.hpp"
 
 namespace hmc {
-    constexpr double TOLERANCE = 1e-12;
+    constexpr double TOLERANCE = 1e-14;
 
     struct HalfEdge;
     struct Face;
@@ -548,6 +548,14 @@ namespace hmc {
             return normal;
         }
 
+        template <typename F>
+        void temporarilyCompute(F computation)
+        {
+            bool alreadyComputed = (faceData_.size() > 0);
+            computation(*this);
+            if (!alreadyComputed) {faceData_.clear();}
+        }
+
         /**
          * \brief Computes the volume of the polyhedron. If the face data
          *        was not already computed, erase the face data.
@@ -556,11 +564,14 @@ namespace hmc {
          */
         double temporarilyComputeVolume()
         {
-            bool alreadyComputed = (faceData_.size() > 0);
-            double vol = computeVolume();
-            if (!alreadyComputed) {faceData_.clear();}
-            return vol;
+            double volume;
+            temporarilyCompute([&volume](Polyhedron& c){
+                volume = c.computeVolume();
+            });
+            return volume;
         }
+
+
 
         /**
          * \brief Finds the distance of the furthest neighbor.
@@ -916,9 +927,16 @@ namespace hmc {
                 }
 
                 // If the loop fell through without breaking, then
-                // we are at a local maximum. Hence, there are no
-                // outside vertices and we don't have to cut.
+                // we are at a local maximum. Hence, ASSUMING CONVEXITY,
+                // there are no outside vertices and we don't have to cut.
                 if (edgeToNeighbor == edgeToPrevious) {
+                    // This is only an optimization. We expect to cut next
+                    // using other points that are close to the one we
+                    // just cut with, and we want to start as close to
+                    // lating cutting planes as possible.
+                    // So we start out at the previous maximum.
+                    root_ = edgeToCurrent;
+
                     // Return INVALID_EDGE to signify that we do not
                     // need to cut.
                     return INVALID_EDGE;
@@ -968,7 +986,7 @@ namespace hmc {
                 // We can still attempt to at least do SOMETHING, however.
                 if (edgeToNeighbor == edgeToPrevious) {
                     auto locationV = [&](VertexIndex vi) -> Plane::Location {
-                        return location(signedDistance(vi));
+                        return plane.location(vertices_[vi], TOLERANCE);
                     };
 
                     auto isOutgoingEdge = [&](EdgeIndex ei) -> bool {
@@ -999,6 +1017,14 @@ namespace hmc {
 
                     VERIFY(someVertexIsInside());
                 )
+
+                // TODO: What should we do if we enter this error
+                // state, where we're trying to cut off the entire
+                // polyhedron?
+
+                // At the moment, by simply falling through,
+                // we end up infinite looping because cutWithPlane
+                // expects to be able to find outside vertices.
             }
             return flip(edgeToCurrent);
         }
@@ -1010,7 +1036,7 @@ namespace hmc {
          * \param[in] plane     The plane object of the cutting plane.
          * \return True if the plane cut the face.
          */
-        bool cutWithPlane(const int faceid, const Plane plane)
+        bool cutWithPlane(const int faceid, const Plane plane, bool verbose = false)
         {
             VERIFY_INVARIANT(isValid());
             VERIFY(faceData_.size() == 0);
@@ -1044,6 +1070,34 @@ namespace hmc {
             VERIFY_INVARIANT(verticesToDestroy_.size() == 0);
             VERIFY_INVARIANT(edgesToDestroy_.size() == 0);
 
+            auto locationV = [&](VertexIndex vi) -> Plane::Location {
+                return plane.location(vertices_[vi], TOLERANCE);
+            };
+
+            auto outV = [&](VertexIndex vi) -> void {
+                if (vi == INVALID_VERTEX) {
+                    std::cerr << "INVALID VERTEX";
+                    return;
+                }
+                std::cerr << "[" << locationV(vi) << "] "
+                    << "Vertex #" << vi << " " << vertices_[vi];
+            };
+
+            auto outE = [&](EdgeIndex ei) -> void {
+                if (ei == INVALID_EDGE) {
+                    std::cerr << "INVALID EDGE";
+                    return;
+                }
+                std::cerr << "Edge #" << ei << " (" << face(ei) << "), "
+                    << "flip " << flip(ei) << " (" << face(flip(ei)) << "): ";
+                    outV(source(ei)); std::cerr << " --> "; outV(target(ei));
+            };
+
+            if (verbose) {
+                std::cerr << "Beginning to cut. Creating face " << outsideFace << std::endl;
+                std::cerr << "First outgoing is: "; outE(firstOutgoingEdge); std::cerr << std::endl;
+            }
+
             do {
                 VertexIndex previousVertex = target(outgoingEdge);
                 VERIFY(location(previousVertex) != Plane::INSIDE);
@@ -1052,22 +1106,40 @@ namespace hmc {
                 EdgeIndex currentEdge = next(outgoingEdge);
                 VertexIndex currentVertex = target(currentEdge);
 
+                if (verbose) {
+                    std::cerr << std::endl;
+                    std::cerr << "Cutting face " << face(outgoingEdge) << std::endl;
+                    std::cerr << "Outgoing: "; outE(outgoingEdge); std::cerr << std::endl;
+                }
+
                 bool needToCut = (location(previousVertex) == Plane::OUTSIDE);
 
-                while (location(currentVertex) != Plane::INSIDE) {
+                Plane::Location currentLocation, previousLocation;
+                while ((currentLocation = location(currentVertex)) != Plane::INSIDE) {
                     needToCut = true;
                     verticesToDestroy_.push_back(currentVertex);
                     edgesToDestroy_.push_back(currentEdge);
 
                     previousVertex = currentVertex;
+                    previousLocation = currentLocation;
                     currentEdge = next(currentEdge);
                     currentVertex = target(currentEdge);
                 }
 
                 target(outgoingEdge) = previousIntersection;
 
+                if (verbose) {
+                    std::cerr << "Need to cut: " << (needToCut ? "Yes" : "No") << std::endl;
+                }
+
                 if (needToCut) {
-                    VertexIndex currentIntersection = createIntersection(previousVertex, currentVertex);
+                    VertexIndex currentIntersection;
+                    if (previousLocation == Plane::INCIDENT) {
+                        currentIntersection = createVertex(vertices_[previousVertex]);
+                    }
+                    else {
+                        currentIntersection = createIntersection(previousVertex, currentVertex);
+                    }
                     FaceIndex currentFace = face(outgoingEdge);
                     // Make sure that the face's starting edge is one that
                     // we know won't end up getting destroyed
@@ -1091,6 +1163,12 @@ namespace hmc {
                     );
 
                     previousIntersection = currentIntersection;
+
+                    if (verbose) {
+                        std::cerr << "Ingoing: "; outE(currentEdge); std::cerr << std::endl;
+                        std::cerr << "Intersection: "; outV(currentIntersection); std::cerr << std::endl;
+                        std::cerr << "Bridge: "; outE(bridge); std::cerr << std::endl;
+                    }
                 }
 
                 outgoingEdge = flip(currentEdge);
@@ -1282,6 +1360,63 @@ namespace hmc {
             }
 
             return out;
+        }
+
+        void outputGnuplot(std::ostream& out, Vector3 shift = VECTOR_ZERO) const
+        {
+            for (auto eit = edges_.begin(); eit != edges_.end(); ++eit) {
+                if (eit.index().value > eit->flip.value) {
+                    Vector3 v = vertices_[eit->target] + shift;
+                    out << v.x << " " << v.y << " " << v.z << std::endl;
+                    v = vertices_[source(eit.index())] + shift;
+                    out << v.x << " " << v.y << " " << v.z << std::endl;
+                    out << std::endl << std::endl;
+                }
+            }
+        }
+
+        void outputCuttingGraph(std::ostream& out, const Plane& plane) const
+        {
+            auto location = [&](VertexIndex vi) -> Plane::Location {
+                return plane.location(vertices_[vi], TOLERANCE);
+            };
+
+            auto outV = [&](VertexIndex vi) -> void {
+                if (vi == INVALID_VERTEX) {
+                    out << "INVALID VERTEX";
+                    return;
+                }
+                out << "[" << location(vi) << "] "
+                    << "Vertex #" << vi << " " << vertices_[vi];
+            };
+
+            auto outE = [&](EdgeIndex ei) -> void {
+                if (ei == INVALID_EDGE) {
+                    out << "INVALID EDGE";
+                    return;
+                }
+                out << "Edge #" << ei << " (" << face(ei) << "), "
+                    << "flip " << flip(ei) << " (" << face(flip(ei)) << "): ";
+                    outV(source(ei)); out << " --> "; outV(target(ei));
+            };
+
+            out << "Cutting with " << plane << std::endl;
+            out << "Root: "; outE(root_);
+
+            for (auto fit = faces_.begin(); fit != faces_.end(); ++fit) {
+                out << std::endl << std::endl;
+                out << "Face #" << fit.index() << ":" << std::endl;
+                auto ei = fit->startingEdge;
+                do {
+                    out << "        ";
+                    outE(ei);
+                    out << std::endl;
+                    out << "    ";
+                    outV(target(ei));
+                    out << std::endl;
+                    ei = next(ei);
+                } while(ei != fit->startingEdge);
+            }
         }
     };
 

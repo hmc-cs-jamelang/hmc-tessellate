@@ -303,7 +303,10 @@ struct Volume {
         return std::abs(a.volume - b.volume) < Volume::TOLERANCE;
     }
     friend std::ostream& operator<<(std::ostream& out, const Volume& v) {
-        return out << v.volume;
+        auto oldPrecision = out.precision();
+        return out << std::setprecision(std::numeric_limits<double>::max_digits10)
+                   << v.volume
+                   << std::setprecision(oldPrecision);
     }
 };
 

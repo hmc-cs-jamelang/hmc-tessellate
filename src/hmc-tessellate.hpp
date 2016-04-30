@@ -818,6 +818,10 @@ namespace hmc {
             poly = containerShape_;
             poly.translate(-position);
 
+            if (false && particleIndex == 266) {
+                std::cerr << "Cutting particle " << particleIndex << ": " << particles_[particleIndex] << std::endl;
+            }
+
             // Use expanding search if no radius is given
             if (searchRadius == NO_RADIUS) {
     			searchRadius = std::numeric_limits<double>::max();
@@ -828,13 +832,33 @@ namespace hmc {
 					if (targetGroup == nullptr) {
 						for (SizeType index : search) {
 							Vector3 shiftedPosition = particles_[index] - position;
+
 							if (index != particleIndex
 								&& mag2(shiftedPosition) <= searchRadius)
 							{
-								poly.cutWithPlane(
+                                if (false && particleIndex == 266 && (index == 27705 || index == 263)) {
+                                    std::cerr << "Cutting with position " << shiftedPosition << std::endl;
+                                    poly.outputCuttingGraph(std::cerr, Plane::halfwayFromOriginTo(shiftedPosition));
+                                }
+
+                                // std::cerr << "Try to cut " << particleIndex << " with " << index << std::endl;
+                    			bool cut = poly.cutWithPlane(
 									originalIndices_[index],
-									Plane::halfwayFromOriginTo(shiftedPosition)
+									Plane::halfwayFromOriginTo(shiftedPosition),
+                                    (particleIndex == 266 && index == 263)
 									);
+
+                                if (false && cut && particleIndex == 266) {
+                                    std::cerr << std::endl;
+                                    std::cerr << "Cut " << particleIndex << " by " << index << std::endl << std::endl;
+                                    std::cerr << "Shifted position of neighbor: " << shiftedPosition << std::endl;
+                                    poly.outputGnuplot(std::cerr);
+                                }
+
+                                if (false && particleIndex == 266 && index == 263) {
+                                    std::cerr << "Afterwards:" << std::endl;
+                                    poly.outputCuttingGraph(std::cerr, Plane::halfwayFromOriginTo(shiftedPosition));
+                                }
 							}
 						}
 					}

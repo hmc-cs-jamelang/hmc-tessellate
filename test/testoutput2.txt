@@ -1,0 +1,37 @@
+Reading points from 'particles'
+Voro++, 61026 particles, checking nothing
+##############################
+Completed in 
+        1282.61 ms
+##############################
+Volume incorrect (1544786.773793597 vs 1544804.4159999997)
+
+HMC auto-finding, 61026 particles, checking nothing
+Beginning to cut. Creating face 5
+First outgoing is: Edge #8 (2), flip 18 (4): [INSIDE] Vertex #7 (-14.48, 75.85, 0.040005) --> [OUTSIDE] Vertex #6 (101.12, 75.85, 0.040005)
+
+Cutting face 2
+Outgoing: Edge #8 (2), flip 18 (4): [INSIDE] Vertex #7 (-14.48, 75.85, 0.040005) --> [OUTSIDE] Vertex #6 (101.12, 75.85, 0.040005)
+Need to cut: Yes
+Ingoing: Edge #20 (2), flip 21 (0): [OUTSIDE] Vertex #3 (101.12, 75.85, -55.995) --> [INSIDE] Vertex #0 (79.46, 75.85, -77.655)
+Intersection: [INCIDENT] Vertex #8 (79.46, 75.85, -77.655)
+Bridge: Edge #25 (2), flip 24 (5): [INSIDE] Vertex #0 (79.46, 75.85, -77.655) --> [INCIDENT] Vertex #8 (79.46, 75.85, -77.655)
+
+Cutting face 0
+Outgoing: Edge #21 (0), flip 20 (2): [INSIDE] Vertex #0 (79.46, 75.85, -77.655) --> [OUTSIDE] Vertex #3 (101.12, 75.85, -55.995)
+Need to cut: Yes
+Ingoing: Edge #2 (0), flip 1 (6): [INCIDENT] Vertex #4 (1.765, -1.84501, 0.040005) --> [INSIDE] Vertex #0 (79.46, 75.85, -77.655)
+Intersection: [INCIDENT] Vertex #11 (16.3809, 12.7709, -14.5759)
+Bridge: Edge #15 (0), flip 16 (5): [INCIDENT] Vertex #8 (79.46, 75.85, -77.655) --> [INCIDENT] Vertex #11 (16.3809, 12.7709, -14.5759)
+
+Cutting face 6
+Outgoing: Edge #1 (6), flip 2 (0): [INSIDE] Vertex #0 (79.46, 75.85, -77.655) --> [INCIDENT] Vertex #4 (1.765, -1.84501, 0.040005)
+Need to cut: No
+
+Cutting face 4
+Outgoing: Edge #31 (4), flip 30 (6): [INSIDE] Vertex #10 (-14.48, -1.84501, 0.040005) --> [INCIDENT] Vertex #4 (1.765, -1.84501, 0.040005)
+Need to cut: Yes
+Ingoing: Edge #18 (4), flip 8 (2): INVALID VERTEX --> [INSIDE] Vertex #7 (-14.48, 75.85, 0.040005)
+Intersection: [INCIDENT] Vertex #1 (79.46, 75.85, 0.040005)
+Bridge: Edge #10 (4), flip 14 (5): [INCIDENT] Vertex #11 (16.3809, 12.7709, -14.5759) --> [INCIDENT] Vertex #1 (79.46, 75.85, 0.040005)
+make: *** [test] Interrupt
