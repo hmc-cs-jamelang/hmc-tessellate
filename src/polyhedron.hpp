@@ -77,6 +77,7 @@ namespace hmc {
     struct Face {
         int id;                         ///< The index of the neighboring particle that made the face
         EdgeIndex startingEdge;         ///< The first HalfEdge in the face
+        Vector3 unitNormal;
 
 
         /**
@@ -91,7 +92,8 @@ namespace hmc {
               NO_VERIFICATION( startingEdge() )
         { /* Done */ }
 
-        Face(int id, EdgeIndex startingEdge) : id(id), startingEdge(startingEdge) {}
+        Face(int id, EdgeIndex startingEdge, Vector3 unitNormal)
+            : id(id), startingEdge(startingEdge), unitNormal(unitNormal) {}
     };
 
     /**
@@ -672,15 +674,16 @@ namespace hmc {
                 );
             };
 
-            //    BUL-------BUR
-            //    /|        /|
-            //   / |       / |
-            // FUL-------FUR |
-            //  |  |      |  |
-            //  | BDL-----|-BDR
-            //  | /       | /
-            //  |/        |/
-            // FDL-------FDR
+            //    BUL-------BUR               +z
+            //    /|        /|                |   +y
+            //   / |       / |                |  /
+            // FUL-------FUR |                | /
+            //  |  |      |  |       -x_______|/_______+x
+            //  | BDL-----|-BDR              /|
+            //  | /       | /               / |
+            //  |/        |/               /  |
+            // FDL-------FDR             -y   |
+            //                                -z
 
             V(FDL, xmin, ymin, zmin);
             V(FDR, xMAX, ymin, zmin);
@@ -691,6 +694,26 @@ namespace hmc {
             V(BDR, xMAX, yMAX, zmin);
             V(BUR, xMAX, yMAX, zMAX);
             V(BUL, xmin, yMAX, zMAX);
+
+            //    BUL-------BUR               +z
+            //    /|        /|                |   +y
+            //   / |       / |                |  /
+            // FUL-------FUR |                | /
+            //  |  |      |  |       -x_______|/_______+x
+            //  | BDL-----|-BDR              /|
+            //  | /       | /               / |
+            //  |/        |/               /  |
+            // FDL-------FDR             -y   |
+            //                                -z
+
+            // Unit normal vectors for each face
+            Vector3
+                backNormal  { 0, -1,  0},
+                frontNormal { 0,  1,  0},
+                upNormal    { 0,  0,  1},
+                downNormal  { 0,  0, -1},
+                rightNormal { 1,  0,  0},
+                leftNormal  {-1,  0,  0};
 
             enum Edges {
                 FU, FL, FD, FR,
@@ -717,11 +740,12 @@ namespace hmc {
                 );
             };
 
-            auto F = [&](Edges startingEdge) -> FaceIndex
+            auto F = [&](Edges startingEdge, Vector3 unitNormal) -> FaceIndex
             {
                 return createFace(
                     -1,
-                    EdgeIndex {static_cast<EdgePool::SizeType>(startingEdge)}
+                    EdgeIndex {static_cast<EdgePool::SizeType>(startingEdge)},
+                    unitNormal
                 );
             };
 
@@ -753,7 +777,7 @@ namespace hmc {
             //            FD
 
             VERIFY_EXIT(edgeOrder(FU, FL, FD, FR));
-            FaceIndex f = F(FU);
+            FaceIndex f = F(FU, frontNormal);
             E(f, FU, UF, FUL, FL);
             E(f, FL, LF, FDL, FD);
             E(f, FD, DF, FDR, FR);
@@ -771,7 +795,7 @@ namespace hmc {
             //            RD
 
             VERIFY_EXIT(edgeOrder(RU, RF, RD, RB));
-            f = F(RU);
+            f = F(RU, rightNormal);
             E(f, RU, UR, FUR, RF);
             E(f, RF, FR, FDR, RD);
             E(f, RD, DR, BDR, RB);
@@ -789,7 +813,7 @@ namespace hmc {
             //            BD
 
             VERIFY_EXIT(edgeOrder(BU, BR, BD, BL));
-            f = F(BU);
+            f = F(BU, backNormal);
             E(f, BU, UB, BUR, BR);
             E(f, BR, RB, BDR, BD);
             E(f, BD, DB, BDL, BL);
@@ -807,7 +831,7 @@ namespace hmc {
             //            LD
 
             VERIFY_EXIT(edgeOrder(LU, LB, LD, LF));
-            f = F(LU);
+            f = F(LU, leftNormal);
             E(f, LU, UL, BUL, LB);
             E(f, LB, BL, BDL, LD);
             E(f, LD, DL, FDL, LF);
@@ -825,7 +849,7 @@ namespace hmc {
             //            UF
 
             VERIFY_EXIT(edgeOrder(UF, UR, UB, UL));
-            f = F(UF);
+            f = F(UF, upNormal);
             E(f, UF, FU, FUR, UR);
             E(f,UR, RU, BUR, UB);
             E(f, UB, BU, BUL, UL);
@@ -843,7 +867,7 @@ namespace hmc {
             //            DF
 
             VERIFY_EXIT(edgeOrder(DF, DL, DB, DR));
-            f = F(DF);
+            f = F(DF, downNormal);
             E(f, DF, FD, FDL, DL);
             E(f, DL, LD, BDL, DB);
             E(f, DB, BD, BDR, DR);
@@ -1063,7 +1087,7 @@ namespace hmc {
             VertexIndex previousIntersection = INVALID_VERTEX;
 
             EdgeIndex firstOutsideFaceEdge = createEdge();
-            FaceIndex outsideFace = createFace(faceid, firstOutsideFaceEdge);
+            FaceIndex outsideFace = createFace(faceid, firstOutsideFaceEdge, plane.unitNormal);
             face(firstOutsideFaceEdge) = outsideFace;
             EdgeIndex outsideFaceEdge = firstOutsideFaceEdge;
 
@@ -1114,7 +1138,7 @@ namespace hmc {
 
                 bool needToCut = (location(previousVertex) == Plane::OUTSIDE);
 
-                Plane::Location currentLocation, previousLocation;
+                Plane::Location currentLocation, previousLocation = location(previousVertex);
                 while ((currentLocation = location(currentVertex)) != Plane::INSIDE) {
                     needToCut = true;
                     verticesToDestroy_.push_back(currentVertex);

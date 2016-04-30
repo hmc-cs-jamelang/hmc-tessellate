@@ -845,7 +845,7 @@ namespace hmc {
                     			bool cut = poly.cutWithPlane(
 									originalIndices_[index],
 									Plane::halfwayFromOriginTo(shiftedPosition),
-                                    (particleIndex == 266 && index == 263)
+                                    false && (particleIndex == 266 && index == 263)
 									);
 
                                 if (false && cut && particleIndex == 266) {
