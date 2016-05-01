@@ -175,7 +175,7 @@ void runTrial(const double boxLength,
     if (vvol == expectedVol) {
         std::cerr << "Volume correct (" << vvol << ")" << std::endl;
     }
-    else if (std::abs(vvol - expectedVol) < 1e-8) {
+    else if (std::abs((vvol - expectedVol)/expectedVol) < 1e-8) {
         auto oldPrecision = std::cerr.precision();
         std::cerr << std::setprecision(dbl::max_digits10)
                   << "Volume nearly correct:"

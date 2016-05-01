@@ -22,7 +22,7 @@
 #include "verification.hpp"
 
 namespace hmc {
-    constexpr double TOLERANCE = 1e-14;
+    constexpr double TOLERANCE = 1e-12;
 
     struct HalfEdge;
     struct Face;
@@ -77,8 +77,6 @@ namespace hmc {
     struct Face {
         int id;                         ///< The index of the neighboring particle that made the face
         EdgeIndex startingEdge;         ///< The first HalfEdge in the face
-        Vector3 unitNormal;
-
 
         /**
          * \brief Constructor for a Face
@@ -92,8 +90,8 @@ namespace hmc {
               NO_VERIFICATION( startingEdge() )
         { /* Done */ }
 
-        Face(int id, EdgeIndex startingEdge, Vector3 unitNormal)
-            : id(id), startingEdge(startingEdge), unitNormal(unitNormal) {}
+        Face(int id, EdgeIndex startingEdge)
+            : id(id), startingEdge(startingEdge) {}
     };
 
     /**
@@ -706,15 +704,6 @@ namespace hmc {
             // FDL-------FDR             -y   |
             //                                -z
 
-            // Unit normal vectors for each face
-            Vector3
-                backNormal  { 0, -1,  0},
-                frontNormal { 0,  1,  0},
-                upNormal    { 0,  0,  1},
-                downNormal  { 0,  0, -1},
-                rightNormal { 1,  0,  0},
-                leftNormal  {-1,  0,  0};
-
             enum Edges {
                 FU, FL, FD, FR,
                 RU, RF, RD, RB,
@@ -740,12 +729,11 @@ namespace hmc {
                 );
             };
 
-            auto F = [&](Edges startingEdge, Vector3 unitNormal) -> FaceIndex
+            auto F = [&](Edges startingEdge) -> FaceIndex
             {
                 return createFace(
                     -1,
-                    EdgeIndex {static_cast<EdgePool::SizeType>(startingEdge)},
-                    unitNormal
+                    EdgeIndex {static_cast<EdgePool::SizeType>(startingEdge)}
                 );
             };
 
@@ -777,7 +765,7 @@ namespace hmc {
             //            FD
 
             VERIFY_EXIT(edgeOrder(FU, FL, FD, FR));
-            FaceIndex f = F(FU, frontNormal);
+            FaceIndex f = F(FU);
             E(f, FU, UF, FUL, FL);
             E(f, FL, LF, FDL, FD);
             E(f, FD, DF, FDR, FR);
@@ -795,7 +783,7 @@ namespace hmc {
             //            RD
 
             VERIFY_EXIT(edgeOrder(RU, RF, RD, RB));
-            f = F(RU, rightNormal);
+            f = F(RU);
             E(f, RU, UR, FUR, RF);
             E(f, RF, FR, FDR, RD);
             E(f, RD, DR, BDR, RB);
@@ -813,7 +801,7 @@ namespace hmc {
             //            BD
 
             VERIFY_EXIT(edgeOrder(BU, BR, BD, BL));
-            f = F(BU, backNormal);
+            f = F(BU);
             E(f, BU, UB, BUR, BR);
             E(f, BR, RB, BDR, BD);
             E(f, BD, DB, BDL, BL);
@@ -831,7 +819,7 @@ namespace hmc {
             //            LD
 
             VERIFY_EXIT(edgeOrder(LU, LB, LD, LF));
-            f = F(LU, leftNormal);
+            f = F(LU);
             E(f, LU, UL, BUL, LB);
             E(f, LB, BL, BDL, LD);
             E(f, LD, DL, FDL, LF);
@@ -849,7 +837,7 @@ namespace hmc {
             //            UF
 
             VERIFY_EXIT(edgeOrder(UF, UR, UB, UL));
-            f = F(UF, upNormal);
+            f = F(UF);
             E(f, UF, FU, FUR, UR);
             E(f,UR, RU, BUR, UB);
             E(f, UB, BU, BUL, UL);
@@ -867,7 +855,7 @@ namespace hmc {
             //            DF
 
             VERIFY_EXIT(edgeOrder(DF, DL, DB, DR));
-            f = F(DF, downNormal);
+            f = F(DF);
             E(f, DF, FD, FDL, DL);
             E(f, DL, LD, BDL, DB);
             E(f, DB, BD, BDR, DR);
@@ -878,180 +866,53 @@ namespace hmc {
             root_ = EdgeIndex {FU};
         }
 
-        /**
-         * \brief Find an edge going through the cutting plane
-         *
-         * \remark Not robust for floating point errors.
-         */
         EdgeIndex findOutgoingEdge(const Plane& plane) {
-            auto signedDistance = [&](VertexIndex vi) -> double {
-                // return plane.signedDistance(vertices_[vi]);
-                return plane.offset(vertices_[vi]);
+            auto location = [&](VertexIndex vi) -> Plane::Location {
+                return plane.location(vertices_[vi], TOLERANCE);
             };
 
-            auto location = [&](double distance) -> Plane::Location {
-                return plane.location(distance - plane.planeOffset, TOLERANCE);
-            };
-            // We start by finding some OUTSIDE vertex, i.e. one that will
-            // be cut off. If we can't find one, then there will be no outgoing
-            // edge (and no need to cut), so we return INVALID_EDGE.
-            // Starting from the OUTSIDE vertex, we find an INSIDE one.
-            // We will then have an edge pointing from either OUTSIDE or
-            // directly on the cutting plane (INCIDENT) to INSIDE.
-            // The flip of this edge will be the result.
-
-            // We find an outside vertex by starting at some vertex and iteratively
-            // moving to a neighbor that is closer to being outside.
-            // If we find a local maximum that is not outside, then we are done.
-            // THIS ONLY WORKS BECAUSE THE POLYHEDRON IS CONVEX.
-
-            // We have NOT definitely shown that this is entirely robust to
-            // floating point errors.
-            // However, we believe such an error should only happen
-            // when the cutting plane is close to parallel with some of the
-            // faces of the polyhedron.
-            // As long as the polyhedron is CLOSE to convex, any missed cuts
-            // would thus be very small.
-
-            // We start using an arbitrary edge (root_). Between that edge
-            // and its flip, we pick the edge that is moving from less to more
-            // outside.
-            EdgeIndex edgeToCurrent = root_, edgeToPrevious = flip(edgeToCurrent);
-            double currentDistance;
-            {
-                currentDistance = signedDistance(target(edgeToCurrent));
-                double previousDistance = signedDistance(target(edgeToPrevious));
-
-                // Increasing distance is more outside.
-                if (previousDistance > currentDistance) {
-                    swap(edgeToCurrent, edgeToPrevious);
-                    currentDistance = previousDistance;
+            // First, check to see if there are any vertices
+            // that will need to be cut off by the plane,
+            // called OUTSIDE vertices.
+            //   If there aren't, we don't need to cut at all.
+            bool needToCut = false;
+            for (auto v : vertices_) {
+                if (plane.location(v, TOLERANCE) == Plane::OUTSIDE) {
+                    needToCut = true;
+                    break;
                 }
             }
 
-            // Now we enter the hill-climbing portion to find an outside vertex.
-            while (location(currentDistance) != Plane::OUTSIDE) {
-                VERIFY_INVARIANT(edgeToCurrent == flip(edgeToPrevious));
-                VERIFY_INVARIANT(currentDistance == signedDistance(target(edgeToCurrent)));
+            // Signify that we don't need to cut
+            // by returning INVALID_EDGE
+            if (!needToCut) {
+                return INVALID_EDGE;
+            }
 
-                EdgeIndex edgeToNeighbor = next(edgeToCurrent);
-                for (; edgeToNeighbor != edgeToPrevious;
-                     edgeToNeighbor = next(flip(edgeToNeighbor)))
-                {
-                    double neighborDistance = signedDistance(target(edgeToNeighbor));
-
-                    // More distance means "more outside"
-                    if (neighborDistance > currentDistance) {
-                        edgeToCurrent = edgeToNeighbor;
-                        currentDistance = neighborDistance;
-                        edgeToPrevious = flip(edgeToCurrent);
-
-                        break;
+            VERIFY(needToCut);
+            // Simply look at all edges until you find an outgoing one.
+            for (auto eit = edges_.begin(); eit != edges_.end(); ++eit) {
+                // If we found an ingoing edge, return its flip
+                if (location(eit->target) == Plane::INSIDE) {
+                    if (location(target(eit->flip)) != Plane::INSIDE) {
+                        return eit->flip;
                     }
                 }
-
-                // If the loop fell through without breaking, then
-                // we are at a local maximum. Hence, ASSUMING CONVEXITY,
-                // there are no outside vertices and we don't have to cut.
-                if (edgeToNeighbor == edgeToPrevious) {
-                    // This is only an optimization. We expect to cut next
-                    // using other points that are close to the one we
-                    // just cut with, and we want to start as close to
-                    // lating cutting planes as possible.
-                    // So we start out at the previous maximum.
-                    root_ = edgeToCurrent;
-
-                    // Return INVALID_EDGE to signify that we do not
-                    // need to cut.
-                    return INVALID_EDGE;
+                // If we found an outgoing edge, return it itself
+                else {
+                    if (location(target(eit->flip)) == Plane::INSIDE) {
+                        return eit.index();
+                    }
                 }
             }
 
-            // Now the current vertex is an outside vertex.
-            // Next, we start OUTSIDE and then find a vertex that is INSIDE.
-            // This means we'll end up with an edge pointing inward across the
-            // boundary. (Edge target is INSIDE, edge source is either
-            // INCIDENT or OUTSIDE.)
-
-            // It's best if we start with an edge going from less to more INSIDE.
-            // edgeToCurrent is an edge going from less to more OUTSIDE, so
-            // we just reverse directions and swap edgeToCurrent with edgeToPrevious
-            // (updating current distance, of course.)
-            VERIFY(edgeToPrevious == flip(edgeToCurrent));
-            swap(edgeToCurrent, edgeToPrevious);
-            currentDistance = signedDistance(target(edgeToCurrent));
-            while (location(currentDistance) != Plane::INSIDE) {
-                VERIFY_INVARIANT(edgeToCurrent == flip(edgeToPrevious));
-                VERIFY_INVARIANT(currentDistance == signedDistance(target(edgeToCurrent)));
-
-                EdgeIndex edgeToNeighbor = next(edgeToCurrent);
-                for (; edgeToNeighbor != edgeToPrevious;
-                     edgeToNeighbor = next(flip(edgeToNeighbor)))
-                {
-                    double neighborDistance = signedDistance(target(edgeToNeighbor));
-
-                    // Less distance means "more inside"
-                    if (neighborDistance < currentDistance) {
-                        edgeToCurrent = edgeToNeighbor;
-                        currentDistance = neighborDistance;
-                        edgeToPrevious = flip(edgeToCurrent);
-
-                        break;
-                    }
-                }
-
-                // There MUST be some INSIDE vertex. So if we reach
-                // a local minimum without finding an INSIDE vertex,
-                // either we're cutting by something very close -
-                // as in, within machine epsilon close -
-                // or our polyhedron is not convex.
-
-                // So, really we have encountered an error state here.
-                // We can still attempt to at least do SOMETHING, however.
-                if (edgeToNeighbor == edgeToPrevious) {
-                    auto locationV = [&](VertexIndex vi) -> Plane::Location {
-                        return plane.location(vertices_[vi], TOLERANCE);
-                    };
-
-                    auto isOutgoingEdge = [&](EdgeIndex ei) -> bool {
-                        return locationV(target(ei)) != Plane::INSIDE
-                            && locationV(source(ei)) == Plane::INSIDE;
-                    };
-
-                    for (auto eit = edges_.begin(); eit != edges_.end(); ++eit) {
-                        if (isOutgoingEdge(eit.index())) {
-                            return eit.index();
-                        }
-                    }
-                }
-
-                // There is no outgoing edge. However, there ARE
-                // outside vertices if it got to this point,
-                // so this means there aren't any inside vertices.
-
-                VERIFICATION(
-                    auto someVertexIsInside = [&]() -> bool {
-                        for (auto v : vertices_) {
-                            if (plane.location(v, TOLERANCE)) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    };
-
-                    VERIFY(someVertexIsInside());
-                )
-
-                // TODO: What should we do if we enter this error
-                // state, where we're trying to cut off the entire
-                // polyhedron?
-
-                // At the moment, by simply falling through,
-                // we end up infinite looping because cutWithPlane
-                // expects to be able to find outside vertices.
-            }
-            return flip(edgeToCurrent);
+            // This is an error state, where we're trying to cut
+            // off an entire polyhedron. Oops!
+            // Currently, instead, we just don't cut at all.
+            VERIFY(false);
+            return INVALID_EDGE;
         }
+
 
         /**
          * \brief Cuts the polyhedron's face with the given plane.
@@ -1079,6 +940,10 @@ namespace hmc {
             EdgeIndex firstOutgoingEdge = findOutgoingEdge(plane);
             if (firstOutgoingEdge == INVALID_EDGE) { return false; }
 
+            VERIFY(location(target(firstOutgoingEdge)) != Plane::INSIDE
+                    &&
+                   location(source(firstOutgoingEdge)) == Plane::INSIDE);
+
             // Make sure that root_ is an edge that we know
             // won't end up getting destroyed during cutting.
             root_ = firstOutgoingEdge;
@@ -1087,7 +952,7 @@ namespace hmc {
             VertexIndex previousIntersection = INVALID_VERTEX;
 
             EdgeIndex firstOutsideFaceEdge = createEdge();
-            FaceIndex outsideFace = createFace(faceid, firstOutsideFaceEdge, plane.unitNormal);
+            FaceIndex outsideFace = createFace(faceid, firstOutsideFaceEdge);
             face(firstOutsideFaceEdge) = outsideFace;
             EdgeIndex outsideFaceEdge = firstOutsideFaceEdge;
 
