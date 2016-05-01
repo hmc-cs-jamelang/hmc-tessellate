@@ -921,7 +921,7 @@ namespace hmc {
          * \param[in] plane     The plane object of the cutting plane.
          * \return True if the plane cut the face.
          */
-        bool cutWithPlane(const int faceid, const Plane plane, bool verbose = false)
+        bool cutWithPlane(const int faceid, const Plane plane)
         {
             VERIFY_INVARIANT(isValid());
             VERIFY(faceData_.size() == 0);
@@ -959,34 +959,6 @@ namespace hmc {
             VERIFY_INVARIANT(verticesToDestroy_.size() == 0);
             VERIFY_INVARIANT(edgesToDestroy_.size() == 0);
 
-            auto locationV = [&](VertexIndex vi) -> Plane::Location {
-                return plane.location(vertices_[vi], TOLERANCE);
-            };
-
-            auto outV = [&](VertexIndex vi) -> void {
-                if (vi == INVALID_VERTEX) {
-                    std::cerr << "INVALID VERTEX";
-                    return;
-                }
-                std::cerr << "[" << locationV(vi) << "] "
-                    << "Vertex #" << vi << " " << vertices_[vi];
-            };
-
-            auto outE = [&](EdgeIndex ei) -> void {
-                if (ei == INVALID_EDGE) {
-                    std::cerr << "INVALID EDGE";
-                    return;
-                }
-                std::cerr << "Edge #" << ei << " (" << face(ei) << "), "
-                    << "flip " << flip(ei) << " (" << face(flip(ei)) << "): ";
-                    outV(source(ei)); std::cerr << " --> "; outV(target(ei));
-            };
-
-            if (verbose) {
-                std::cerr << "Beginning to cut. Creating face " << outsideFace << std::endl;
-                std::cerr << "First outgoing is: "; outE(firstOutgoingEdge); std::cerr << std::endl;
-            }
-
             do {
                 VertexIndex previousVertex = target(outgoingEdge);
                 VERIFY(location(previousVertex) != Plane::INSIDE);
@@ -994,12 +966,6 @@ namespace hmc {
 
                 EdgeIndex currentEdge = next(outgoingEdge);
                 VertexIndex currentVertex = target(currentEdge);
-
-                if (verbose) {
-                    std::cerr << std::endl;
-                    std::cerr << "Cutting face " << face(outgoingEdge) << std::endl;
-                    std::cerr << "Outgoing: "; outE(outgoingEdge); std::cerr << std::endl;
-                }
 
                 bool needToCut = (location(previousVertex) == Plane::OUTSIDE);
 
@@ -1016,10 +982,6 @@ namespace hmc {
                 }
 
                 target(outgoingEdge) = previousIntersection;
-
-                if (verbose) {
-                    std::cerr << "Need to cut: " << (needToCut ? "Yes" : "No") << std::endl;
-                }
 
                 if (needToCut) {
                     VertexIndex currentIntersection;
@@ -1052,12 +1014,6 @@ namespace hmc {
                     );
 
                     previousIntersection = currentIntersection;
-
-                    if (verbose) {
-                        std::cerr << "Ingoing: "; outE(currentEdge); std::cerr << std::endl;
-                        std::cerr << "Intersection: "; outV(currentIntersection); std::cerr << std::endl;
-                        std::cerr << "Bridge: "; outE(bridge); std::cerr << std::endl;
-                    }
                 }
 
                 outgoingEdge = flip(currentEdge);
