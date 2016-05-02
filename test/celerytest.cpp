@@ -7,10 +7,10 @@
 #include <iostream>
 #include <random>
 #include <vector>
-#include "cellarray.hpp"
+#include "../src/cellarray.hpp"
 
 using namespace std;
-using namespace spatial;
+using namespace hmc::spatial;
 
 // Set up random number generation
 uniform_real_distribution<double> rand_double(0, 1);

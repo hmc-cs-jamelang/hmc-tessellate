@@ -205,6 +205,24 @@ namespace hmc {
             INSIDE
         };
 
+        inline friend std::ostream& operator<<(std::ostream& out, Location loc)
+        {
+            switch (loc) {
+                case OUTSIDE: {
+                    return out << "OUTSIDE";
+                } break;
+                case INCIDENT: {
+                    return out << "INCIDENT";
+                } break;
+                case INSIDE: {
+                    return out << "INSIDE";
+                } break;
+                default: {
+                    return out << "<Unknown Plane::Location>";
+                } break;
+            }
+        }
+
         constexpr Plane(const Vector3& unitNormal,  const double offset)
             : unitNormal(unitNormal), planeOffset(offset)
         { /* Done */ }
@@ -253,6 +271,13 @@ namespace hmc {
             return signedDistance >  tolerance ? OUTSIDE
                 :  signedDistance < -tolerance ? INSIDE
                 :                                INCIDENT;
+        }
+
+        inline friend std::ostream& operator<<(std::ostream& out, const Plane& plane)
+        {
+            return out << "Plane {normal = " << plane.unitNormal
+                        << ", offset = " << plane.planeOffset
+                        << "}";
         }
     };
 

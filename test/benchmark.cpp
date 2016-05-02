@@ -24,12 +24,6 @@ std::size_t totalCuts = 0,
 auto dont_use_this_name = std::chrono::high_resolution_clock::now();
 auto expansionTime = dont_use_this_name - dont_use_this_name;
 
-#include "../src/utilities.hpp"
-#include "../src/vectormath.hpp"
-#include "../src/hmc-tessellate.hpp"
-
-#include <voro++.hh>
-
 #if defined(COUNT_MALLOCS)
     #include <malloc_count.h>
 
@@ -46,14 +40,11 @@ auto expansionTime = dont_use_this_name - dont_use_this_name;
     void outputMallocs(char const* = "") {}
 #endif
 
-// struct Particle {
-//     int id;
-//     hmc::Vector3 position;
+#include "../src/utilities.hpp"
+#include "../src/vectormath.hpp"
+#include "../src/hmc-tessellate.hpp"
 
-//     Particle(int id, double x, double y, double z)
-//         : id(id), position(x, y, z)
-//     {}
-// };
+#include <voro++.hh>
 
 struct Particle {
     int id;
@@ -165,7 +156,6 @@ void runTrial(const double boxLength,
                 c = diagram.getCell(i);
             }
             double vol = c.computeVolume();
-
             vvol += vol;
             record(c);
         }
@@ -185,7 +175,7 @@ void runTrial(const double boxLength,
     if (vvol == expectedVol) {
         std::cerr << "Volume correct (" << vvol << ")" << std::endl;
     }
-    else if (std::abs(vvol - expectedVol) < 1e-8) {
+    else if (std::abs((vvol - expectedVol)/expectedVol) < 1e-8) {
         auto oldPrecision = std::cerr.precision();
         std::cerr << std::setprecision(dbl::max_digits10)
                   << "Volume nearly correct:"
@@ -313,7 +303,10 @@ struct Volume {
         return std::abs(a.volume - b.volume) < Volume::TOLERANCE;
     }
     friend std::ostream& operator<<(std::ostream& out, const Volume& v) {
-        return out << v.volume;
+        auto oldPrecision = out.precision();
+        return out << std::setprecision(std::numeric_limits<double>::max_digits10)
+                   << v.volume
+                   << std::setprecision(oldPrecision);
     }
 };
 

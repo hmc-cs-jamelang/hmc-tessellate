@@ -12,6 +12,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <vector>
+#include <array>
 
 #include "vectormath.hpp"
 
