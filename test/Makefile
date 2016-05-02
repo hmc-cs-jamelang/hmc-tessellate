@@ -2,8 +2,8 @@ CC_INCLUDE =
 LD_FLAGS =
 FLAGS =
 CC_FLAGS += -O3 -Wall -Wextra -std=c++11 $(FLAGS)
-# VORO_INCLUDE = -I../../../source/voro++-0.4.6/include/voro++ -L../../../source/voro++-0.4.6/lib -lvoro++ -Wno-unused-parameter
-VORO_INCLUDE = -I../../voro++-0.4.6/build/include/voro++ -L../../voro++-0.4.6/build/lib -lvoro++ -Wno-unused-parameter
+VORO_INCLUDE = -I../../../source/voro++-0.4.6/include/voro++ -L../../../source/voro++-0.4.6/lib -lvoro++ -Wno-unused-parameter
+#  VORO_INCLUDE = -I../../voro++-0.4.6/build/include/voro++ -L../../voro++-0.4.6/build/lib -lvoro++ -Wno-unused-parameter
 MALLOC_COUNT_DIRECTORY = ../../malloc_count-0.7
 COUNT_MALLOCS = -I$(MALLOC_COUNT_DIRECTORY) -DCOUNT_MALLOCS malloc_count.o -ldl
 #CC = clang++-3.5

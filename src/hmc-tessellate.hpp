@@ -30,6 +30,7 @@ namespace hmc {
 
     class Diagram;
     class Cell;
+	class VoronoiFace;
 
 	/// Value used to signify that no group has been specified.
 	constexpr int DEFAULT_GROUP = -1;
@@ -251,13 +252,30 @@ namespace hmc {
 		 * \brief
 		 *   Compute the vertices of the Voronoi cell.
 		 *
-		 * \param[out]  result  A container for storing the neighbors
+		 * \param[out]  result  A container of VoronoiFace objects for storing the neighbors
 		 */
 		template<typename Collection>
 		void computeVertices(Collection& result)
 		{
 			ensurePolyComputed();
 			poly_.computeVertices(result);
+		}
+
+		/**
+		 * \brief
+		 *   Compute the faces of the Voronoi cell.
+		 *
+		 * \param[out]  result  A container for storing the faces
+		 */
+		template<typename Collection>
+		void computeFaces(Collection& result)
+		{
+			ensurePolyComputed();
+
+			auto output = std::back_inserter(result);
+			for (auto fit = poly_.faces_.begin(); fit != poly_.faces_.end(); ++fit) {
+				*output++ = VoronoiFace(fit.index(), *this);
+			}
 		}
 
 		/**
@@ -278,6 +296,72 @@ namespace hmc {
     protected:
         inline void computeVoronoiCell();
     };
+
+	/**
+	 * \class VoronoiFace
+	 *
+	 * \brief
+	 *   Allows access to data for a single face of a Voronoi Cell.
+	 */
+	class VoronoiFace
+	{
+	private:
+
+		// The FaceIndex corresponding to this face in the Polyhedron for the Voronoi Cell.
+		FaceIndex fi_;
+
+		// A pointer to the Voronoi Cell that contains this face.
+		Cell* cell_;
+
+	public:
+
+		/**
+		 * \brief
+		 *   Constructor
+		 *
+		 * \param[in]  fi    The face index of this face in the cell Polyhedron
+		 * \param[in]  cell  The cell that contains this face
+		 */
+		VoronoiFace(FaceIndex fi, Cell& cell)
+			: fi_(fi), cell_(&cell)
+		{}
+
+		/**
+		 * \brief
+		 *   Get the vertices of the VoronoiFace.
+		 *
+		 * \param[out]  result  A container of doubles, stored sequentially as x, y, z coordinates of each vertex
+		 */
+		template<typename Collection>
+		void computeVertices(Collection& result)
+		{
+			cell_->poly_.computeFaceVertices(fi_, result);
+		}
+
+		/**
+		 * \brief
+		 *   Get the area of the VoronoiFace.
+		 *
+		 * \return
+		 *   The area of the VoronoiFace.
+		 */
+		double computeArea()
+		{
+			return 0.5 * mag(cell_->poly_.weightedNormal(fi_));
+		}
+
+		/**
+		 * \brief
+		 *   Get the neighbor of the Voronoi Cell which cut the polyhedron to make this face.
+		 *
+		 * \return
+		 *  The index of the neighbor in the Diagram that contains the Voronoi Cell.
+		 */
+		SizeType getNeighbor()
+		{
+			return cell_->poly_.faces_[fi_].id;
+		}
+	};
 
 	/**
 	 * \class Diagram

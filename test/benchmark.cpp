@@ -352,6 +352,46 @@ struct Neighbors {
     }
 };
 
+struct FaceData {
+	static constexpr char const* checkedData() {return "face data";}
+	std::set<double> areas;
+
+	FaceData() = default;
+	FaceData(voro::voronoicell_neighbor& c) {
+		std::vector<double> n;
+		c.face_areas(n);
+		for (auto i : n) {
+			areas.insert(i);
+		}
+	}
+	FaceData(hmc::Cell& c) {
+		std::vector<hmc::VoronoiFace> n;
+		c.computeFaces(n);
+		for (auto i : n) {
+			areas.insert(i.computeArea());
+		}
+	}
+
+	friend bool operator==(const FaceData& a, const FaceData& b) {
+		if (a.areas.size() != b.areas.size()) { return false; }
+
+		for (auto ait = a.areas.begin(), bit = b.areas.begin(); ait != a.areas.end(); ++ait, ++bit) {
+			if (abs(*ait - *bit) > 1e-14) { return false; }
+		}
+		return true;
+	}
+	friend std::ostream& operator<<(std::ostream& out, const FaceData& n) {
+		out << "[";
+		char* sep = (char*) "";
+		for (auto a : n.areas) {
+			out << sep << a;
+			sep = (char*) ", ";
+		}
+		out << "]";
+		return out;
+	}
+};
+
 struct AllData {
     static constexpr char const* checkedData() {return "volumes and neighbors";}
     Volume v;
@@ -426,7 +466,7 @@ struct AllData {
 
 
 
-using CheckType = Check<void>;
+using CheckType = Check<FaceData>;
 constexpr int DEFAULT_NUM_POINTS = 100;
 constexpr bool shrinkwrap = false;
 constexpr double shrinkwrapPadding = 1 + 1e-5;

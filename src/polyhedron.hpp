@@ -507,6 +507,26 @@ namespace hmc {
             );
         }
 
+		template<typename Collection>
+		void computeFaceVertices(FaceIndex fi, Collection& result)
+		{
+			auto output = std::back_inserter(result);
+
+			EdgeIndex start = startingEdge(fi);
+			EdgeIndex current = start;
+
+			do {
+				Vector3 v = vertices_[target(current)];
+
+				*output++ = v.x;
+				*output++ = v.y;
+				*output++ = v.z;
+
+				current = next(current);
+
+			} while (current != start);
+		}
+
         /**
          * \brief Computes the data for each face. Nothing is returned.
          *
