@@ -369,7 +369,7 @@ struct FaceData {
 		if (a.areas.size() != b.areas.size()) { return false; }
 
 		for (auto ait = a.areas.begin(), bit = b.areas.begin(); ait != a.areas.end(); ++ait, ++bit) {
-			if (abs(*ait - *bit) > 1e-14) { return false; }
+			if (std::abs(*ait - *bit) > 1e-14) { return false; }
 		}
 		return true;
 	}
@@ -459,7 +459,7 @@ struct AllData {
 
 
 
-using CheckType = Check<FaceData>;
+using CheckType = Check<void>;
 constexpr int DEFAULT_NUM_POINTS = 100;
 constexpr bool shrinkwrap = false;
 constexpr double shrinkwrapPadding = 1 + 1e-5;

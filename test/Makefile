@@ -8,8 +8,8 @@ MALLOC_COUNT_DIRECTORY = ../../malloc_count-0.7
 COUNT_MALLOCS = -I$(MALLOC_COUNT_DIRECTORY) -DCOUNT_MALLOCS malloc_count.o -ldl
 HMC_DEP = ../src/sds.hpp ../src/hmc-tessellate.hpp ../src/polyhedron.hpp ../src/structpool.hpp ../src/verification.hpp ../src/wrapper.hpp ../src/vectormath.hpp ../src/cellarray.hpp ../src/cellarray-private.hpp
 
-#CC = clang++-3.5
-CC = g++
+CC = clang++
+# CC = g++
 
 TARGETS = benchmark mallocs celerytest diagramtest simpletest
 

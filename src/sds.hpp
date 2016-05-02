@@ -88,12 +88,9 @@ namespace hmc {
             cellarray_.initialize(begin, end, getPointFromHandle);
         }
 
-        const std::vector<PointHandle>& search(Vector3 position, double searchRadius) const
+        void search(Vector3 position, double searchRadius, std::vector<PointHandle>& result) const
         {
-            static std::vector<PointHandle> v;
-            v.clear();
-            cellarray_.findNeighborsInCellRadius(position.x, position.y, position.z, searchRadius, v);
-            return v;
+            cellarray_.findNeighborsInCellRadius(position.x, position.y, position.z, searchRadius, result);
         }
 
         class ExpandingSearch {

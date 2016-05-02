@@ -262,6 +262,19 @@ namespace hmc {
 
 		/**
 		 * \brief
+		 *   Find all of the points within a raidus of the particle contained in the Cell.
+		 *
+		 * \param[in]   radius  The radius to use for the search
+		 * \param[out]  result  A vector for storing the indices of neighbors
+		 *
+		 * \remark
+		 *   If a TargetGroup has been specified for the cell, only finds neighbors in the
+		 *   TargetGroup.
+		 */
+		inline void computeNeighborCloud(double radius, std::vector<SizeType>& result);
+
+		/**
+		 * \brief
 		 *   Compute the vertices of the Voronoi cell.
 		 *
 		 * \param[out]  result  A container of VoronoiFace objects for storing the neighbors
@@ -280,15 +293,7 @@ namespace hmc {
 		 * \param[out]  result  A container for storing the faces
 		 */
 		template<typename Collection>
-		void computeFaces(Collection& result)
-		{
-			ensurePolyComputed();
-
-			auto output = std::back_inserter(result);
-			for (auto fit = poly_.faces_.begin(); fit != poly_.faces_.end(); ++fit) {
-				*output++ = VoronoiFace(fit.index(), *this);
-			}
-		}
+		inline void computeFaces(Collection& result);
 
 		/**
 		 * \brief
@@ -943,8 +948,10 @@ namespace hmc {
 
             // Otherwise (given radius), do a basic search
             else {
+				std::vector<SizeType> searchPoints;
+				spatialStructure_.search(position, searchRadius, searchPoints);
 				if (targetGroup == nullptr) {
-					for (SizeType index : spatialStructure_.search(position, searchRadius)) {
+					for (SizeType index : searchPoints) {
 						if (index != particleIndex) {
 							poly.cutWithPlane(
 								originalIndices_[index],
@@ -955,7 +962,7 @@ namespace hmc {
 				}
 
 				else {
-					for (SizeType index : spatialStructure_.search(position, searchRadius)) {
+					for (SizeType index : searchPoints) {
 						if (index != particleIndex && targetGroup->count(groups_[index]) != 0) {
 							poly.cutWithPlane(
 								originalIndices_[index],
@@ -1000,4 +1007,27 @@ namespace hmc {
         // event we do in fact want to return NO_INDEX
         return index_;
     }
+
+	template<typename Collection>
+	void Cell::computeFaces(Collection& result)
+	{
+		ensurePolyComputed();
+
+		auto output = std::back_inserter(result);
+		for (auto fit = poly_.faces_.begin(); fit != poly_.faces_.end(); ++fit) {
+			*output++ = VoronoiFace(fit.index(), *this);
+		}
+	}
+
+	void Cell::computeNeighborCloud(double radius, std::vector<SizeType>& result)
+	{
+		diagram_->spatialStructure_.search(position_, radius, result);
+
+		if (targetGroup_ != nullptr) {
+			std::remove_if(result.begin(), result.end(), [&](SizeType i) {
+					return targetGroup_->count(i) == 0;
+				});
+		}
+	}
+
 }
