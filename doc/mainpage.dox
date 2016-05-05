@@ -7,8 +7,8 @@
  cell contains exactly one particle and all of the space closer to that particle than any other.
  `hmc-tessellate` aims to compute 3D Voronoi tessellations.
 
- \image html ./voronoithing.png "Example of a 2D Voronoi tessellation." width="5cm"
- \image latex ./voronoithing.png "Example of a 2D Voronoi tessellation." width="5cm"
+ \image html voronoithing.png "Example of a 2D Voronoi tessellation." width="5cm"
+ \image latex voronoithing.png "Example of a 2D Voronoi tessellation." width="5cm"
 
  \section init Initializing a Diagram
 
@@ -202,6 +202,7 @@
  including those iterating over source groups,
  are designed so that they can be easily parallelized by OMP
  by adding a single line:
+
  \code{.cpp}
                  Cell c;
                  #pragma omp parallel for private(c) // <-- New
@@ -209,5 +210,11 @@
                      // etc.
                  }
  \endcode
+
+\section doxygen      Doxygen
+
+More in depth documentation can be generated in the ```doc``` directory. Inside `doc`, run `doxygen`
+which will generate both `html` and `latex` directories.
+
 
 */
